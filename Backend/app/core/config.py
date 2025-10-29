@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Expenses Manager"
     DATABASE_URL: str
     FRONTEND_URL: str
+    JWT_SECRET_KEY: str
+    ALGORITHM: str
 
     class Config:
         env_file = ".env"
