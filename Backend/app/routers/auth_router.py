@@ -4,8 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import timedelta
-
-from app.services.auth_service import authenticate_user, create_access_token
+from app.services import AuthService
 from app.database import get_db
 
 
@@ -20,7 +19,8 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db)
 ) -> Token:
-    user = authenticate_user(form_data.username, form_data.password, db)
+    auth_service = AuthService(db)
+    user = auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -28,7 +28,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=1440)
-    access_token = create_access_token(
+    access_token = auth_service.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
 

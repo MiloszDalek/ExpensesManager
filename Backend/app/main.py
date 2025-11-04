@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
-from app.database import Base, engine
-from app.routers import auth_router, user_router
-from app.services.auth_service import create_admin
+from app.database import Base, engine, SessionLocal
+from app.routers import auth_router, user_router, group_router, expense_router, expense_share_router
+from app.services import AuthService
 from app import models
 
 settings = get_settings()
@@ -22,9 +22,20 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix='/api')
-app.include_router(user_router, prefix='/api', tags=['Users'])
+app.include_router(user_router, prefix='/api')
+app.include_router(group_router, prefix='/api')
+app.include_router(expense_router, prefix='/api')
+app.include_router(expense_share_router, prefix='/api')
 
-create_admin()
+
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        auth_service = AuthService(db)
+        auth_service.create_admin()
+    finally:
+        db.close()
 
 @app.get("/")
 def root():
