@@ -58,4 +58,7 @@ class GroupService:
 
 
     def get_members(self, group_id: int):
+        group = self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
         return self.member_repo.get_members_by_group(group_id)

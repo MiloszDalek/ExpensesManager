@@ -14,12 +14,12 @@ def get_user_service(db: Session = Depends(get_db)):
     return UserService(db)
 
 
-@user_router.get("/me", status_code=status.HTTP_200_OK)
+@user_router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def read_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
-@user_router.get("/me/admin", status_code=status.HTTP_200_OK)
+@user_router.get("/me/admin", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def read_me(current_user: User = Depends(get_current_admin_user)):
     return current_user
 
