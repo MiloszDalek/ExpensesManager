@@ -3,3 +3,4 @@ from .group_repository import GroupRepository
 from .group_member_repository import GroupMemberRepository
 from .expense_repository import ExpenseRepository
 from .expense_share_repository import ExpenseShareRepository
+from .settlement_repository import SettlementRepository

@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models import Expense
 
@@ -40,3 +41,16 @@ class ExpenseRepository:
         self.db.delete(expense)
         self.db.commit()
         return True
+    
+
+    def sum_personal_expenses(self, user_id: int) -> float:
+        result = (
+            self.db.query(Expense)
+            .filter(
+                Expense.is_personal == True,
+                Expense.paid_by_id == user_id
+            )
+            .with_entities(func.coalesce(func.sum(Expense.amount), 0))
+            .scalar()
+        )
+        return float(result)

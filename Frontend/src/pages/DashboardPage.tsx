@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils/url";
 import { Button } from "@/components/ui/button";
@@ -10,13 +9,21 @@ import {
   DollarSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
-
-import type { Expense } from "@/types"
+import { useQuery } from "@tanstack/react-query";
 
 import QuickStats from "../components/dashboard/QuickStats";
 import GroupBalances from "../components/dashboard/GroupBalances";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import SpendingChart from "../components/dashboard/SpendingChart";
+
+import { groupsApi } from "@/api/groupsApi";
+import { expensesApi } from "@/api/expensesApi";
+import {
+  useTotalOwed,
+  useTotalReceivable,
+  usePersonalSpending,
+  useGroupBalances
+} from "@/api/dashboard";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,76 +31,6 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function DashboardPage() {
   
   const { user, logout } = useAuth();
-
-  useEffect(()=>{
-    console.log(user)
-  }, []);
-  // const [user, setUser] = useState<User | null>(null);
-
-  // useEffect(() => {
-  //   // const loadUser = async () => {
-  //   //   const currentUser = await base44.auth.me();
-  //   //   setUser(currentUser);
-  //   // };
-  //   const loadUser = async () => {
-  //     const currentUser = {
-  //       full_name: "Miłosz Dałek",
-  //       email: "milosz@example.com",
-  //     };
-  //     setUser(currentUser);
-  //   }
-  //   loadUser();
-  // }, []);
-
-  // const { data: groups = [], isLoading: groupsLoading } = useQuery({
-  //   queryKey: ['groups'],
-  //   queryFn: () => base44.entities.Group.list('-created_date'),
-  // });
-
-  // const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-  //   queryKey: ['expenses'],
-  //   queryFn: () => base44.entities.Expense.list('-date'),
-  // });
-
-  // const { data: settlements = [] } = useQuery({
-  //   queryKey: ['settlements'],
-  //   queryFn: () => base44.entities.Settlement.list('-date'),
-  // });
-
-  const { data: groups = [] } = { data: [
-    { id: 1, name: "Grupa domowa", members: ["milosz@gmail.com", "ania@example.com"] },
-    { id: 2, name: "Wyjazd", members: ["milosz@gmail.com", "piotr@example.com"] },
-  ]};
-
-  // const { data: expenses = [] } = { data: [
-  //   { id: 1, is_personal: false, paid_by: "milosz@example.com", amount: 120, splits: [{ user_email: "ania@example.com", amount: 60 }] },
-  //   { id: 2, is_personal: true, paid_by: "milosz@example.com", amount: 80 },
-  // ]};
-
-  const { data: expenses = [] }: { data: Expense[] } = {
-  data: [
- {
-      id: 1,
-      title: "Dinner with friends",
-      amount: 120,
-      date: "2025-11-09",
-      category: "food",
-      is_personal: false,
-      paid_by: "milosz@gmail.com",
-    },
-    {
-      id: 2,
-      title: "Taxi ride",
-      amount: 80,
-      date: "2025-11-08",
-      category: "transport",
-      is_personal: true,
-      paid_by: "milosz@gmail.com",
-    },
-  ],
-};
-
-  // const { data: settlements = [] } = { data: [] };
 
   if (!user) {
     return (
@@ -103,63 +40,17 @@ export default function DashboardPage() {
     );
   }
 
-  const myGroups = groups.filter(g => g.members?.includes(user.email));
-  const personalExpenses = expenses.filter(e => e.is_personal && e.paid_by === user.email);
-  const groupExpenses = expenses.filter(e => !e.is_personal);
-
-  // Calculate total personal spending
-  const totalPersonalSpending = personalExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-
-  interface Settlement {
-  from_user: string;
-  to_user: string;
-  amount: number;
-}
-
-const settlements: Settlement[] = [
-  { from_user: "A", to_user: "B", amount: 50 },
-  { from_user: "C", to_user: "A", amount: 20 },
-];
-
-  // Calculate group balances
-  const calculateBalances = () => {
-    const balances: Record<string, number> = {};
-    
-    groupExpenses.forEach(expense => {
-      if (!expense.splits) return;
-      
-      expense.splits.forEach(split => {
-        if (split.user_email === user.email && expense.paid_by !== user.email) {
-          // I owe someone
-          const key = `${user.email}-${expense.paid_by}`;
-          balances[key] = (balances[key] || 0) + split.amount;
-        } else if (expense.paid_by === user.email && split.user_email !== user.email) {
-          // Someone owes me
-          const key = `${split.user_email}-${user.email}`;
-          balances[key] = (balances[key] || 0) + split.amount;
-        }
-      });
-    });
-
-    // Subtract settlements
-    settlements.forEach(settlement => {
-      const key = `${settlement.from_user}-${settlement.to_user}`;
-      if (balances[key]) {
-        balances[key] -= settlement.amount;
-      }
-    });
-
-    return balances;
-  };
-
-  const balances = calculateBalances();
-  const totalOwed = Object.entries(balances)
-    .filter(([key]) => key.startsWith(user.email))
-    .reduce((sum, [, amount]) => sum + amount, 0);
+  const { data: totalOwed = 0 } = useTotalOwed();
+  const { data: totalOwedToMe = 0 } = useTotalReceivable();
+  const { data: totalPersonalSpending = 0 } = usePersonalSpending();
+  const { data: groupBalances = {} } = useGroupBalances();
   
-  const totalOwedToMe = Object.entries(balances)
-    .filter(([key]) => key.endsWith(user.email) && !key.startsWith(user.email))
-    .reduce((sum, [, amount]) => sum + amount, 0);
+
+  const { data: myGroups = [] } = useQuery({
+    queryKey: ["groups"],
+    queryFn: groupsApi.list,
+  });
+
 
   return (
     <div className="min-h-screen p-4 md:p-8">

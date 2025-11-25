@@ -1,3 +1,4 @@
+import datetime
 from pydantic import BaseModel
 
 
@@ -8,5 +9,7 @@ class GroupMemberBase(BaseModel):
 
 class GroupMemberResponse(GroupMemberBase):
     id: int
+    joined_at: datetime
+
     class Config:
         from_attributes = True

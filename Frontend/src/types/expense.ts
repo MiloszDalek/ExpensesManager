@@ -1,9 +1,5 @@
 import { categoryIcons } from "./categoryIcons";
-
-export interface ExpenseSplit {
-  user_email: string;
-  amount: number;
-}
+import type { ExpenseShare } from "./expenseShare";
 
 export interface Expense {
   id: number;
@@ -13,5 +9,5 @@ export interface Expense {
   category: keyof typeof categoryIcons;
   paid_by: string;
   is_personal?: boolean;
-  splits?: ExpenseSplit[];
+  splits?: ExpenseShare[];
 }

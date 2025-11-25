@@ -1,10 +1,11 @@
+import datetime
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
 class UserBase(BaseModel):
     email: EmailStr
-    username: Optional[str] = None
+    username: str
 
 
 class UserCreate(UserBase):
@@ -20,6 +21,8 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     role: str
+    is_active: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True

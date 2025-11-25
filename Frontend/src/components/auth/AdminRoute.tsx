@@ -1,30 +1,22 @@
 import { Navigate } from "react-router-dom";
-import { useEffect, useState, type JSX } from "react";
-import { getCurrentUser } from "@/api/auth";
-import type { User } from "@/types";
-
+import type { JSX } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminRoute({ children }: { children: JSX.Element }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await getCurrentUser();
-        setUser(data);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
 
-  if (loading) return <div>Loading...</div>;
-
-  if (!user || user.role !== "admin") {
+  if (!user) {
+    return <Navigate to="login" replace />
+  }
+  else if (user.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 

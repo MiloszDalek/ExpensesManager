@@ -21,6 +21,7 @@ class GroupResponse(GroupBase):
     id: int
     created_by: int
     created_at: datetime
+    
     class Config:
         from_attributes = True
 
