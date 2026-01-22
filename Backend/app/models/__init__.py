@@ -6,3 +6,4 @@ from .expense_share_model import ExpenseShare
 from .settlement_model import Settlement
 from .bank_token_model import BankToken
 from .contact_model import Contact
+from .notification_model import Notification

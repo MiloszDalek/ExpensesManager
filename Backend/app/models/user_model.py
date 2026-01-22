@@ -18,18 +18,11 @@ class User(Base):
     expenses = relationship("Expense", back_populates="payer")
     expense_shares = relationship("ExpenseShare", back_populates="user")
 
-    sent_settlements = relationship(
-        "Settlement",
-        foreign_keys="Settlement.from_user_id",
-        back_populates="from_user",
-    )
-    received_settlements = relationship(
-        "Settlement",
-        foreign_keys="Settlement.to_user_id",
-        back_populates="to_user",
-    )
+    sent_settlements = relationship("Settlement", foreign_keys="Settlement.from_user_id", back_populates="from_user")
+    received_settlements = relationship("Settlement", foreign_keys="Settlement.to_user_id", back_populates="to_user")
 
     contacts = relationship("Contact", foreign_keys="Contact.user_id", back_populates="user")
     contact_of = relationship("Contact", foreign_keys="Contact.contact_id", back_populates="contact")
-
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    
     bank_tokens = relationship("BankToken", back_populates="user")

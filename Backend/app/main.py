@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.database import Base, engine, SessionLocal
-from app.routers import auth_router, user_router, group_router, expense_router, expense_share_router
+from app.routers import auth_router, user_router, group_router, expense_router, expense_share_router, dashboard_router
 from app.services import AuthService
 from app import models
 
@@ -26,6 +26,7 @@ app.include_router(user_router, prefix='/api')
 app.include_router(group_router, prefix='/api')
 app.include_router(expense_router, prefix='/api')
 app.include_router(expense_share_router, prefix='/api')
+app.include_router(dashboard_router, prefix='/api')
 
 
 @app.on_event("startup")

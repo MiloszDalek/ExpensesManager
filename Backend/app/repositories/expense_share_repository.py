@@ -35,11 +35,11 @@ class ExpenseShareRepository:
         Suma: ile user powinien innym (z perspektywy konsumenta).
         """
         result = (
-            self.db.query(func.coalesce(func.sum(ExpenseShare.amount), 0))
+            self.db.query(func.coalesce(func.sum(ExpenseShare.share_amount), 0))
             .join(Expense, Expense.id == ExpenseShare.expense_id)
             .filter(
                 ExpenseShare.user_id == user_id,        # ja jestem konsumentem
-                Expense.paid_by_id != user_id           # ale nie płaciłem
+                Expense.payer_id != user_id           # ale nie płaciłem
             )
             .scalar()
         )
@@ -52,10 +52,10 @@ class ExpenseShareRepository:
         Suma: ile inni powinni userowi (z perspektywy płacącego).
         """
         result = (
-            self.db.query(func.coalesce(func.sum(ExpenseShare.amount), 0))
+            self.db.query(func.coalesce(func.sum(ExpenseShare.share_amount), 0))
             .join(Expense, Expense.id == ExpenseShare.expense_id)
             .filter(
-                Expense.paid_by_id == user_id,          # ja płaciłem
+                Expense.payer_id == user_id,          # ja płaciłem
                 ExpenseShare.user_id != user_id         # ktoś inny konsumował
             )
             .scalar()
@@ -71,13 +71,13 @@ class ExpenseShareRepository:
         rows = (
             self.db.query(
                 ExpenseShare.user_id.label("from_user"),
-                Expense.paid_by_id.label("to_user"),
-                func.sum(ExpenseShare.amount).label("amount")
+                Expense.payer_id.label("to_user"),
+                func.sum(ExpenseShare.share_amount).label("amount")
             )
             .join(Expense, Expense.id == ExpenseShare.expense_id)
             .filter(
                 (ExpenseShare.user_id == user_id) |  # user konsumował
-                (Expense.paid_by_id == user_id)      # user płacił
+                (Expense.payer_id == user_id)      # user płacił
             )
             .group_by("from_user", "to_user")
             .all()

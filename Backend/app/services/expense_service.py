@@ -11,8 +11,8 @@ class ExpenseService:
         self.share_repo = ExpenseShareRepository(db)
 
     
-    def create_expense(self, data: ExpenseCreate, group_id: int, creator_id: int) -> Expense:
-        expense = Expense(**data.model_dump(), group_id=group_id, created_by=creator_id)
+    def create_expense(self, data: ExpenseCreate, group_id: int, payer_id: int) -> Expense:
+        expense = Expense(**data.model_dump(), group_id=group_id, payer_id=payer_id)
         expense = self.expense_repo.create(expense)
 
         shares = [

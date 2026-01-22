@@ -9,49 +9,31 @@ import {
   DollarSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-
 import QuickStats from "../components/dashboard/QuickStats";
 import GroupBalances from "../components/dashboard/GroupBalances";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import SpendingChart from "../components/dashboard/SpendingChart";
 
-import { groupsApi } from "@/api/groupsApi";
-import { expensesApi } from "@/api/expensesApi";
-import {
-  useTotalOwed,
-  useTotalReceivable,
-  usePersonalSpending,
-  useGroupBalances
-} from "@/api/dashboard";
-
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardSummary } from "@/hooks/useDashboard";
 
+import MockData from "@/mocks/dashboard-mock-data.json";
 
 export default function DashboardPage() {
   
   const { user, logout } = useAuth();
 
-  if (!user) {
+  const { data, isLoading } = useDashboardSummary();
+
+
+  if (!user || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
-
-  const { data: totalOwed = 0 } = useTotalOwed();
-  const { data: totalOwedToMe = 0 } = useTotalReceivable();
-  const { data: totalPersonalSpending = 0 } = usePersonalSpending();
-  const { data: groupBalances = {} } = useGroupBalances();
-  
-
-  const { data: myGroups = [] } = useQuery({
-    queryKey: ["groups"],
-    queryFn: groupsApi.list,
-  });
-
-
+ 
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -89,28 +71,28 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <QuickStats
             title="You Owe"
-            value={`$${totalOwed.toFixed(2)}`}
+            value={`${(MockData.statistics.total_owed ?? 0).toFixed(2)}`}
             icon={ArrowUpRight}
             gradient="from-red-500 to-orange-500"
-            trend={totalOwed > 0 ? "Settle up soon" : "All clear!"}
+            trend={(MockData.statistics.total_owed ?? 0) > 0 ? "Settle up soon" : "All clear!"}
           />
           <QuickStats
             title="Owed to You"
-            value={`$${totalOwedToMe.toFixed(2)}`}
+            value={`${(MockData.statistics.total_receivable ?? 0).toFixed(2)}`}
             icon={DollarSign}
             gradient="from-green-500 to-emerald-500"
-            trend={totalOwedToMe > 0 ? "Pending" : "All settled"}
+            trend={(MockData.statistics.total_receivable ?? 0) > 0 ? "Pending" : "All settled"}
           />
           <QuickStats
             title="Active Groups"
-            value={myGroups.length}
+            value={`${MockData.statistics.active_groups}`}
             icon={Users}
             gradient="from-purple-500 to-pink-500"
-            trend={`${myGroups.length} groups`}
+            trend={`${MockData.statistics.active_groups} groups`}
           />
           <QuickStats
             title="Personal Spending"
-            value={`$${totalPersonalSpending.toFixed(2)}`}
+            value={`${MockData.statistics.personal_spending.toFixed(2)}`}
             icon={Wallet}
             gradient="from-blue-500 to-cyan-500"
             trend="This month"
@@ -120,15 +102,36 @@ export default function DashboardPage() {
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <SpendingChart expenses={expenses} user={user} />
-            <RecentActivity expenses={expenses} user={user} />
-          </div>
+            {/* <SpendingChart expenses={data?.recent_expenses ?? []} user={user} />
+            <RecentActivity expenses={data?.recent_expenses ?? []} user={user} /> */}
+            <SpendingChart expenses={MockData.expenses} user={user} />
+            <RecentActivity expenses={MockData.expenses} user={user} />
+          </div>  
           
           <div className="space-y-6">
-            <GroupBalances 
-              groups={myGroups} 
-              balances={balances} 
+            {/* <GroupBalances 
+              groups={data?.group_list ?? []}
+              balances={data?.group_balances ?? []}
               userEmail={user.email}
+            /> */}
+            <GroupBalances
+              groups={[
+                { id: 1, name: "Roommates", description:"des", color: "purple", members: ["alice@example.com", "milosz@example.com"] },
+                { id: 2, name: "Project Team", description:"des", color: "blue", members: ["bob@example.com", "milosz@example.com"] },
+                { id: 3, name: "Trip", description:"des", color: "pink", members: ["milosz@example.com", "admin@example.com"] }
+              ]}
+              balances = {{
+                1: {
+                  "milosz@gmail.com_alice@gmail.com": 22
+                },
+                2: {
+                  "bob@gmail.com_milosz@gmail.com": 31
+                },
+                3: {
+                  "admin@gmail.com_milosz@gmail.com": 14
+                }
+              }}
+              userEmail="milosz@gmail.com"
             />
           </div>
         </div>

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.dashboard_service import DashboardService
-from Backend.app.utils.auth_dependencies import get_current_active_user
+from app.utils.auth_dependencies import get_current_active_user
 
 
 dashboard_router = APIRouter(
@@ -45,3 +45,11 @@ def group_balances(
     current_user = Depends(get_current_active_user)
 ):
     return {"group_balances": service.get_group_balances(current_user.id)}
+
+
+@dashboard_router.get("/")
+def get_full_dashboard_info(
+    service: DashboardService = Depends(get_dashboard_service),
+    current_user = Depends(get_current_active_user)
+):
+    return service.get_full_dashboard(current_user.id)

@@ -6,8 +6,8 @@ from datetime import datetime
 class ExpenseBase(BaseModel):
     title: str
     amount: float
-    payer_id: int
-    group_id: Optional[int] = None
+    # payer_id: Optional[int] = None
+    # group_id: Optional[int] = None
     is_personal: bool = True
     currency: str = "PLN"
     category: Optional[str] = None

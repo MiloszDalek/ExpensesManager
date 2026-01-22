@@ -4,7 +4,7 @@ from app.services import ExpenseService
 from app.database import get_db
 from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
 from app.models import User
-from Backend.app.utils.auth_dependencies import get_current_active_user
+from app.utils.auth_dependencies import get_current_active_user
 
 expense_router = APIRouter(
     prefix="/expenses",

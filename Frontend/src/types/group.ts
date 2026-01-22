@@ -1,3 +1,5 @@
+import type { User, Expense } from "@/types";
+
 export const groupColors = {
   purple: "from-purple-500 to-purple-600",
   blue: "from-blue-500 to-blue-600",
@@ -11,6 +13,13 @@ type GroupColorKey = keyof typeof groupColors;
 export interface Group {
   id: number;
   name: string;
-  members?: string[];
+  description: string | null;
+  created_by?: number;
+  created_at?: string;
+
+  created_by_user?: User | null;
+  expenses?: Expense[];
+
+  members?: String[];
   color?: GroupColorKey;
 }

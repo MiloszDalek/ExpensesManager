@@ -48,9 +48,22 @@ class ExpenseRepository:
             self.db.query(Expense)
             .filter(
                 Expense.is_personal == True,
-                Expense.paid_by_id == user_id
+                Expense.payer_id == user_id
             )
             .with_entities(func.coalesce(func.sum(Expense.amount), 0))
             .scalar()
         )
         return float(result)
+    
+
+    def get_recent_expenses(self, user_id: int, limit: int = 5):
+        return (
+            self.db.query(Expense)
+            .filter(Expense.payer_id == user_id)
+            .order_by(Expense.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+    
+
+    

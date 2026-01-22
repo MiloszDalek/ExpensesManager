@@ -10,25 +10,28 @@ import { groupColors } from "@/types";
 
 interface GroupBalancesProps {
   groups: Group[];
-  balances: Record<string, number>;
+  balances: Record<number, Record<string, number>>
   userEmail: string;
 }
 
 export default function GroupBalances({ groups, balances, userEmail }: GroupBalancesProps) {
-  const getGroupBalance = (_groupId: number) => {
-    let owed = 0;
-    let owedToMe = 0;
+const getGroupBalance = (groupId: number) => {
+  let owed = 0;
+  let owedToMe = 0;
 
-    Object.entries(balances).forEach(([key, amount]) => {
-      if (key.startsWith(userEmail)) {
-        owed += amount;
-      } else if (key.endsWith(userEmail)) {
-        owedToMe += amount;
-      }
-    });
+  const groupBalances = balances[groupId];
+  if (!groupBalances) return { owed, owedToMe };
 
-    return { owed, owedToMe };
-  };
+  Object.entries(groupBalances).forEach(([key, amount]) => {
+    if (key.startsWith(userEmail)) {
+      owed += amount;
+    } else if (key.endsWith(userEmail)) {
+      owedToMe += amount;
+    }
+  });
+
+  return { owed, owedToMe };
+};
 
   return (
     <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
@@ -85,7 +88,7 @@ export default function GroupBalances({ groups, balances, userEmail }: GroupBala
                       </div>
                       {netBalance !== 0 && (
                         <div className={`text-sm font-medium ${netBalance > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {netBalance > 0 ? `You're owed $${Math.abs(netBalance).toFixed(2)}` : `You owe $${Math.abs(netBalance).toFixed(2)}`}
+                          {netBalance > 0 ? `You're owed ${Math.abs(netBalance).toFixed(2)} PLN` : `You owe ${Math.abs(netBalance).toFixed(2)} PLN`}
                         </div>
                       )}
                     </div>

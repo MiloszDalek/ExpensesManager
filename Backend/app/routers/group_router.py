@@ -4,7 +4,7 @@ from app.services import GroupService
 from app.database import get_db
 from app.schemas import GroupResponse, GroupCreate, GroupUpdate, UserResponse
 from app.models import User
-from Backend.app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
+from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
 group_router = APIRouter(
     prefix='/groups',

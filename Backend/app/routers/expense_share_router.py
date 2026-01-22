@@ -4,7 +4,7 @@ from app.services import ExpenseShareService
 from app.database import get_db
 from app.schemas import ExpenseShareResponse, ExpenseShareCreate
 from app.models import User
-from Backend.app.utils.auth_dependencies import get_current_active_user
+from app.utils.auth_dependencies import get_current_active_user
 
 expense_share_router = APIRouter(
     prefix="/expense-shares",

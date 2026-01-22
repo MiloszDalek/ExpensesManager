@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Smartphone } from "lucide-react";
+import { Activity } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 
 import type { User, Expense } from "@/types";
-import { categoryIcons } from "@/types";
+import { getCategoryIcon } from "@/utils/category";
 
 interface RecentActivityProps {
   expenses: Expense[];
@@ -31,8 +31,8 @@ export default function RecentActivity({ expenses, user }: RecentActivityProps) 
         ) : (
           <div className="space-y-3">
             {recentExpenses.map((expense, index) => {
-              const Icon = categoryIcons[expense.category] || Smartphone;
-              const isPaidByMe = expense.paid_by === user.email;
+              const Icon = getCategoryIcon(expense.category);
+              const isPaidByMe = expense.payer_id === user.id;
               
               return (
                 <motion.div
@@ -49,13 +49,13 @@ export default function RecentActivity({ expenses, user }: RecentActivityProps) 
                     <div>
                       <h4 className="font-medium text-gray-900">{expense.title}</h4>
                       <p className="text-xs text-gray-500">
-                        {format(new Date(expense.date), "MMM d, yyyy")} · {expense.category}
+                        {format(new Date(expense.created_at), "MMM d, yyyy")} · {expense.category}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`font-semibold ${isPaidByMe ? 'text-green-600' : 'text-gray-900'}`}>
-                      ${expense.amount.toFixed(2)}
+                      {expense.amount.toFixed(2)} {expense.currency}
                     </p>
                     {!expense.is_personal && (
                       <p className="text-xs text-gray-500">

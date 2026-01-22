@@ -12,7 +12,7 @@ interface SpendingChartProps {
 }
 
 export default function SpendingChart({ expenses, user }: SpendingChartProps) {
-  const personalExpenses = expenses.filter(e => e.is_personal && e.paid_by === user.email);
+  const personalExpenses = expenses.filter(e => e.is_personal && e.payer_id === user.id);
 
   // Group expenses by category
   const categoryData = personalExpenses.reduce((acc: Record<string, number>, expense) => {

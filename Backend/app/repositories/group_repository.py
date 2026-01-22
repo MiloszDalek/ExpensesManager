@@ -49,3 +49,11 @@ class GroupRepository:
             .filter(GroupMember.user_id == user_id)
             .all()
         )
+    
+
+    def count_user_groups(self, user_id: int) -> int:
+        return (
+            self.db.query(GroupMember)
+            .filter(GroupMember.user_id == user_id)
+            .count()
+        )

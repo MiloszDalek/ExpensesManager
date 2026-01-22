@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import GroupMember
+from app.models import GroupMember, User
 
 
 class GroupMemberRepository:
@@ -23,8 +23,8 @@ class GroupMemberRepository:
         self.db.commit()
 
 
-    def get_members_by_group(self, group_id: int) -> list[GroupMember]:
-        return self.db.query(GroupMember).filter(GroupMember.group_id == group_id).all()
+    def get_members_by_group(self, group_id: int) -> list[User]:
+        return self.db.query(User).join(GroupMember, User.id == GroupMember.user_id).filter(GroupMember.group_id == group_id).all()
 
 
     def is_user_in_group(self, group_id: int, user_id: int) -> bool:

@@ -3,11 +3,19 @@ import type { ExpenseShare } from "./expenseShare";
 
 export interface Expense {
   id: number;
+  group_id: number | null;
+  payer_id: number;
   title: string;
   amount: number;
-  date: string; // lub Date, zależnie od backendu
-  category: keyof typeof categoryIcons;
-  paid_by: string;
-  is_personal?: boolean;
-  splits?: ExpenseShare[];
+  is_personal: boolean;
+  currency: string;
+  category: string | null;
+  created_at: string;
+  receipt_image_url: string | null;
+  receipt_text: string | null;
+
+  // FRONTEND-ONLY FIELDS:
+  payer_name?: string;
+  category_icon?: keyof typeof categoryIcons;
+  shares?: ExpenseShare[];
 }

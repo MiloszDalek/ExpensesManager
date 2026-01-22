@@ -25,7 +25,7 @@ export default function QuickStats({ title, value, icon: Icon, gradient, trend }
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-500 mb-2">{title}</p>
               <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-                {value}
+                {value} 
               </h3>
               <p className="text-xs text-gray-400">{trend}</p>
             </div>
