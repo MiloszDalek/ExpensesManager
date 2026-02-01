@@ -70,6 +70,13 @@ export default function DashboardPage() {
         {/* Quick Stats Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <QuickStats
+            title="Personal Spending"
+            value={`${MockData.statistics.personal_spending.toFixed(2)}`}
+            icon={Wallet}
+            gradient="from-blue-500 to-cyan-500"
+            trend="This month"
+          />
+          <QuickStats
             title="You Owe"
             value={`${(MockData.statistics.total_owed ?? 0).toFixed(2)}`}
             icon={ArrowUpRight}
@@ -89,13 +96,6 @@ export default function DashboardPage() {
             icon={Users}
             gradient="from-purple-500 to-pink-500"
             trend={`${MockData.statistics.active_groups} groups`}
-          />
-          <QuickStats
-            title="Personal Spending"
-            value={`${MockData.statistics.personal_spending.toFixed(2)}`}
-            icon={Wallet}
-            gradient="from-blue-500 to-cyan-500"
-            trend="This month"
           />
         </div>
 

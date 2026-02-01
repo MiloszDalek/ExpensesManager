@@ -10,39 +10,94 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
 import GroupCard from "../components/groups/GroupCard";
+import { useAuth } from "@/contexts/AuthContext";
+
+import groupsMock from "@/mocks/groups-mock-data.json";
+
+type CreateGroupInput = {
+  name: string;
+  description?: string;
+  currency?: string;
+};
+
+const groupColors = {
+  purple: "from-purple-500 to-purple-600",
+  blue: "from-blue-500 to-blue-600",
+  teal: "from-teal-500 to-teal-600",
+  pink: "from-pink-500 to-pink-600",
+  orange: "from-orange-500 to-orange-600",
+};
+
+type GroupColor = "purple" | "blue" | "teal" | "pink" | "orange";
+
+type Group = {
+  id: string;
+  name: string;
+  color?: GroupColor;
+  description?: string;
+  currency?: string;
+  members: string[];
+  created_date: string;
+  total_expenses: number;
+};
+
+
 
 export default function GroupsPage() {
-  const [user, setUser] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+  const { user, logout } = useAuth();
+
+const [mockGroups, setMockGroups] = useState<Group[]>(groupsMock as Group[]);
+
+const { data: groups = [], isLoading } = useQuery({
+  queryKey: ["groups"],
+  queryFn: async () => mockGroups
+});
+
+const createGroupMutation = useMutation({
+  mutationFn: async (groupData: CreateGroupInput) => {
+    const newGroup = {
+      id: crypto.randomUUID(),
+      ...groupData,
+      members: [user?.email!],
+      created_date: new Date().toISOString(),
+      total_expenses: 0
     };
-    loadUser();
-  }, []);
 
-  const { data: groups = [], isLoading } = useQuery({
-    queryKey: ['groups'],
-    queryFn: () => base44.entities.Group.list('-created_date'),
-  });
+    setMockGroups(prev => [newGroup, ...prev]);
+    return newGroup;
+  },
+  onSuccess: () => {
+    setShowCreateDialog(false);
+  }
+});
 
-  const createGroupMutation = useMutation({
-    mutationFn: (groupData) => base44.entities.Group.create(groupData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
-      setShowCreateDialog(false);
-    },
-  });
+const deleteGroupMutation = useMutation({
+  mutationFn: async (groupId: String) => {
+    setMockGroups(prev =>
+      prev.filter(group => group.id !== groupId)
+    );
+    return groupId;
+  }
+});
 
-  const deleteGroupMutation = useMutation({
-    mutationFn: (groupId) => base44.entities.Group.delete(groupId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
-    },
-  });
+
+  // const createGroupMutation = useMutation({
+  //   mutationFn: (groupData) => base44.entities.Group.create(groupData),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['groups'] });
+  //     setShowCreateDialog(false);
+  //   },
+  // });
+
+  // const deleteGroupMutation = useMutation({
+  //   mutationFn: (groupId) => base44.entities.Group.delete(groupId),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['groups'] });
+  //   },
+  // });
 
   if (!user) {
     return (
@@ -123,7 +178,7 @@ export default function GroupsPage() {
       <CreateGroupDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onSubmit={(data) => createGroupMutation.mutate(data)}
+        onSubmit={(data: CreateGroupInput) => createGroupMutation.mutate(data)}
         userEmail={user.email}
         isLoading={createGroupMutation.isPending}
       />

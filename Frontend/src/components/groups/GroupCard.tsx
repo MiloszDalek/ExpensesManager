@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-// import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/utils/url";
 import { Users, Trash2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -25,7 +25,28 @@ const groupColors = {
   orange: "from-orange-500 to-orange-600",
 };
 
-export default function GroupCard({ group, index, onDelete }) {
+type GroupColor = "purple" | "blue" | "teal" | "pink" | "orange";
+
+type Group = {
+  id: string;
+  name: string;
+  color?: GroupColor;
+  description?: string;
+  currency?: string;
+  members: string[];
+  created_date: string;
+  total_expenses: number;
+};
+
+interface GroupCardProps {
+  group: Group;             // Twój typ Group z góry
+  index: number;
+  onDelete: () => void;
+}
+
+
+
+export default function GroupCard({group, index, onDelete }: GroupCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,11 +55,11 @@ export default function GroupCard({ group, index, onDelete }) {
       transition={{ delay: index * 0.1 }}
     >
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
-        <div className={`h-2 bg-gradient-to-r ${groupColors[group.color] || groupColors.purple}`} />
+        <div className={`h-2 bg-gradient-to-r ${groupColors[group.color as GroupColor] || groupColors.purple}`} />
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${groupColors[group.color] || groupColors.purple} flex items-center justify-center shadow-lg`}>
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${groupColors[group.color as GroupColor] || groupColors.purple} flex items-center justify-center shadow-lg`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>

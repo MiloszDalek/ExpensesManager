@@ -8,50 +8,109 @@ import { motion } from "framer-motion";
 import AddExpenseDialog from "../components/expenses/AddExpenseDialog";
 import ExpensesList from "../components/expenses/ExpensesList";
 import ExpenseFilters from "../components/expenses/ExpenseFilters";
+import { useAuth } from "@/contexts/AuthContext";
+
+import mockExpenses from "@/mocks/expenses-mock-data.json";
+
+export type ExpenseCategory =
+  | "food"
+  | "transport"
+  | "accommodation"
+  | "entertainment"
+  | "shopping"
+  | "utilities"
+  | "health"
+  | "groceries"
+  | "other";
+
+export type Expense = {
+  id: number;
+  title: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;       // ISO string, np. "2026-01-20"
+  notes?: string;
+  is_personal: boolean;
+  paid_by: string;
+};
+
+const expensesMock: Expense[] = mockExpenses as Expense[];
 
 export default function PersonalExpensesPage() {
-  const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filters, setFilters] = useState({ category: 'all' });
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    };
-    loadUser();
-  }, []);
+  const { user, logout } = useAuth();
 
-  const { data: expenses = [], isLoading } = useQuery({
+  const [mockExpenses, setMockExpenses] = useState<Expense[]>(expensesMock);
+
+  const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ['personal-expenses'],
     queryFn: async () => {
-      const allExpenses = await base44.entities.Expense.list('-date');
-      return allExpenses.filter(e => e.is_personal && e.paid_by === user?.email);
+      await new Promise(res => setTimeout(res, 300));
+      return mockExpenses.filter(e => e.is_personal && e.paid_by === user?.email);
     },
     enabled: !!user,
   });
 
-  const createExpenseMutation = useMutation({
-    mutationFn: (expenseData) => base44.entities.Expense.create({
-      ...expenseData,
-      is_personal: true,
-      paid_by: user.email,
-    }),
+  const createExpenseMutation = useMutation<Expense, unknown, Omit<Expense, "id">>({
+    mutationFn: (expenseData) => {
+      const newExpense: Expense = {
+        ...expenseData,
+        id: Math.floor(Math.random() * 100000), // number
+        is_personal: true,
+        paid_by: user?.email!,
+      };
+      setMockExpenses(prev => [newExpense, ...prev]);
+      return Promise.resolve(newExpense);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
       setShowAddDialog(false);
-    },
+    }
   });
 
-  const deleteExpenseMutation = useMutation({
-    mutationFn: (expenseId) => base44.entities.Expense.delete(expenseId),
+  const deleteExpenseMutation = useMutation<number, unknown, number>({
+    mutationFn: (expenseId) => {
+      setMockExpenses(prev => prev.filter(e => e.id !== expenseId));
+      return Promise.resolve(expenseId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-    },
+    }
   });
+
+
+  // const { data: expenses = [], isLoading } = useQuery({
+  //   queryKey: ['personal-expenses'],
+  //   queryFn: async () => {
+  //     const allExpenses = await base44.entities.Expense.list('-date');
+  //     return allExpenses.filter(e => e.is_personal && e.paid_by === user?.email);
+  //   },
+  //   enabled: !!user,
+  // });
+
+  // const createExpenseMutation = useMutation({
+  //   mutationFn: (expenseData) => base44.entities.Expense.create({
+  //     ...expenseData,
+  //     is_personal: true,
+  //     paid_by: user.email,
+  //   }),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['personal-expenses'] });
+  //     queryClient.invalidateQueries({ queryKey: ['expenses'] });
+  //     setShowAddDialog(false);
+  //   },
+  // });
+
+  // const deleteExpenseMutation = useMutation({
+  //   mutationFn: (expenseId) => base44.entities.Expense.delete(expenseId),
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['personal-expenses'] });
+  //     queryClient.invalidateQueries({ queryKey: ['expenses'] });
+  //   },
+  // });
 
   if (!user) {
     return (

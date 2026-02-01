@@ -38,7 +38,36 @@ const categoryColors = {
   other: "from-gray-500 to-slate-500",
 };
 
-export default function ExpensesList({ expenses, isLoading, onDelete }) {
+export type ExpenseCategory =
+  | "food"
+  | "transport"
+  | "accommodation"
+  | "entertainment"
+  | "shopping"
+  | "utilities"
+  | "health"
+  | "groceries"
+  | "other";
+
+export type Expense = {
+  id: number;
+  title: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;       // ISO string, np. "2026-01-20"
+  notes?: string;
+  is_personal: boolean;
+  paid_by: string;
+};
+
+type ExpensesListProps = {
+  expenses: Expense[];
+  isLoading: boolean;
+  onDelete: (id: number) => void;
+};
+
+
+export default function ExpensesList({ expenses, isLoading, onDelete }: ExpensesListProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4">
@@ -69,7 +98,7 @@ export default function ExpensesList({ expenses, isLoading, onDelete }) {
     <div className="grid gap-4">
       <AnimatePresence>
         {expenses.map((expense, index) => {
-          const Icon = categoryIcons[expense.category] || Smartphone;
+          const Icon = categoryIcons[expense.category as keyof typeof categoryIcons] || Smartphone;
           const gradient = categoryColors[expense.category] || categoryColors.other;
           
           return (

@@ -1,0 +1,55 @@
+[
+  {
+    "id": "1",
+    "name": "Apartment Expenses",
+    "description": "Shared costs for rent, utilities and groceries",
+    "members": [
+      "milosz@gmail.com",
+      "anna@gmail.com",
+      "john@gmail.com"
+    ],
+    "currency": "PLN",
+    "created_date": "2025-01-05T10:15:00Z",
+    "total_expenses": 2450.75
+  },
+  {
+    "id": "2",
+    "name": "Trip to Italy",
+    "description": "Flights, hotels and food for Italy trip",
+    "color": "blue",
+    "members": [
+      "milosz@gmail.com",
+      "kate@gmail.com"
+    ],
+    "currency": "EUR",
+    "created_date": "2025-01-12T18:30:00Z",
+    "total_expenses": 1320.00
+  },
+  {
+    "id": "3",
+    "name": "Family Budget",
+    "description": "Monthly family expenses",
+    "members": [
+      "mom@gmail.com",
+      "dad@gmail.com"
+    ],
+    "currency": "PLN",
+    "created_date": "2024-12-20T09:00:00Z",
+    "total_expenses": 3890.40
+  },
+  {
+    "id": "4",
+    "name": "Friends Night Out",
+    "description": "Bars, cinema, and random stuff",
+    "color": "teal",
+    "members": [
+      "milosz@gmail.com",
+      "paul@gmail.com",
+      "asia@gmail.com",
+      "tom@gmail.com"
+    ],
+    "currency": "PLN",
+    "created_date": "2025-01-18T21:45:00Z",
+    "total_expenses": 640.00
+  }
+]

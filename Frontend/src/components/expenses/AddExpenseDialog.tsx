@@ -31,8 +31,48 @@ const categories = [
   'other'
 ];
 
-export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoading }) {
-  const [formData, setFormData] = useState({
+
+export type ExpenseCategory =
+  | "food"
+  | "transport"
+  | "accommodation"
+  | "entertainment"
+  | "shopping"
+  | "utilities"
+  | "health"
+  | "groceries"
+  | "other";
+
+export type Expense = {
+  id: number;
+  title: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;       // ISO string, np. "2026-01-20"
+  notes?: string;
+  is_personal: boolean;
+  paid_by: string;
+};
+
+
+type AddExpenseDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (expenseData: Omit<Expense, "id">) => void; // id zostanie nadany później
+  isLoading?: boolean;
+};
+
+type FormData = {
+  title: string;
+  amount: string;
+  category: ExpenseCategory;
+  date: string;
+  notes: string;
+};
+
+
+export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoading }: AddExpenseDialogProps) {
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     amount: '',
     category: 'food',
@@ -45,6 +85,8 @@ export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoadi
       onSubmit({
         ...formData,
         amount: parseFloat(formData.amount),
+        is_personal: true,
+        paid_by: "milosz@gmail.com",
       });
       setFormData({
         title: '',
@@ -91,7 +133,7 @@ export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoadi
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ExpenseCategory }))}
               >
                 <SelectTrigger>
                   <SelectValue />

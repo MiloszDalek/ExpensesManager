@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "title": "Lunch with colleagues",
+    "amount": 23.5,
+    "category": "food",
+    "date": "2026-01-22",
+    "notes": "Pizza and drinks",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 2,
+    "title": "Uber to office",
+    "amount": 15.75,
+    "category": "transport",
+    "date": "2026-01-21",
+    "notes": "",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 3,
+    "title": "Groceries at Lidl",
+    "amount": 58.2,
+    "category": "groceries",
+    "date": "2026-01-19",
+    "notes": "Fruits and vegetables",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 4,
+    "title": "Movie night",
+    "amount": 12,
+    "category": "entertainment",
+    "date": "2026-01-18",
+    "notes": "Cinema tickets",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 5,
+    "title": "New headphones",
+    "amount": 89.99,
+    "category": "shopping",
+    "date": "2026-01-15",
+    "notes": "",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 6,
+    "title": "Yoga class",
+    "amount": 20,
+    "category": "health",
+    "date": "2026-01-14",
+    "notes": "Monthly subscription",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 7,
+    "title": "Coffee with friend",
+    "amount": 5.5,
+    "category": "food",
+    "date": "2026-01-13",
+    "notes": "",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  },
+  {
+    "id": 8,
+    "title": "Bus ticket",
+    "amount": 2.8,
+    "category": "transport",
+    "date": "2026-01-12",
+    "notes": "Home to office",
+    "is_personal": true,
+    "paid_by": "milosz@gmail.com"
+  }
+]
