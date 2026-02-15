@@ -159,4 +159,5 @@ vite.config.ts.timestamp-*
 
 # Docs files
 *.sql
-~$cumentation.docx
+~$documentation.docx
+docs/~$thesis.docx
