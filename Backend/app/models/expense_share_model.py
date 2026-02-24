@@ -9,7 +9,7 @@ class ExpenseShare(Base):
     id = Column(Integer, primary_key=True)
     expense_id = Column(Integer, ForeignKey("expenses.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    share_amount = Column(Numeric, nullable=False)
+    share_amount = Column(Numeric(12, 2), nullable=False)
     currency = Column(CHAR(3), default="PLN")
 
     expense = relationship("Expense", back_populates="shares")

@@ -1,16 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from decimal import Decimal
+from app.enums import CurrencyEnum
 
 
 class ExpenseBase(BaseModel):
     title: str
-    amount: float
-    # payer_id: Optional[int] = None
-    # group_id: Optional[int] = None
-    is_personal: bool = True
-    currency: str = "PLN"
-    category: Optional[str] = None
+    amount: Decimal
+    currency: CurrencyEnum = CurrencyEnum.PLN
+    expense_date: datetime
+    category_id: int  
+    notes: Optional[str] = None
     receipt_image_url: Optional[str] = None
     receipt_text: Optional[str] = None
 

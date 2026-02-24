@@ -15,7 +15,7 @@ class User(Base):
 
     groups_created = relationship("Group", back_populates="created_by_user")
     memberships = relationship("GroupMember", back_populates="user")
-    expenses = relationship("Expense", back_populates="payer")
+    expenses = relationship("Expense", back_populates="user")
     expense_shares = relationship("ExpenseShare", back_populates="user")
 
     sent_settlements = relationship("Settlement", foreign_keys="Settlement.from_user_id", back_populates="from_user")
@@ -26,3 +26,5 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     
     bank_tokens = relationship("BankToken", back_populates="user")
+
+    personal_categories = relationship("Category", back_populates="user")

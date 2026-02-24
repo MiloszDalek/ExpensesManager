@@ -1,0 +1,1 @@
+from .default_category_seed import seed_default_categories

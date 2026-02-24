@@ -1,9 +1,9 @@
-from .user import UserCreate, UserResponse, UserUpdate
-from .token import Token, TokenData
-from .group import GroupCreate, GroupResponse, GroupUpdate
-from .group_member import GroupMemberResponse
-from .expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
-from .expense_share import ExpenseShareCreate, ExpenseShareResponse, ExpenseShareUpdate
-from .settlement import SettlementCreate, SettlementResponse
-from .bank_token import BankTokenCreate, BankTokenResponse
-from .contact import ContactCreate, ContactResponse
+from .user_schemas import UserCreate, UserResponse, UserUpdate
+from .token_schemas import Token, TokenData
+from .group_schemas import GroupCreate, GroupResponse, GroupUpdate
+from .group_member_schemas import GroupMemberResponse
+from .expense_personal_schemas import ExpenseCreate, ExpenseResponse, ExpenseUpdate
+from .expense_share_schemas import ExpenseShareCreate, ExpenseShareResponse, ExpenseShareUpdate
+from .settlement_schemas import SettlementCreate, SettlementResponse
+from .bank_token_schemas import BankTokenCreate, BankTokenResponse
+from .contact_schemas import ContactCreate, ContactResponse

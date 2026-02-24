@@ -15,41 +15,43 @@ def get_dashboard_service(db: Session = Depends(get_db)):
     return DashboardService(db)
 
 
-@dashboard_router.get("/total-owed")
-def total_owed(
-    service: DashboardService = Depends(get_dashboard_service),
-    current_user = Depends(get_current_active_user)
-):
-    return {"total_owed": service.get_total_owed(current_user.id)}
+   # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
+
+# @dashboard_router.get("/total-owed")
+# def total_owed(
+#     service: DashboardService = Depends(get_dashboard_service),
+#     current_user = Depends(get_current_active_user)
+# ):
+#     return {"total_owed": service.get_total_owed(current_user.id)}
 
 
-@dashboard_router.get("/total-receivable")
-def total_receivable(
-    service: DashboardService = Depends(get_dashboard_service),
-    current_user = Depends(get_current_active_user)
-):
-    return {"total_receivable": service.get_total_receivable(current_user.id)}
+# @dashboard_router.get("/total-receivable")
+# def total_receivable(
+#     service: DashboardService = Depends(get_dashboard_service),
+#     current_user = Depends(get_current_active_user)
+# ):
+#     return {"total_receivable": service.get_total_receivable(current_user.id)}
 
 
-@dashboard_router.get("/personal-spending")
-def personal_spending(
-    service: DashboardService = Depends(get_dashboard_service),
-    current_user = Depends(get_current_active_user)
-):
-    return {"personal_spending": service.get_personal_spending(current_user.id)}
+# @dashboard_router.get("/personal-spending")
+# def personal_spending(
+#     service: DashboardService = Depends(get_dashboard_service),
+#     current_user = Depends(get_current_active_user)
+# ):
+#     return {"personal_spending": service.get_personal_spending(current_user.id)}
 
 
-@dashboard_router.get("/group-balances")
-def group_balances(
-    service: DashboardService = Depends(get_dashboard_service),
-    current_user = Depends(get_current_active_user)
-):
-    return {"group_balances": service.get_group_balances(current_user.id)}
+# @dashboard_router.get("/group-balances")
+# def group_balances(
+#     service: DashboardService = Depends(get_dashboard_service),
+#     current_user = Depends(get_current_active_user)
+# ):
+#     return {"group_balances": service.get_group_balances(current_user.id)}
 
 
-@dashboard_router.get("/")
-def get_full_dashboard_info(
-    service: DashboardService = Depends(get_dashboard_service),
-    current_user = Depends(get_current_active_user)
-):
-    return service.get_full_dashboard(current_user.id)
+# @dashboard_router.get("/")
+# def get_full_dashboard_info(
+#     service: DashboardService = Depends(get_dashboard_service),
+#     current_user = Depends(get_current_active_user)
+# ):
+#     return service.get_full_dashboard(current_user.id)
