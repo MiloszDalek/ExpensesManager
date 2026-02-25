@@ -5,3 +5,4 @@ from .expense_group_router import expense_group_router
 from .expense_personal_router import expense_personal_router
 from .expense_share_router import expense_share_router
 from .dashboard_router import dashboard_router
+from .category_router import category_router

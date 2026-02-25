@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from app.repositories import ExpensePersonalRepository, CategoryRepository
+from app.repositories import ExpensePersonalRepository
+from .category_service import CategoryService
 from app.models import Expense
 from app.schemas import ExpenseCreate, ExpenseUpdate
 from fastapi import HTTPException
@@ -8,7 +9,7 @@ from fastapi import HTTPException
 class ExpensePersonalService:
     def __init__(self, db: Session):
         self.expense_repo = ExpensePersonalRepository(db)
-        self.category_repo = CategoryRepository(db)
+        self.category_service = CategoryService(db)
 
     
     # -- Personal Expenses
@@ -17,10 +18,7 @@ class ExpensePersonalService:
         if expense_in.amount <= 0:
             raise HTTPException(status_code=400, detail="Amount must be greater than 0")
         
-        category = self.category_repo.get_available_for_personal_expense(expense_in.category_id, user_id)
-
-        if not category:
-            raise HTTPException(status_code=404, detail="Category not found")
+        self.category_service.validate_available_for_personal_expense(expense_in.category_id, user_id)
         
         expense = Expense(
             title=expense_in.title,
@@ -58,10 +56,8 @@ class ExpensePersonalService:
         update_data = expense_in.model_dump(exclude_unset=True)
 
         if "category_id" in update_data:
-            category = self.category_repo.get_available_for_personal_expense(update_data["category_id"], user_id)
+            self.category_service.validate_available_for_personal_expense(update_data["category_id"], user_id)
 
-            if not category:
-                raise HTTPException(status_code=404, detail="Category not found")
         
         return self.expense_repo.update(expense, update_data)
     

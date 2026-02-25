@@ -7,3 +7,4 @@ from .expense_share_schemas import ExpenseShareCreate, ExpenseShareResponse, Exp
 from .settlement_schemas import SettlementCreate, SettlementResponse
 from .bank_token_schemas import BankTokenCreate, BankTokenResponse
 from .contact_schemas import ContactCreate, ContactResponse
+from .category_schemas import CategoryCreate, CategoryResponse

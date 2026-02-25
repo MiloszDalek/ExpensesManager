@@ -41,30 +41,6 @@ class ExpensePersonalRepository:
   # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
 
 
-    # def get_by_group(self, group_id: int) -> list[Expense]:
-    #     return self.db.query(Expense).filter(Expense.group_id == group_id).all()
-    
-
-    # def update(self, expense_id: int, new_data: dict) -> Expense | None:
-    #     expense = self.get_by_id(expense_id)
-    #     if not expense:
-    #         return None
-    #     for key, value in new_data.items():
-    #         setattr(expense, key, value)
-    #     self.db.commit()
-    #     self.db.refresh(expense)
-    #     return expense
-    
-    
-    # def delete(self, expense_id: int) -> bool:
-    #     expense = self.get_by_id(expense_id)
-    #     if not expense:
-    #         return False
-    #     self.db.delete(expense)
-    #     self.db.commit()
-    #     return True
-    
-
     # def sum_personal_expenses(self, user_id: int) -> float:
     #     result = (
     #         self.db.query(Expense)
