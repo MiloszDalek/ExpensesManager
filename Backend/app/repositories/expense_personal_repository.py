@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.models import Expense
 
 
-class ExpenseRepository:
+class ExpensePersonalRepository:
     def __init__(self, db: Session):
         self.db = db
 
@@ -15,14 +15,30 @@ class ExpenseRepository:
         return expense
 
 
-    def get_all_personal_by_user_id(self, user_id: int) -> list[Expense]:
+    def get_all_by_user_id(self, user_id: int) -> list[Expense]:
         return self.db.query(Expense).filter(Expense.user_id == user_id, Expense.group_id.is_(None)).all()
+    
+
+    def get_by_id(self, expense_id: int) -> Expense | None:
+        return self.db.query(Expense).filter(Expense.id == expense_id).first()
+
+
+    def update(self, expense: Expense, update_data: dict) -> Expense:
+        for field, value in update_data.items():
+            setattr(expense, field, value)
+
+        self.db.commit()
+        self.db.refresh(expense)
+        return expense
+
+
+    def delete(self, expense: Expense):
+        self.db.delete(expense)
+        self.db.commit()
+
 
 
   # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
-
-    # def get_by_id(self, expense_id: int) -> Expense | None:
-    #     return self.db.query(Expense).filter(Expense.id == expense_id).first()
 
 
     # def get_by_group(self, group_id: int) -> list[Expense]:

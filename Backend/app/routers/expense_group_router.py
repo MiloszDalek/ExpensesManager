@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from app.services import ExpenseService
+from app.services import ExpensePersonalService
 from app.database import get_db
 from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
 from app.models import User
@@ -12,7 +12,7 @@ expense_group_router = APIRouter(
 )
 
 def get_expense_service(db: Session = Depends(get_db)):
-    return ExpenseService(db)
+    return ExpensePersonalService(db)
 
 
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from app.services import ExpenseService
+from app.services import ExpensePersonalService
 from app.database import get_db
 from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
 from app.models import User
@@ -12,21 +12,40 @@ expense_personal_router = APIRouter(
 )
 
 def get_expense_service(db: Session = Depends(get_db)):
-    return ExpenseService(db)
+    return ExpensePersonalService(db)
 
 
 @expense_personal_router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 def create_personal_expense(
     expense_in: ExpenseCreate,
-    service: ExpenseService = Depends(get_expense_service),
+    service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
 ):
     return service.create_personal_expense(expense_in, current_user.id)
 
 
-@expense_personal_router.get("/all", response_model=list[ExpenseResponse]) # only for debuging
+@expense_personal_router.get("/all", response_model=list[ExpenseResponse], status_code=status.HTTP_200_OK) # only for debuging
 def get_all_personal_expenses(
-    service: ExpenseService = Depends(get_expense_service),
+    service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
 ):
     return service.get_all_personal_expenses(current_user.id)
+
+
+@expense_personal_router.patch("/{expense_id}", response_model=ExpenseResponse, status_code=status.HTTP_200_OK)
+def edit_personal_expense(
+    expense_id: int,
+    expense_in: ExpenseUpdate,
+    service: ExpensePersonalService = Depends(get_expense_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.edit_personal_expense(expense_id, expense_in, current_user.id)
+
+
+@expense_personal_router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_personal_expense(
+    expense_id: int,
+    service: ExpensePersonalService = Depends(get_expense_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    service.delete_personal_expense(expense_id, current_user.id)

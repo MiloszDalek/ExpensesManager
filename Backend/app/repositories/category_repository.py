@@ -10,7 +10,7 @@ class CategoryRepository:
 
     def get_by_id(self, category_id: int) -> Category | None:
         return self.db.query(Category).filter(Category.id == category_id).first()
-    
+
 
     def get_available_for_personal_expense(self, category_id: int, user_id: int):
         return (

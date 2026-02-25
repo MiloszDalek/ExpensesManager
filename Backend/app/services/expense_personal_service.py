@@ -1,14 +1,13 @@
 from sqlalchemy.orm import Session
-from app.repositories import ExpenseRepository, ExpenseShareRepository, CategoryRepository
-from app.models import Expense, ExpenseShare
-from app.schemas import ExpenseCreate
+from app.repositories import ExpensePersonalRepository, CategoryRepository
+from app.models import Expense
+from app.schemas import ExpenseCreate, ExpenseUpdate
 from fastapi import HTTPException
 
 
-class ExpenseService:
+class ExpensePersonalService:
     def __init__(self, db: Session):
-        self.expense_repo = ExpenseRepository(db)
-        self.share_repo = ExpenseShareRepository(db)
+        self.expense_repo = ExpensePersonalRepository(db)
         self.category_repo = CategoryRepository(db)
 
     
@@ -41,7 +40,45 @@ class ExpenseService:
     
 
     def get_all_personal_expenses(self, user_id: int):
-        return self.expense_repo.get_all_personal_by_user_id(user_id)
+        return self.expense_repo.get_all_by_user_id(user_id)
+
+
+    def edit_personal_expense(self, expense_id: int, expense_in: ExpenseUpdate, user_id: int):
+        expense = self.expense_repo.get_by_id(expense_id)
+        
+        if not expense:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        
+        if expense.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        if expense.group_id is not None:
+            raise HTTPException(status_code=400, detail="Not a personal expense")
+        
+        update_data = expense_in.model_dump(exclude_unset=True)
+
+        if "category_id" in update_data:
+            category = self.category_repo.get_available_for_personal_expense(update_data["category_id"], user_id)
+
+            if not category:
+                raise HTTPException(status_code=404, detail="Category not found")
+        
+        return self.expense_repo.update(expense, update_data)
+    
+
+    def delete_personal_expense(self, expense_id: int, user_id: int):
+        expense = self.expense_repo.get_by_id(expense_id)
+
+        if not expense:
+            raise HTTPException(status_code=404, detail="Expense not found")
+        
+        if expense.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        if expense.group_id is not None:
+            raise HTTPException(status_code=400, detail="Not a personal expense")
+        
+        self.expense_repo.delete(expense)
 
 
     # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

@@ -22,11 +22,10 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpenseUpdate(BaseModel):
     title: Optional[str] = None
-    amount: Optional[float] = None
-    group_id: Optional[int] = None
-    is_personal: Optional[bool] = None
-    currency: Optional[str] = None
-    category: Optional[str] = None
+    amount: Optional[Decimal] = None
+    currency: Optional[CurrencyEnum] = None
+    expense_date: Optional[datetime] = None
+    category_id: Optional[int] = None
     receipt_image_url: Optional[str] = None
     receipt_text: Optional[str] = None
 

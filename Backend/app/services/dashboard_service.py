@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
-from app.repositories import ExpenseRepository, ExpenseShareRepository, SettlementRepository, GroupRepository
+from app.repositories import ExpensePersonalRepository, ExpenseShareRepository, SettlementRepository, GroupRepository
 from app.models import Group
 
 
 class DashboardService:
     def __init__(self, db: Session):
-        self.expense_repo = ExpenseRepository(db)
+        self.expense_repo = ExpensePersonalRepository(db)
         self.share_repo = ExpenseShareRepository(db)
         self.settlement_repo = SettlementRepository(db)
         self.group_repo = GroupRepository(db)
