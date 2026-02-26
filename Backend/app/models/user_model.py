@@ -1,20 +1,22 @@
 from sqlalchemy import Column, DateTime, Enum, Integer, String, Boolean, func
 from app.database import Base
 from sqlalchemy.orm import relationship
+from app.enums import SystemUserRole
+
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False)
-    username = Column(String(255), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
-    role = Column(Enum("user", "admin", name="user_roles"), default="user")
+    role = Column(Enum(SystemUserRole, name="system_user_roles"), default=SystemUserRole.USER, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    groups_created = relationship("Group", back_populates="created_by_user")
-    memberships = relationship("GroupMember", back_populates="user")
+    groups_created = relationship("Group", back_populates="created_by_user", passive_deletes=True)
+    memberships = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     expenses = relationship("Expense", back_populates="user")
     expense_shares = relationship("ExpenseShare", back_populates="user")
 
