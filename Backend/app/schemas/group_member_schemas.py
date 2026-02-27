@@ -1,5 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from app.enums import GroupMemberRole, GroupMemberStatus
 
 
 class GroupMemberBase(BaseModel):
@@ -10,6 +11,7 @@ class GroupMemberBase(BaseModel):
 class GroupMemberResponse(GroupMemberBase):
     id: int
     joined_at: datetime
+    role: GroupMemberRole
+    status: GroupMemberStatus
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

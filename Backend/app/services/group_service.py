@@ -1,14 +1,37 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.repositories import GroupRepository, GroupMemberRepository
-from app.models import Group
-from app.schemas import GroupCreate, GroupUpdate
 from fastapi import HTTPException
+from app.models import Group, GroupMember
+from app.schemas import GroupCreate, GroupUpdate
+from app.enums import GroupStatus, GroupMemberRole, GroupMemberStatus
 
 
 class GroupService:
     def __init__(self, db: Session):
         self.group_repo = GroupRepository(db)
         self.member_repo = GroupMemberRepository(db)
+
+
+    def create_group(self, group_in: GroupCreate, user_id: int) -> Group:
+        new_group = Group(
+            name=group_in.name.strip().lower(),
+            description=group_in.description,
+            status=GroupStatus.ACTIVE,
+            created_by=user_id
+        )
+
+        member = GroupMember(
+            user_id=user_id,
+            role=GroupMemberRole.ADMIN,
+            status=GroupMemberStatus.ACTIVE
+        )
+
+        try:
+            return self.group_repo.create_group_with_creator(new_group, member)
+        except IntegrityError:
+            raise HTTPException(status_code=400, detail="You have already created a group with this name")
+        
 
 
     # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

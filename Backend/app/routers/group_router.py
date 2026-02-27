@@ -15,6 +15,15 @@ def get_group_service(db: Session = Depends(get_db)):
     return GroupService(db)
 
 
+@group_router.post("/", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
+def create_group(
+    group_in: GroupCreate,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.create_group(group_in, current_user.id)
+
+
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
 
 # @group_router.get("/", response_model=list[GroupResponse])

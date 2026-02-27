@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
+from app.enums import SystemUserRole
 
 
 class UserBase(BaseModel):
@@ -20,9 +21,8 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    role: str
+    role: SystemUserRole
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

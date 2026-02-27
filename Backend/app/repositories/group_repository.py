@@ -1,10 +1,28 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
 
 
 class GroupRepository:
     def __init__(self, db: Session):
         self.db = db
+
+
+    def create_group_with_creator(self, group: Group, member: GroupMember):
+        try:
+            member.group = group
+
+            self.db.add(group)
+            self.db.add(member)
+
+            self.db.commit()
+            self.db.refresh(group)
+
+            return group
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise e
 
 
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

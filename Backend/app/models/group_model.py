@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Enum, Integer, String, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Enum, Integer, String, ForeignKey, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -20,3 +20,8 @@ class Group(Base):
     expenses = relationship("Expense", back_populates="group")
 
     group_categories = relationship("Category", back_populates="group")
+
+
+    __table_args__ = (
+        UniqueConstraint("created_by", "name", name="uq_user_group_name"),
+    )
