@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.repositories import GroupRepository, GroupMemberRepository
+from app.repositories import GroupRepository
 from fastapi import HTTPException
 from app.models import Group, GroupMember
 from app.schemas import GroupCreate, GroupUpdate
@@ -10,7 +10,13 @@ from app.enums import GroupStatus, GroupMemberRole, GroupMemberStatus
 class GroupService:
     def __init__(self, db: Session):
         self.group_repo = GroupRepository(db)
-        self.member_repo = GroupMemberRepository(db)
+
+
+    # def get_group(self, group_id: int) -> Group:
+    #     group = self.group_repo.get_by_id(group_id)
+    #     if not group:
+    #         raise HTTPException(status_code=404, detail="Group not found")
+    #     return group
 
 
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:

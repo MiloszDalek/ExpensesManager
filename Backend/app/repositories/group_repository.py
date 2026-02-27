@@ -25,6 +25,21 @@ class GroupRepository:
             raise e
 
 
+    def get_membership(self, group_id: int, user_id: int) -> GroupMember | None:
+        return (
+            self.db.query(GroupMember)
+            .filter(
+                GroupMember.group_id == group_id,
+                GroupMember.user_id == user_id
+            )
+            .first()
+        )
+    
+
+    def get_by_id(self, group_id: int) -> Group | None:
+        return self.db.query(Group).filter(Group.id == group_id).first()
+
+
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
 
     # def create(self, group: Group) -> Group:
@@ -33,10 +48,6 @@ class GroupRepository:
     #     self.db.refresh(group)
     #     return group
     
-
-    # def get_by_id(self, group_id: int) -> Group | None:
-    #     return self.db.query(Group).filter(Group.id == group_id).first()
-
 
     # def get_all(self) -> list[Group]:
     #     return self.db.query(Group).all()

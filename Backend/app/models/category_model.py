@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Index, CheckConstraint
+from sqlalchemy.sql import func, expression
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -19,5 +19,38 @@ class Category(Base):
     group = relationship("Group", back_populates="group_categories")
 
     __table_args__ = (
-        UniqueConstraint("name", "user_id", "group_id", name="uq_category_name_context"),
+        Index(
+            "uq_global_category",
+            "name",
+            unique=True,
+            postgresql_where=expression.and_(
+                user_id.is_(None),
+                group_id.is_(None)
+            )
+        ),
+        Index(
+            "uq_user_category",
+            "user_id",
+            "name",
+            unique=True,
+            postgresql_where=user_id.isnot(None)
+        ),
+        Index(
+            "uq_group_category",
+            "group_id",
+            "name",
+            unique=True,
+            postgresql_where=group_id.isnot(None)
+        ),
+    )
+
+    CheckConstraint(
+        """
+        (user_id IS NOT NULL AND group_id IS NULL)
+        OR
+        (user_id IS NULL AND group_id IS NOT NULL)
+        OR
+        (user_id IS NULL AND group_id IS NULL)
+        """,
+        name="ck_category_context"
     )

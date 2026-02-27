@@ -39,6 +39,23 @@ class CategoryRepository:
             ).all()
 
 
+    def get_all_by_group_id(self, group_id: int) -> list[Category]:
+        return self.db.query(Category).filter(
+                Category.group_id == group_id,
+                Category.user_id.is_(None)
+            ).all()
+    
+
+    def get_all_default_and_by_group_id(self, group_id: int) -> list[Category]:
+        return self.db.query(Category).filter(
+                Category.user_id.is_(None),
+                or_(
+                    Category.group_id.is_(None),
+                    Category.group_id == group_id
+                )
+            ).all()
+    
+
     def get_all_default_and_personal(self, user_id: int) -> list[Category]:
         return self.db.query(Category).filter(
                 Category.group_id.is_(None),

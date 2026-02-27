@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session
-from app.repositories import CategoryRepository
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException
+from app.repositories import CategoryRepository, GroupRepository
 from app.models import Category
 from app.schemas import CategoryCreate
-from fastapi import HTTPException
+from app.enums import GroupMemberRole
 
 
 class CategoryService:
     def __init__(self, db: Session):
         self.category_repo = CategoryRepository(db)
+        self.group_repo = GroupRepository(db)
         
 
     def get_by_id(self, category_id: int) -> Category:
@@ -65,4 +68,68 @@ class CategoryService:
         if category.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         
+        self.category_repo.delete(category)
+
+
+    def create_group_category(self, category_in: CategoryCreate, group_id: int, user_id: int) -> Category:
+        group = self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        membership = self.group_repo.get_membership(group_id, user_id)
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        if membership.role != GroupMemberRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+
+        category = Category(
+            name=category_in.name.strip().lower(),
+            group_id=group_id,
+            user_id=None
+        )
+
+        try:
+            return self.category_repo.create(category)
+        except IntegrityError:
+            raise HTTPException(status_code=400, detail="Category already exists")
+        
+
+    def get_group_categories(self, group_id: int, user_id: int) -> list[Category]:
+        group = self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        membership = self.group_repo.get_membership(group_id, user_id)
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        return self.category_repo.get_all_by_group_id(group_id)
+    
+
+    def get_default_and_group_categories(self, group_id: int, user_id: int) -> list[Category]:
+        group = self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+
+        membership = self.group_repo.get_membership(group_id, user_id)
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        return self.category_repo.get_all_default_and_by_group_id(group_id)
+    
+
+    def delete_group_category(self, category_id: int, user_id: int):
+        category = self.get_by_id(category_id)
+
+        if category.group_id is None or category.user_id is not None:
+            raise HTTPException(status_code=400, detail="Not a group category")
+
+        membership = self.group_repo.get_membership(category.group_id, user_id)
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        if membership.role != GroupMemberRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+
+
         self.category_repo.delete(category)
