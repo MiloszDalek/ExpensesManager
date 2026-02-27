@@ -38,6 +38,15 @@ class GroupRepository:
 
     def get_by_id(self, group_id: int) -> Group | None:
         return self.db.query(Group).filter(Group.id == group_id).first()
+    
+    
+    def get_all_by_user_id(self, user_id: int) -> list[Group]:
+        return (
+            self.db.query(Group)
+            .join(GroupMember, Group.id == GroupMember.group_id)
+            .filter(GroupMember.user_id == user_id)
+            .all()
+        )
 
 
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

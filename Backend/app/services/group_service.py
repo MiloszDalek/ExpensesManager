@@ -12,11 +12,18 @@ class GroupService:
         self.group_repo = GroupRepository(db)
 
 
-    # def get_group(self, group_id: int) -> Group:
-    #     group = self.group_repo.get_by_id(group_id)
-    #     if not group:
-    #         raise HTTPException(status_code=404, detail="Group not found")
-    #     return group
+    def get_group(self, group_id: int, user_id: int) -> Group | None:
+        group = self.group_repo.get_by_id(group_id)
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        if not self.group_repo.get_membership(group_id, user_id):
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        return group
+
+
+    def get_all_groups(self, user_id) -> list[Group]:
+        return self.group_repo.get_all_by_user_id(user_id)
 
 
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:

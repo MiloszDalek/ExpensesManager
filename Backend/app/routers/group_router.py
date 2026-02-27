@@ -24,6 +24,23 @@ def create_group(
     return service.create_group(group_in, current_user.id)
 
 
+@group_router.get("/all", response_model=list[GroupResponse])
+def get_all_groups(
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_all_groups(current_user.id)
+
+
+@group_router.get("/{group_id}", response_model=GroupResponse)
+def get_group_by_id(
+    group_id: int,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_group(group_id, current_user.id)
+
+
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
 
 # @group_router.get("/", response_model=list[GroupResponse])
