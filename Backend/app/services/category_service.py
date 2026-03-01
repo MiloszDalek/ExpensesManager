@@ -68,6 +68,9 @@ class CategoryService:
         if category.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         
+        if self.category_repo.has_expenses(category_id):
+            raise HTTPException(status_code=400, detail="Cannot delete category assigned to expenses")
+        
         self.category_repo.delete(category)
 
 
@@ -78,7 +81,7 @@ class CategoryService:
         
         membership = self.group_repo.get_membership(group_id, user_id)
         if not membership:
-            raise HTTPException(status_code=403, detail="Not authorized")
+            raise HTTPException(status_code=403, detail="Not authorized not a group member")
         if membership.role != GroupMemberRole.ADMIN:
             raise HTTPException(status_code=403, detail="Not authorized admin role required")
 
@@ -127,7 +130,7 @@ class CategoryService:
         membership = self.group_repo.get_membership(category.group_id, user_id)
         
         if not membership:
-            raise HTTPException(status_code=403, detail="Not authorized")
+            raise HTTPException(status_code=403, detail="Not authorized not a group member")
         if membership.role != GroupMemberRole.ADMIN:
             raise HTTPException(status_code=403, detail="Not authorized admin role required")
 

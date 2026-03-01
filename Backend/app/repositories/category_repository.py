@@ -1,7 +1,7 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import Optional
-from app.models import Category
+from app.models import Category, Expense
 
 
 class CategoryRepository:
@@ -22,6 +22,15 @@ class CategoryRepository:
                 Category.group_id == group_id
             )
             .first()
+        )
+    
+
+    def has_expenses(self, category_id: int) -> bool:
+        return (
+            self.db.query(Expense.id)
+            .filter(Expense.category_id == category_id)
+            .first()
+            is not None
         )
 
 
