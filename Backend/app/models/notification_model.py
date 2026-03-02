@@ -1,18 +1,20 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.enums import NotificationSeverity
+
 
 class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     type = Column(String(50), nullable=False)
-    reference_id = Column(Integer, nullable=True)  # expense or contact id 
+    reference_id = Column(Integer, nullable=True)  # invitation or contact id 
     message = Column(Text, nullable=True)
     is_read = Column(Boolean, default=False)
-    severity = Column(String(20), default="info")  # 'info', 'warning', 'urgent'
+    severity = Column(Enum(NotificationSeverity, name="notification_severity"), default=NotificationSeverity.INFO)
     action_url = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
