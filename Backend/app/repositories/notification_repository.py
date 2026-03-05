@@ -6,6 +6,28 @@ class NotificationRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    
+    def get_by_user_id(self, user_id: int, limit: int, offset: int):
+        return (
+            self.db.query(Notification)
+            .filter(Notification.user_id == user_id)
+            .order_by(Notification.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+    
+
+    def get_unread_count(self, user_id: int) -> int:
+        return (
+            self.db.query(Notification)
+            .filter(
+                Notification.user_id == user_id,
+                Notification.is_read == False
+            )
+            .count()
+        )
+
 
     def create(self, notification: Notification):
         self.db.add(notification)

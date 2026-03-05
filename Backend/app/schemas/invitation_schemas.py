@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from app.enums import InvitationStatus, InvitationType
+from typing import Optional
 
 
 class ContactInvitationBase(BaseModel):
@@ -17,7 +18,7 @@ class ContactInvitationResponse(ContactInvitationBase):
     status: InvitationStatus
     from_user_id: int
     created_at: datetime
-    responded_at: datetime | None
+    responded_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -33,6 +34,6 @@ class GroupInvitationResponse(ContactInvitationBase):
     group_id: int
     from_user_id: int
     created_at: datetime
-    responded_at: datetime | None
+    responded_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -9,6 +9,15 @@ class NotificationService:
         self.notification_repo = NotificationRepository(db)
 
 
+    def get_user_notifications(self, user_id: int, limit: int, offset: int) ->list[Notification]:
+        return self.notification_repo.get_by_user_id(user_id, limit, offset)
+    
+
+    def get_unread_count(self, user_id: int) -> int:
+        count = self.notification_repo.get_unread_count(user_id)
+        return {"count": count}
+
+
     def create_notification(
         self,
         user_id: int,

@@ -11,7 +11,8 @@ from app.routers import (
         expense_share_router, 
         dashboard_router, 
         category_router, 
-        invitation_router
+        invitation_router,
+        notification_router,
     )
 from app.services import AuthService
 from app.utils import seed_default_categories, reset_database
@@ -49,6 +50,7 @@ app.include_router(expense_share_router, prefix='/api')
 app.include_router(dashboard_router, prefix='/api')
 app.include_router(category_router, prefix='/api')
 app.include_router(invitation_router, prefix='/api')
+app.include_router(notification_router, prefix='/api')
 
 
 @app.on_event("startup")
