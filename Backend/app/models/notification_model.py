@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateT
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
-from app.enums import NotificationSeverity
+from app.enums import NotificationSeverity, NotificationType
 
 
 class Notification(Base):
@@ -10,7 +10,7 @@ class Notification(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    type = Column(String(50), nullable=False)
+    type = Column(Enum(NotificationType, name="notification_type"), nullable=False)
     reference_id = Column(Integer, nullable=True)  # invitation or contact id 
     message = Column(Text, nullable=True)
     is_read = Column(Boolean, default=False)

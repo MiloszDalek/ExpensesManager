@@ -4,3 +4,6 @@ from .expense_personal_repository import ExpensePersonalRepository
 from .expense_share_repository import ExpenseShareRepository
 from .settlement_repository import SettlementRepository
 from .category_repository import CategoryRepository
+from .invitation_repository import InvitationRepository
+from .notification_repository import NotificationRepository
+from .contact_repository import ContactRepository

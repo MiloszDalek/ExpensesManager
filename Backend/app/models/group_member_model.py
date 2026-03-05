@@ -21,5 +21,5 @@ class GroupMember(Base):
     user = relationship("User", back_populates="memberships")
 
     __table_args__ = (
-        UniqueConstraint("user_id", "group_id", name="uq_group_member")
+        UniqueConstraint("user_id", "group_id", name="uq_group_member"),
     )
