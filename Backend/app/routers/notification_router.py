@@ -17,18 +17,27 @@ def get_notification_service(db: Session = Depends(get_db)):
 
 
 @notification_router.get("", response_model=list[NotificationResponse])
-def get_notification(
+def get_notifications(
     limit: int = Query(20, le=100),
     offset: int = Query(0, ge=0),
+    service: NotificationService = Depends(get_notification_service),    
     current_user: User = Depends(get_current_active_user),
-    service: NotificationService = Depends(get_notification_service),
 ):
     return service.get_user_notifications(current_user.id, limit, offset)
 
 
-@notification_router.get("unread-count", response_model=UnreadNotificationCountResponse)
+@notification_router.get("/unread-count", response_model=UnreadNotificationCountResponse)
 def get_unread_notifacations_count(
+    service: NotificationService = Depends(get_notification_service),    
     current_user: User = Depends(get_current_active_user),
-    service: NotificationService = Depends(get_notification_service),
 ):
     return service.get_unread_count(current_user.id)
+
+
+@notification_router.patch("/{notification_id}/read", response_model=NotificationResponse)
+def mark_as_read(
+    notification_id: int,
+    service: NotificationService = Depends(get_notification_service),    
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.mark_as_read(notification_id, current_user.id)

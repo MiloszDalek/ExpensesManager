@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from datetime import datetime
-from app.repositories import InvitationRepository, ContactRepository
+from datetime import datetime, timezone
+from app.repositories import InvitationRepository
 from .notification_service import NotificationService
 from .user_service import UserService
 from .group_service import GroupService
+from .contact_service import ContactService
 from app.models import Invitation, Notification
 from app.enums import InvitationType, InvitationStatus, NotificationType
 from app.schemas import ContactInvitationCreate, GroupInvitationCreate
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class InvitationService:
     def __init__(self, db: Session):
         self.invitation_repo = InvitationRepository(db)
-        self.contact_repo = ContactRepository(db)
+        self.contact_service = ContactService(db)
         self.notification_serivce = NotificationService(db)
         self.user_service = UserService(db)
         self.group_service = GroupService(db)
@@ -28,7 +29,7 @@ class InvitationService:
         if from_user_id == to_user.id:
             raise HTTPException(status_code=400, detail="Cannot invite yourself")
         
-        if self.contact_repo.exists_between(from_user_id, to_user.id):
+        if self.contact_service.exists_between(from_user_id, to_user.id):
             raise HTTPException(status_code=400, detail="Contact already exist")
         
         try:
@@ -42,7 +43,7 @@ class InvitationService:
                 
                 invitation.status = InvitationStatus.PENDING
                 invitation.responded_at = None
-                invitation.created_at = datetime.now(datetime.timezone.utc)
+                invitation.created_at = datetime.now(timezone.utc)
             else:
                 invitation = Invitation(
                     type=InvitationType.CONTACT,
@@ -94,7 +95,7 @@ class InvitationService:
                 
                 invitation.status = InvitationStatus.PENDING
                 invitation.responded_at = None
-                invitation.created_at = datetime.now(datetime.timezone.utc)
+                invitation.created_at = datetime.now(timezone.utc)
             else:
                 invitation = Invitation(
                     type=InvitationType.GROUP,
@@ -123,3 +124,65 @@ class InvitationService:
             self.invitation_repo.db.rollback()
             raise e
 
+
+    def accept_invitation(self, invitation_id: int, user_id: int):
+        invitation = self.invitation_repo.get_by_id(invitation_id)
+
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invitation not found")
+        
+        if invitation.to_user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        if invitation.type == InvitationType.CONTACT:
+            self.accept_contact(invitation)
+
+        elif invitation.type == InvitationType.GROUP:
+            self.accept_group(invitation)
+
+        return invitation
+        
+
+    def accept_contact(self, invitation: Invitation):
+        if self.contact_service.exists_between(invitation.from_user_id, invitation.to_user_id):
+            raise HTTPException(status_code=400, detail="Contact already exist")   
+        
+        try:
+            self.contact_service.create_contact_pair(invitation.from_user_id, invitation.to_user_id)
+            invitation.status = InvitationStatus.ACCEPTED
+            invitation.responded_at = datetime.now(timezone.utc)
+
+            self.invitation_repo.save_all()
+        except Exception as e:
+            self.invitation_repo.db.rollback()
+            raise e
+
+
+    def accept_group(self, invitation: Invitation):
+        if self.group_service.group_repo.get_membership(invitation.group_id, invitation.to_user_id) is not None:
+            raise HTTPException(status_code=400, detail="User already in group")
+        
+        try:
+            self.group_service.group_repo.add_member(invitation.group_id, invitation.to_user_id)
+            invitation.status = InvitationStatus.ACCEPTED
+            invitation.responded_at = datetime.now(timezone.utc)
+
+            self.create_missing_contacts_for_group(invitation.group_id, invitation.to_user_id)
+
+            self.invitation_repo.save_all()
+        except Exception as e:
+            self.invitation_repo.db.rollback()
+            raise e
+
+
+    def create_missing_contacts_for_group(self, group_id: int, new_user_id: int):
+        members = self.group_service.group_repo.get_all_members(group_id)
+
+        for member in members:
+            other_user_id = member.user_id
+
+            if other_user_id == new_user_id:
+                continue
+
+            if not self.contact_service.exists_between(new_user_id, other_user_id):
+                self.contact_service.create_contact_pair(new_user_id, other_user_id)

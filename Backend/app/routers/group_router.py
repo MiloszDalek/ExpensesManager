@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.services import GroupService
 from app.database import get_db
-from app.schemas import GroupResponse, GroupCreate, GroupUpdate, UserResponse
+from app.schemas import GroupResponse, GroupCreate, GroupUpdate, UserResponse, GroupMemberResponse
 from app.models import User
 from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
@@ -39,6 +39,15 @@ def get_group_by_id(
     current_user: User = Depends(get_current_active_user)
 ):
     return service.get_group(group_id, current_user.id)
+
+
+@group_router.get("/{group_id}/members", response_model=list[GroupMemberResponse])
+def get_group_members(
+    group_id: int,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_all_members(group_id, current_user.id)
 
 
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

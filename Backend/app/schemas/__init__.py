@@ -9,4 +9,4 @@ from .bank_token_schemas import BankTokenCreate, BankTokenResponse
 from .contact_schemas import ContactCreate, ContactResponse
 from .category_schemas import CategoryCreate, CategoryResponse
 from .notification_schemas import NotificationResponse, UnreadNotificationCountResponse
-from .invitation_schemas import ContactInvitationCreate, ContactInvitationResponse, GroupInvitationCreate, GroupInvitationResponse
+from .invitation_schemas import ContactInvitationCreate, ContactInvitationResponse, GroupInvitationCreate, GroupInvitationResponse, InvitationResponse

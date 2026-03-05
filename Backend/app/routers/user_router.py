@@ -33,7 +33,7 @@ def read_users(
     return service.get_all_users()
 
 
-@user_router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@user_router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_data: UserCreate, 
     service: UserService = Depends(get_user_service)

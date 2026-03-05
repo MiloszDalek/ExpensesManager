@@ -6,3 +6,4 @@ from .expense_share_service import ExpenseShareService
 from .category_service import CategoryService
 from .invitation_service import InvitationService
 from .notification_service import NotificationService
+from .contact_service import ContactService

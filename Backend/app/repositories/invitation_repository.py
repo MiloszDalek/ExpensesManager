@@ -9,6 +9,14 @@ class InvitationRepository:
         self.db = db
 
 
+    def get_by_id(self, invitation_id: int):
+        return (
+            self.db.query(Invitation)
+            .filter(Invitation.id == invitation_id)
+            .first()
+        )
+
+
     def get_by_unique_key(
         self,
         invitation_type: InvitationType,

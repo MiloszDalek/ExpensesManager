@@ -50,6 +50,11 @@ class GroupService:
             raise HTTPException(status_code=400, detail="You have already created a group with this name")
         
 
+    def get_all_members(self, group_id: int, user_id: int) -> list[GroupMember]:
+        group = self.get_group(group_id, user_id)
+
+        return self.group_repo.get_all_members(group.id)
+        
 
     # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
 

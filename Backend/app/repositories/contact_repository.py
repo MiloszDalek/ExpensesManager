@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 from app.models import Contact
 
 
@@ -7,18 +6,17 @@ class ContactRepository:
     def __init__(self, db: Session):
         self.db = db
 
+
+    def create(self, contact: Contact):
+        self.db.add(contact)
+
     
-    def exists_between(self, user1_id: int, user2_id: int) -> bool:
-        u1 = min(user1_id, user2_id)
-        u2 = max(user1_id, user2_id)
-
-        stmt = (
-            select(Contact.id)
-            .where(
-                Contact.user_id == u1,
-                Contact.contact_id == u2
+    def get_by_id_pair(self, user1_id: int, user2_id: int) -> Contact:
+        return (
+            self.db.query(Contact)
+            .filter(
+                Contact.user_id == user1_id,
+                Contact.contact_id == user2_id
             )
-            .limit(1)
+            .first()
         )
-
-        return self.db.execute(stmt).scalar() is not None

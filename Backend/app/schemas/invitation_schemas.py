@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from app.enums import InvitationStatus, InvitationType
-from typing import Optional
+from typing import Optional, Union
 
 
 class ContactInvitationBase(BaseModel):
@@ -37,3 +37,6 @@ class GroupInvitationResponse(ContactInvitationBase):
     responded_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+InvitationResponse = Union[ContactInvitationResponse, GroupInvitationResponse]
