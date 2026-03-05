@@ -13,6 +13,7 @@ from app.routers import (
         category_router, 
         invitation_router,
         notification_router,
+        contact_router,
     )
 from app.services import AuthService
 from app.utils import seed_default_categories, reset_database
@@ -51,6 +52,7 @@ app.include_router(dashboard_router, prefix='/api')
 app.include_router(category_router, prefix='/api')
 app.include_router(invitation_router, prefix='/api')
 app.include_router(notification_router, prefix='/api')
+app.include_router(contact_router, prefix='/api')
 
 
 @app.on_event("startup")

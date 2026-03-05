@@ -65,3 +65,10 @@ class GroupRepository:
             .filter(GroupMember.group_id == group_id)
             .all()
         )
+    
+    def get_member_by_id(self, group_id: int, user_id: int) -> GroupMember | None:
+        return (
+            self.db.query(GroupMember)
+            .filter(GroupMember.group_id == group_id, GroupMember.user_id == user_id)
+            .first()
+        )

@@ -34,6 +34,7 @@ class NotificationService:
         
         return notification
 
+
     def create_notification(
         self,
         user_id: int,

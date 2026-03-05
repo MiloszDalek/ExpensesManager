@@ -20,3 +20,14 @@ class ContactRepository:
             )
             .first()
         )
+    
+    def get_all_by_user_id(self, user_id: int, limit: int, offset: int):
+        return (
+            self.db.query(Contact)
+            .filter(Contact.user_id == user_id)
+            .order_by(Contact.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+    

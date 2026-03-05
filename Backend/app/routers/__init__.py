@@ -8,3 +8,4 @@ from .dashboard_router import dashboard_router
 from .category_router import category_router
 from .invitation_router import invitation_router
 from .notification_router import notification_router
+from .contact_router import contact_router
