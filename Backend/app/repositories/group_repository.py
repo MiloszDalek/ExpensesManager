@@ -9,20 +9,13 @@ class GroupRepository:
 
 
     def create_group_with_creator(self, group: Group, member: GroupMember):
-        try:
-            member.group = group
+        member.group = group
 
-            self.db.add(group)
-            self.db.add(member)
+        self.db.add(group)
+        self.db.add(member)
+        self.db.flush()
 
-            self.db.commit()
-            self.db.refresh(group)
-
-            return group
-
-        except IntegrityError as e:
-            self.db.rollback()
-            raise e
+        return group
 
 
     def get_membership(self, group_id: int, user_id: int) -> GroupMember | None:
@@ -47,6 +40,14 @@ class GroupRepository:
             .filter(GroupMember.user_id == user_id)
             .all()
         )
+
+
+    def save_all(self):
+        self.db.commit()
+
+        
+    def refresh(self, group: Group):
+        self.db.refresh(group)
 
 
    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania

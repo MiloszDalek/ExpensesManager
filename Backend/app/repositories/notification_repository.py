@@ -9,6 +9,7 @@ class NotificationRepository:
 
     def create(self, notification: Notification):
         self.db.add(notification)
+        self.db.flush()
 
 
     def refresh(self, notification: Notification):

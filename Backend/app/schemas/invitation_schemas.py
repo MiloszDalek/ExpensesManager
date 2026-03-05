@@ -20,3 +20,19 @@ class ContactInvitationResponse(ContactInvitationBase):
     responded_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GroupInvitationCreate(ContactInvitationBase):
+    group_id: int
+
+
+class GroupInvitationResponse(ContactInvitationBase):
+    id: int
+    type: InvitationType
+    status: InvitationStatus
+    group_id: int
+    from_user_id: int
+    created_at: datetime
+    responded_at: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)

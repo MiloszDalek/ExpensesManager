@@ -28,11 +28,7 @@ class InvitationRepository:
         )
 
 
-    def get_contact_invitation_between(
-        self,
-        user1_id: int,
-        user2_id: int,
-    ) -> Invitation | None:
+    def get_contact_invitation_between(self, user1_id: int, user2_id: int) -> Invitation | None:
         return (
             self.db.query(Invitation)
             .filter(
@@ -47,6 +43,17 @@ class InvitationRepository:
                         Invitation.to_user_id == user1_id,
                     ),
                 ),
+            )
+            .one_or_none()
+        )
+    
+    def get_group_invitation(self, group_id: int, to_user_id: int) -> Invitation | None:
+        return (
+            self.db.query(Invitation)
+            .filter(
+                Invitation.type == InvitationType.GROUP,
+                Invitation.group_id == group_id,
+                Invitation.to_user_id == to_user_id,
             )
             .one_or_none()
         )

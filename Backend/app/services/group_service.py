@@ -27,22 +27,26 @@ class GroupService:
 
 
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:
-        new_group = Group(
-            name=group_in.name.strip().lower(),
-            description=group_in.description,
-            status=GroupStatus.ACTIVE,
-            created_by=user_id
-        )
+        try:       
+            new_group = Group(
+                name=group_in.name.strip().lower(),
+                description=group_in.description,
+                status=GroupStatus.ACTIVE,
+                created_by=user_id
+            )
 
-        member = GroupMember(
-            user_id=user_id,
-            role=GroupMemberRole.ADMIN,
-            status=GroupMemberStatus.ACTIVE
-        )
+            member = GroupMember(
+                user_id=user_id,
+                role=GroupMemberRole.ADMIN,
+                status=GroupMemberStatus.ACTIVE
+            )
 
-        try:
-            return self.group_repo.create_group_with_creator(new_group, member)
+            group = self.group_repo.create_group_with_creator(new_group, member)
+            self.group_repo.save_all()
+            return group
+        
         except IntegrityError:
+            self.group_repo.db.rollback()
             raise HTTPException(status_code=400, detail="You have already created a group with this name")
         
 
