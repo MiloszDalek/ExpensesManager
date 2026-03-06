@@ -9,11 +9,10 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(Integer, primary_key=True)
-    group_id = Column(Integer, ForeignKey("groups.id", ondelete="SET NULL"))
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String(120), nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)
-    is_personal = Column(Boolean, default=True)
     currency = Column(SAEnum(CurrencyEnum, name="currency_enum"), default=CurrencyEnum.PLN)
     category_id = Column(ForeignKey("categories.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -28,6 +27,8 @@ class Expense(Base):
     category = relationship("Category", back_populates="expenses")
 
 
-Index("idx_expenses_group_id", Expense.group_id)
-Index("idx_expenses_user_id", Expense.user_id)
-Index("idx_expenses_category", Expense.category_id)
+    __table_args__ = (
+        Index("idx_expenses_group_id", "group_id"),
+        Index("idx_expenses_user_id", "user_id"),
+        Index("idx_expenses_category", "category_id"),
+    )

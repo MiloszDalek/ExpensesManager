@@ -9,7 +9,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     type = Column(Enum(NotificationType, name="notification_type"), nullable=False)
     reference_id = Column(Integer, nullable=True)  # invitation or contact id 
     message = Column(Text, nullable=True)
@@ -20,5 +20,6 @@ class Notification(Base):
 
     user = relationship("User", back_populates="notifications")
 
-
-    Index("ix_notifications_user_created", "user_id", "created_at")
+    __table_args__ = (
+        Index("ix_notifications_user_created", "user_id", "created_at")
+    )

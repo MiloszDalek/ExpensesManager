@@ -29,7 +29,6 @@ class ExpensePersonalService:
             receipt_image_url=expense_in.receipt_image_url,
             receipt_text=expense_in.receipt_text,
             user_id=user_id,
-            is_personal=True,
             group_id=None,
             category_id=expense_in.category_id
         )
@@ -76,42 +75,3 @@ class ExpensePersonalService:
         
         self.expense_repo.delete(expense)
 
-
-    # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
-
-    # def create_expense(self, data: ExpenseCreate, group_id: int, payer_id: int) -> Expense:
-    #     expense = Expense(**data.model_dump(), group_id=group_id, payer_id=payer_id)
-    #     expense = self.expense_repo.create(expense)
-
-    #     shares = [
-    #         ExpenseShare(expense_id=expense.id, user_id=s.user_id, amount=s.amount)
-    #         for s in data.shares
-    #     ]
-    #     self.share_repo.create_many(shares)
-    #     return expense
-
-
-    # def get_expense(self, expense_id: int) -> Expense:
-    #     expense = self.expense_repo.get_by_id(expense_id)
-    #     if not expense:
-    #         raise HTTPException(status_code=404, detail="Expense not found")
-    #     return expense
-
-
-    # def list_group_expenses(self, group_id: int) -> list[Expense]:
-    #     return self.expense_repo.get_by_group(group_id)
-
-
-    # def update_expense(self, expense_id: int, new_data: dict) -> Expense:
-    #     expense = self.expense_repo.update(expense_id, new_data)
-    #     if not expense:
-    #         raise HTTPException(status_code=404, detail="Expense not found")
-    #     return expense
-
-
-    # def delete_expense(self, expense_id: int):
-    #     self.share_repo.delete_by_expense(expense_id)
-    #     deleted = self.expense_repo.delete(expense_id)
-    #     if not deleted:
-    #         raise HTTPException(status_code=404, detail="Expense not found")
-    #     return True
