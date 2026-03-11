@@ -21,6 +21,7 @@ class Group(Base):
 
     group_categories = relationship("Category", back_populates="group")
 
+    settlements = relationship("Settlement", back_populates="group", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("created_by", "name", name="uq_user_group_name"),
