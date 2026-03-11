@@ -8,6 +8,7 @@ class NotificationResponse(BaseModel):
     id: int
     user_id: int
     type: NotificationType
+    reference_id: Optional[int] = None
     message: Optional[str] = None
     action_url: Optional[str] = None
     is_read: bool

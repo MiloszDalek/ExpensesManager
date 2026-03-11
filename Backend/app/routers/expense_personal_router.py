@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.services import ExpensePersonalService
 from app.database import get_db
-from app.schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
+from app.schemas import PersonalExpenseCreate, PersonalExpenseUpdate, PersonalExpenseResponse
 from app.models import User
 from app.utils.auth_dependencies import get_current_active_user
 
@@ -15,16 +15,16 @@ def get_expense_service(db: Session = Depends(get_db)):
     return ExpensePersonalService(db)
 
 
-@expense_personal_router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
+@expense_personal_router.post("/", response_model=PersonalExpenseResponse, status_code=status.HTTP_201_CREATED)
 def create_personal_expense(
-    expense_in: ExpenseCreate,
+    expense_in: PersonalExpenseCreate,
     service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
 ):
     return service.create_personal_expense(expense_in, current_user.id)
 
 
-@expense_personal_router.get("/all", response_model=list[ExpenseResponse], status_code=status.HTTP_200_OK) # only for debuging
+@expense_personal_router.get("/all", response_model=list[PersonalExpenseResponse], status_code=status.HTTP_200_OK) # only for debuging
 def get_all_personal_expenses(
     service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
@@ -32,10 +32,10 @@ def get_all_personal_expenses(
     return service.get_all_personal_expenses(current_user.id)
 
 
-@expense_personal_router.patch("/{expense_id}", response_model=ExpenseResponse, status_code=status.HTTP_200_OK)
+@expense_personal_router.patch("/{expense_id}", response_model=PersonalExpenseResponse, status_code=status.HTTP_200_OK)
 def edit_personal_expense(
     expense_id: int,
-    expense_in: ExpenseUpdate,
+    expense_in: PersonalExpenseUpdate,
     service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
 ):

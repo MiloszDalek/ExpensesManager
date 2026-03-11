@@ -57,7 +57,7 @@ class GroupService:
     
 
     def get_member(self, group_id, user_id) -> GroupMember | None:
-        return self.group_repo.get_member_by_id(group_id, user_id)
+        return self.group_repo.get_membership(group_id, user_id)
         
 
     def grant_admin_role(self, group_id: int, user_id: int, current_admin_id: int) -> GroupMember:

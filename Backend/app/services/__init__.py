@@ -2,7 +2,7 @@ from .user_service import UserService
 from .auth_service import AuthService
 from .group_service import GroupService
 from .expense_personal_service import ExpensePersonalService
-from .expense_share_service import ExpenseShareService
+from .expense_group_service import ExpenseGroupService
 from .category_service import CategoryService
 from .invitation_service import InvitationService
 from .notification_service import NotificationService

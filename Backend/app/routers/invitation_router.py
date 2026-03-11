@@ -38,7 +38,7 @@ def send_invitation(
     return service.send_invitation_to_group(invitation_in, current_user.id)
 
 
-@invitation_router.post("/{invitation_id}/accept", response_model=InvitationResponse)
+@invitation_router.patch("/{invitation_id}/accept", response_model=InvitationResponse)
 def accept_invitation(
     invitation_id: int,
     service: InvitationService = Depends(get_invitation_service),

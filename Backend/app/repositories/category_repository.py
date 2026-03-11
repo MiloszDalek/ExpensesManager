@@ -63,7 +63,7 @@ class CategoryRepository:
                     Category.group_id == group_id
                 )
             ).all()
-    
+
 
     def get_all_default_and_personal(self, user_id: int) -> list[Category]:
         return self.db.query(Category).filter(
@@ -77,11 +77,13 @@ class CategoryRepository:
 
     def create(self, category: Category) -> Category:
         self.db.add(category)
-        self.db.commit()
-        self.db.refresh(category)
+        self.db.flush()
         return category
     
 
     def delete(self, category: Category):
         self.db.delete(category)
+
+
+    def save_all(self):
         self.db.commit()

@@ -15,5 +15,6 @@ def reset_database():
         conn.execute(text("DROP TYPE IF EXISTS group_status CASCADE"))
         conn.execute(text("DROP TYPE IF EXISTS notification_type CASCADE"))
         conn.execute(text("DROP TYPE IF EXISTS notification_severity CASCADE"))
+        conn.execute(text("DROP TYPE IF EXISTS split_type CASCADE")) 
 
         Base.metadata.create_all(bind=engine)

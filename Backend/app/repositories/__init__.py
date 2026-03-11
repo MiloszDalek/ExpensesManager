@@ -1,6 +1,6 @@
 from .user_repository import UserRepository
 from .group_repository import GroupRepository
-from .expense_personal_repository import ExpensePersonalRepository
+from .expense_repository import ExpenseRepository
 from .expense_share_repository import ExpenseShareRepository
 from .settlement_repository import SettlementRepository
 from .category_repository import CategoryRepository

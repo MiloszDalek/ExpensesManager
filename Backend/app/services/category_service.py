@@ -30,6 +30,16 @@ class CategoryService:
         return category
 
 
+    def validate_available_for_group_expense(self, category_id: int, group_id: int):
+        category = self.get_by_id(category_id)
+        
+        if category.user_id is not None:
+            raise HTTPException(status_code=400, detail="Not a group category")
+        if category.group_id not in (group_id, None):
+            raise HTTPException(status_code=403, detail="Not authorized")
+        return category
+
+
     def get_default_categories(self) -> list[Category]:
         return self.category_repo.get_all_default()
 
@@ -51,12 +61,20 @@ class CategoryService:
         if existing:
             raise HTTPException(status_code=400, detail=f"Category '{category_in.name}' already exists")    
 
-        category = Category(
-            name=category_in.name,
-            user_id=user_id,
-            group_id=None
-        )
-        return self.category_repo.create(category)
+        try:
+            category = Category(
+                name=category_in.name,
+                user_id=user_id,
+                group_id=None
+            )
+            category = self.category_repo.create(category)
+            self.category_repo.save_all()
+
+            return category
+        
+        except Exception:
+            self.category_repo.db.rollback()
+            raise
     
 
     def delete_personal_category(self, category_id: int, user_id: int):
@@ -71,7 +89,12 @@ class CategoryService:
         if self.category_repo.has_expenses(category_id):
             raise HTTPException(status_code=400, detail="Cannot delete category assigned to expenses")
         
-        self.category_repo.delete(category)
+        try:
+            self.category_repo.delete(category)
+            self.category_repo.save_all()
+
+        except Exception:
+            self.category_repo.db.rollback()
 
 
     def create_group_category(self, category_in: CategoryCreate, group_id: int, user_id: int) -> Category:
@@ -92,8 +115,13 @@ class CategoryService:
         )
 
         try:
-            return self.category_repo.create(category)
+            category = self.category_repo.create(category)
+            self.category_repo.save_all()
+
+            return category
+        
         except IntegrityError:
+            self.category_repo.db.rollback()
             raise HTTPException(status_code=400, detail="Category already exists")
         
 
@@ -134,5 +162,10 @@ class CategoryService:
         if membership.role != GroupMemberRole.ADMIN:
             raise HTTPException(status_code=403, detail="Not authorized admin role required")
 
+        try:
+            self.category_repo.delete(category)
+            self.category_repo.save_all()
 
-        self.category_repo.delete(category)
+        except Exception:
+            self.category_repo.db.rollback()
+            raise
