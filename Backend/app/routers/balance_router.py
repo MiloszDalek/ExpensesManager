@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth_dependencies import get_current_active_user
 from app.services import BalanceService
+from app.schemas import GroupBalancesResponse
 from app.models import User
 
 
@@ -15,10 +16,10 @@ def get_balance_service(db: Session = Depends(get_db)):
     return BalanceService(db)
 
 
-@balance_router.get("/{group_id}/balance")
+@balance_router.get("/{group_id}/balance", response_model=GroupBalancesResponse)
 def get_group_balance(
     group_id: int,
     service: BalanceService = Depends(get_balance_service),
     current_user: User = Depends(get_current_active_user)
 ):
-    return service.get_group_balance(group_id, current_user.id)
+    return service.get_group_balances(group_id, current_user.id)

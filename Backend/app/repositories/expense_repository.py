@@ -1,5 +1,6 @@
-from sqlalchemy.orm import Session, selectinload
-from app.models import Expense
+from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy import func
+from app.models import Expense, ExpenseShare
 
 
 class ExpenseRepository:
@@ -28,6 +29,49 @@ class ExpenseRepository:
             .all()
         )
     
+
+    def get_expenses_with_shares(self, group_id: int): # pierwsza próba implementacji, ale niezbyt wydajna
+        return (
+            self.db.query(Expense)
+            .options(joinedload(Expense.shares))
+            .filter(Expense.group_id == group_id)
+            .all()
+        )
+        
+
+    def get_paid_to_others(self, group_id: int, current_user_id: int):
+        return (
+            self.db.query(
+                ExpenseShare.user_id.label("other_user_id"),
+                func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("amount")
+            )
+            .join(Expense, Expense.id == ExpenseShare.expense_id)
+            .filter(
+                Expense.group_id == group_id,
+                Expense.user_id == current_user_id,
+                ExpenseShare.user_id != current_user_id
+            )
+            .group_by(ExpenseShare.user_id)
+            .all()
+        )
+
+
+    def get_owed_by_others(self, group_id: int, current_user_id: int):
+        return (
+            self.db.query(
+                Expense.user_id.label("other_user_id"),
+                func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("amount")
+            )
+            .join(Expense, Expense.id == ExpenseShare.expense_id)
+            .filter(
+                Expense.group_id == group_id,
+                ExpenseShare.user_id == current_user_id,
+                Expense.user_id != current_user_id
+            )
+            .group_by(Expense.user_id)
+            .all()
+        )
+
 
     def get_by_id(self, expense_id: int) -> Expense | None:
         return self.db.query(Expense).filter(Expense.id == expense_id).first()
