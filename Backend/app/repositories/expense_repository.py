@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, selectinload, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, case
 from app.models import Expense, ExpenseShare
 
 
@@ -69,6 +69,54 @@ class ExpenseRepository:
                 Expense.user_id != current_user_id
             )
             .group_by(Expense.user_id)
+            .all()
+        )
+
+
+    def get_balances_with_users(self, current_user_id: int):
+        other_user_id_expr = case(
+            (Expense.user_id == current_user_id, ExpenseShare.user_id),
+            else_=Expense.user_id,
+        ).label("other_user_id")
+
+        balance_expr = func.sum(
+            case(
+                (Expense.user_id == current_user_id, ExpenseShare.share_amount),
+                else_=-ExpenseShare.share_amount,
+            )
+        ).label("balance")
+
+        return (
+            self.db.query(other_user_id_expr, balance_expr)
+            .select_from(Expense)
+            .join(ExpenseShare, ExpenseShare.expense_id == Expense.id)
+            .filter(
+                Expense.group_id.isnot(None),
+                (Expense.user_id == current_user_id)
+                | (ExpenseShare.user_id == current_user_id)
+            )
+            .group_by(other_user_id_expr)
+            .all()
+        )
+
+
+    def get_balance_with_user_by_group(self, current_user_id: int, other_user_id: int):
+        balance_expr = func.sum(
+            case(
+                (Expense.user_id == current_user_id, ExpenseShare.share_amount),
+                else_=-ExpenseShare.share_amount,
+            )
+        ).label("balance")
+
+        return (
+            self.db.query(Expense.group_id, balance_expr)
+            .select_from(Expense)
+            .join(ExpenseShare, ExpenseShare.expense_id == Expense.id)
+            .filter(
+                (Expense.user_id == current_user_id) & (ExpenseShare.user_id == other_user_id)
+                | (Expense.user_id == other_user_id) & (ExpenseShare.user_id == current_user_id)
+            )
+            .group_by(Expense.group_id)
             .all()
         )
 

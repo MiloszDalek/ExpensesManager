@@ -2,12 +2,17 @@ from pydantic import BaseModel
 from decimal import Decimal
 
 
-class GroupBalanceItem(BaseModel):
+class UserBalanceItem(BaseModel):
     user_id: int
     amount: Decimal
 
 
-class GroupBalancesResponse(BaseModel):
+class GroupBalances(BaseModel):
     group_id: int
     total_balance: Decimal
-    balances: list[GroupBalanceItem]
+    balances: list[UserBalanceItem]
+
+
+class ContactBalanceByGroup(BaseModel):
+    group_id: int
+    balance: Decimal
