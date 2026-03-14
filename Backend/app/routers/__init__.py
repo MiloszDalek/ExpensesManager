@@ -9,3 +9,4 @@ from .invitation_router import invitation_router
 from .notification_router import notification_router
 from .contact_router import contact_router
 from .balance_router import balance_router
+from .settlement_router import settlement_router

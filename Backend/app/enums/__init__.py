@@ -10,3 +10,4 @@ from .notification_severity_enum import NotificationSeverity
 from .notification_type_enum import NotificationType
 from .split_type_enum import SplitType
 from .payment_method_enum import PaymentMethod
+from .settlement_status_enum import SettlementStatus

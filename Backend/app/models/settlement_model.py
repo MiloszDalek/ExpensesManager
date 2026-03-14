@@ -1,7 +1,7 @@
 from sqlalchemy import Enum as SAEnum, Column, Integer, ForeignKey, DateTime, Numeric, String, func, Index, CheckConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
-from app.enums import CurrencyEnum, PaymentMethod
+from app.enums import CurrencyEnum, PaymentMethod, SettlementStatus
 
 
 class Settlement(Base):
@@ -14,6 +14,7 @@ class Settlement(Base):
     amount = Column(Numeric, nullable=False)
     currency = Column(SAEnum(CurrencyEnum, name="currency_enum"), default=CurrencyEnum.PLN, nullable=False)
     payment_method = Column(SAEnum(PaymentMethod, name="payment_method"), default=PaymentMethod.CASH, nullable=False)
+    status = Column(SAEnum(SettlementStatus, name="settlement_status"), default=SettlementStatus.COMPLETED, nullable=False)
     transaction_id = Column(String(255))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

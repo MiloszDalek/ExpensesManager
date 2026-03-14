@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import Settlement
+from app.enums import SettlementStatus
 
 
 class SettlementRepository:
@@ -8,39 +9,50 @@ class SettlementRepository:
         self.db = db
 
 
-   # -- inne reliktowe pozostałości vibecodingu narazie bez zastosowania
+    def get_completed_settlements(self, group_id: int, user_id: int):
+        return (
+            self.db.query(
+                Settlement.from_user_id,
+                Settlement.to_user_id,
+                func.coalesce(func.sum(Settlement.amount), 0).label("amount")
+            )
+            .filter(
+                Settlement.group_id == group_id,
+                Settlement.status == SettlementStatus.COMPLETED,
+                ((Settlement.from_user_id == user_id) | (Settlement.to_user_id == user_id))
+            )
+            .group_by(Settlement.from_user_id, Settlement.to_user_id)
+            .all()
+        )
+    
+    
+    def get_completed_settlements_for_user(self, user_id: int):
+        return (
+            self.db.query(Settlement)
+            .filter(
+                Settlement.status == SettlementStatus.COMPLETED,
+                (Settlement.from_user_id == user_id) | (Settlement.to_user_id == user_id)
+            )
+            .all()
+        )
 
-    # # 1. Ile user zapłacił innym (zmniejsza jego "owed")
-    # def sum_payments_made_by(self, user_id: int) -> float:
-    #     result = (
-    #         self.db.query(func.coalesce(func.sum(Settlement.amount), 0))
-    #         .filter(Settlement.from_user_id == user_id)
-    #         .scalar()
-    #     )
-    #     return float(result)
+
+    def get_completed_settlements_between_users(self, user1_id: int, user2_id: int):
+        return (
+            self.db.query(Settlement)
+            .filter(
+                Settlement.status == SettlementStatus.COMPLETED,
+                ((Settlement.from_user_id == user1_id) & (Settlement.to_user_id == user2_id))
+                | ((Settlement.from_user_id == user2_id) & (Settlement.to_user_id == user1_id))
+            )
+            .all()
+        )
 
 
-    # # 2. Ile user dostał od innych (zmniejsza jego "receivable")
-    # def sum_payments_received_by(self, user_id: int) -> float:
-    #     result = (
-    #         self.db.query(func.coalesce(func.sum(Settlement.amount), 0))
-    #         .filter(Settlement.to_user_id == user_id)
-    #         .scalar()
-    #     )
-    #     return float(result)
+    def create(self, settlement: Settlement):
+        self.db.add(settlement)
+        self.db.flush()
 
-
-    # # 3. Surowa lista rozliczeń do bilansów
-    # def list_user_settlements(self, user_id: int):
-    #     return (
-    #         self.db.query(
-    #             Settlement.from_user_id.label("from_user"),
-    #             Settlement.to_user_id.label("to_user"),
-    #             Settlement.amount
-    #         )
-    #         .filter(
-    #             (Settlement.from_user_id == user_id) |
-    #             (Settlement.to_user_id == user_id)
-    #         )
-    #         .all()
-    #     )
+    
+    def save_all(self):
+        self.db.commit()

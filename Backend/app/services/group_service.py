@@ -57,7 +57,10 @@ class GroupService:
     
 
     def get_member(self, group_id, user_id) -> GroupMember | None:
-        return self.group_repo.get_membership(group_id, user_id)
+        member = self.group_repo.get_membership(group_id, user_id)
+        if member is None:
+            raise HTTPException(status_code=404, detail="Member not found")
+        return member
         
 
     def grant_admin_role(self, group_id: int, user_id: int, current_admin_id: int) -> GroupMember:
@@ -70,9 +73,6 @@ class GroupService:
             raise HTTPException(status_code=403, detail="Not authorized admin role required")
 
         new_admin = self.get_member(group.id, user_id)
-
-        if not new_admin:
-            raise HTTPException(status_code=404, detail="Member not found")
         
         new_admin.role = GroupMemberRole.ADMIN
 

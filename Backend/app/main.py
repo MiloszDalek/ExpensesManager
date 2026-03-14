@@ -13,7 +13,8 @@ from app.routers import (
         invitation_router,
         notification_router,
         contact_router,
-        balance_router
+        balance_router,
+        settlement_router,
     )
 from app.services import AuthService
 from app.utils import seed_default_categories, reset_database
@@ -53,6 +54,7 @@ app.include_router(invitation_router, prefix='/api')
 app.include_router(notification_router, prefix='/api')
 app.include_router(contact_router, prefix='/api')
 app.include_router(balance_router, prefix='/api')
+app.include_router(settlement_router, prefix='/api')
 
 
 @app.on_event("startup")

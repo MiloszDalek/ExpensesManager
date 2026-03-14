@@ -8,3 +8,4 @@ from .invitation_service import InvitationService
 from .notification_service import NotificationService
 from .contact_service import ContactService
 from .balance_service import BalanceService
+from .settlement_service import SettlementService
