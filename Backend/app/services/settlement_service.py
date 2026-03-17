@@ -84,3 +84,13 @@ class SettlementService:
         self.settlement_repo.save_all()
 
         return settlements
+
+
+    def get_settlements_by_group(self, group_id: int, limit: int, offset: int, user_id: int):
+        group = self.group_service.get_group(group_id, user_id)
+
+        return self.settlement_repo.get_by_group_id(group.id, limit, offset, user_id)
+    
+
+    def get_settlements_by_user(self, limit: int, offset: int, user_id: int):
+        return self.settlement_repo.get_by_user_id(limit, offset, user_id)

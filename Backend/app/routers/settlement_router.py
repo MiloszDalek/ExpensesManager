@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services import SettlementService
@@ -32,3 +32,24 @@ def create_total_settlement(
     current_user: User = Depends(get_current_active_user)
 ):
     return service.create_total_settlement(settlement_in, current_user.id)
+
+
+@settlement_router.get("/{group_id}/group/all", response_model=list[SettlementResponse])
+def get_settlements_from_group(
+    group_id: int,
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    service: SettlementService = Depends(get_settlement_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_settlements_by_group(group_id, limit, offset, current_user.id)
+
+
+@settlement_router.get("/user/all", response_model=list[SettlementResponse])
+def get_settlements_from_user(
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    service: SettlementService = Depends(get_settlement_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_settlements_by_user(limit, offset, current_user.id)

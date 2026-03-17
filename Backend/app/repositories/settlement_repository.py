@@ -49,6 +49,28 @@ class SettlementRepository:
         )
 
 
+    def get_by_group_id(self, group_id: int, limit: int, offset: int):
+        return (
+            self.db.query(Settlement)
+            .filter(Settlement.group_id == group_id)
+            .order_by(Settlement.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+    
+
+    def get_by_user_id(self, limit: int, offset: int, user_id: int):
+        return (
+            self.db.query(Settlement)
+            .filter(Settlement.group_id == user_id)
+            .order_by(Settlement.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+
     def create(self, settlement: Settlement):
         self.db.add(settlement)
         self.db.flush()
