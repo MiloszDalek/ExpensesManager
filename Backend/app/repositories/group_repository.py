@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
+from app.models import Expense
 
 
 class GroupRepository:
@@ -64,5 +65,15 @@ class GroupRepository:
             self.db.query(GroupMember)
             .filter(GroupMember.group_id == group_id)
             .all()
+        )
+
+
+    def has_any_expenses(self, group_id: int) -> bool:
+        return (
+            self.db.query(Expense.id)
+            .filter(Expense.group_id == group_id)
+            .limit(1)
+            .first()
+            is not None
         )
     

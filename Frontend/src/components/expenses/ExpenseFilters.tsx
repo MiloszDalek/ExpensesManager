@@ -1,7 +1,14 @@
-import React from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function ExpenseFilters({ filters, onFilterChange }) {
+type ExpenseFiltersProps = {
+  filters: {
+    category: string;
+    [key: string]: unknown;
+  };
+  onFilterChange: (next: ExpenseFiltersProps["filters"]) => void;
+};
+
+export default function ExpenseFilters({ filters, onFilterChange }: ExpenseFiltersProps) {
   return (
     <div className="mb-6">
       <Tabs 

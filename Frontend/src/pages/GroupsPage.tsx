@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 // import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
 // import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Users, Edit, Trash2 } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
@@ -18,14 +17,6 @@ type CreateGroupInput = {
   name: string;
   description?: string;
   currency?: string;
-};
-
-const groupColors = {
-  purple: "from-purple-500 to-purple-600",
-  blue: "from-blue-500 to-blue-600",
-  teal: "from-teal-500 to-teal-600",
-  pink: "from-pink-500 to-pink-600",
-  orange: "from-orange-500 to-orange-600",
 };
 
 type GroupColor = "purple" | "blue" | "teal" | "pink" | "orange";
@@ -45,9 +36,8 @@ type Group = {
 
 export default function GroupsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const queryClient = useQueryClient();
 
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
 const [mockGroups, setMockGroups] = useState<Group[]>(groupsMock as Group[]);
 

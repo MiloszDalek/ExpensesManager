@@ -23,7 +23,7 @@ export default function DashboardPage() {
   
   const { user, logout } = useAuth();
 
-  const { data, isLoading } = useDashboardSummary();
+  const { isLoading } = useDashboardSummary();
 
 
   if (!user || isLoading) {

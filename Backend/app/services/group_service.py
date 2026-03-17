@@ -32,6 +32,7 @@ class GroupService:
                 name=group_in.name.strip().lower(),
                 description=group_in.description,
                 status=GroupStatus.ACTIVE,
+                currency=group_in.currency,
                 created_by=user_id
             )
 
@@ -79,3 +80,31 @@ class GroupService:
         self.group_repo.save_all()
 
         return new_admin
+
+
+    def update_group(self, group_id: int, group_in: GroupUpdate, user_id: int) -> Group:
+        group = self.get_group(group_id, user_id)
+
+        member = self.get_member(group.id, user_id)
+        if member.role != GroupMemberRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+
+        update_data = group_in.model_dump(exclude_unset=True)
+
+        if "name" in update_data and update_data["name"] is not None:
+            update_data["name"] = update_data["name"].strip().lower()
+
+        if "currency" in update_data and update_data["currency"] is not None:
+            if update_data["currency"] != group.currency and self.group_repo.has_any_expenses(group.id):
+                raise HTTPException(status_code=400, detail="Cannot change group currency when group has expenses")
+
+        for field, value in update_data.items():
+            setattr(group, field, value)
+
+        try:
+            self.group_repo.save_all()
+            self.group_repo.refresh(group)
+            return group
+        except IntegrityError:
+            self.group_repo.db.rollback()
+            raise HTTPException(status_code=400, detail="You have already created a group with this name")

@@ -24,6 +24,16 @@ def create_group(
     return service.create_group(group_in, current_user.id)
 
 
+@group_router.patch("/{group_id}", response_model=GroupResponse)
+def update_group(
+    group_id: int,
+    group_in: GroupUpdate,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.update_group(group_id, group_in, current_user.id)
+
+
 @group_router.get("/all", response_model=list[GroupResponse])
 def get_all_groups(
     service: GroupService = Depends(get_group_service),

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,28 @@ import { Badge } from "@/components/ui/badge";
 
 const colors = ['purple', 'blue', 'teal', 'pink', 'orange'];
 
-export default function CreateGroupDialog({ open, onOpenChange, onSubmit, userEmail, isLoading }) {
+type CreateGroupFormData = {
+  name: string;
+  description: string;
+  members: string[];
+  color: (typeof colors)[number];
+};
+
+type CreateGroupDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: CreateGroupFormData) => void;
+  userEmail: string;
+  isLoading?: boolean;
+};
+
+export default function CreateGroupDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  userEmail,
+  isLoading,
+}: CreateGroupDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -34,7 +55,7 @@ export default function CreateGroupDialog({ open, onOpenChange, onSubmit, userEm
     }
   };
 
-  const handleRemoveMember = (email) => {
+  const handleRemoveMember = (email: string) => {
     if (email === userEmail) return; // Can't remove self
     setFormData(prev => ({
       ...prev,

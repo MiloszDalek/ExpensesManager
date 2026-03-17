@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Enum, Integer, String, ForeignKey, DateTime, Text, UniqueConstraint
+from sqlalchemy import Column, Enum as SAEnum, Integer, String, ForeignKey, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
-from app.enums import GroupStatus
+from app.enums import GroupStatus, CurrencyEnum
 
 
 class Group(Base):
@@ -11,7 +11,8 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(120), nullable=False)
     description = Column(Text)
-    status = Column(Enum(GroupStatus, name="group_status"), default=GroupStatus.ACTIVE, nullable=False)
+    status = Column(SAEnum(GroupStatus, name="group_status"), default=GroupStatus.ACTIVE, nullable=False)
+    currency = Column(SAEnum(CurrencyEnum, name="currency_enum"), default=CurrencyEnum.PLN, nullable=False)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

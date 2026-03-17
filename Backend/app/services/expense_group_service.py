@@ -73,6 +73,9 @@ class ExpenseGroupService:
 
         category = self.category_service.validate_available_for_group_expense(expense_in.category_id, group_id)
 
+        if expense_in.currency != group.currency:
+            raise HTTPException(status_code=400, detail="Expense currency must match group currency")
+
         self.validate_participants(expense_in.shares, group.id)
             
         # self.validate_payer_in_participants(expense_in.participants, user_id)
@@ -124,6 +127,10 @@ class ExpenseGroupService:
         expense = self.get_group_expense(expense_id, group_id)
 
         self.validate_edit_permission(group.id, expense, user_id)
+
+        next_currency = expense_in.currency if expense_in.currency is not None else expense.currency
+        if next_currency != group.currency:
+            raise HTTPException(status_code=400, detail="Expense currency must match group currency")
         
         if expense_in.amount and not expense_in.shares:
             raise HTTPException(status_code=400, detail="Updating amount requires expense shares")

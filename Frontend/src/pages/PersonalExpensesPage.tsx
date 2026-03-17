@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -40,7 +40,7 @@ export default function PersonalExpensesPage() {
   const [filters, setFilters] = useState({ category: 'all' });
   const queryClient = useQueryClient();
 
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const [mockExpenses, setMockExpenses] = useState<Expense[]>(expensesMock);
 
