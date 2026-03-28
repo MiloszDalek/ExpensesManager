@@ -18,81 +18,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
+import type { ApiPersonalExpenseCreate } from "@/types/expense";
+import type { ApiCategoryResponse } from "@/types/category";
 
-const categories = [
-  'food',
-  'transport',
-  'accommodation',
-  'entertainment',
-  'shopping',
-  'utilities',
-  'health',
-  'groceries',
-  'other'
-];
-
-
-export type ExpenseCategory =
-  | "food"
-  | "transport"
-  | "accommodation"
-  | "entertainment"
-  | "shopping"
-  | "utilities"
-  | "health"
-  | "groceries"
-  | "other";
-
-export type Expense = {
-  id: number;
-  title: string;
-  amount: number;
-  category: ExpenseCategory;
-  date: string;       // ISO string, np. "2026-01-20"
-  notes?: string;
-  is_personal: boolean;
-  paid_by: string;
-};
-
+// TODO: Po dodaniu icon_key w API, umożliwić wybór ikony przy tworzeniu kategorii
 
 type AddExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (expenseData: Omit<Expense, "id">) => void; // id zostanie nadany później
+  onSubmit: (expenseData: ApiPersonalExpenseCreate) => void;
   isLoading?: boolean;
+  categories: ApiCategoryResponse[];
 };
 
 type FormData = {
   title: string;
   amount: string;
-  category: ExpenseCategory;
-  date: string;
+  category_id: number;
+  expense_date: string;
   notes: string;
 };
 
 
-export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoading }: AddExpenseDialogProps) {
+export default function AddExpenseDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
+  categories
+}: AddExpenseDialogProps) {
+  const defaultCategoryId = categories[0]?.id || 0;
+  
   const [formData, setFormData] = useState<FormData>({
     title: '',
     amount: '',
-    category: 'food',
-    date: format(new Date(), 'yyyy-MM-dd'),
+    category_id: defaultCategoryId,
+    expense_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
   });
 
   const handleSubmit = () => {
     if (formData.title && formData.amount) {
       onSubmit({
-        ...formData,
-        amount: parseFloat(formData.amount),
-        is_personal: true,
-        paid_by: "milosz@gmail.com",
+        title: formData.title,
+        amount: formData.amount,
+        category_id: formData.category_id,
+        expense_date: formData.expense_date,
+        notes: formData.notes || null,
+        currency: 'USD', // We'll make this configurable in Phase 2
       });
+      
       setFormData({
         title: '',
         amount: '',
-        category: 'food',
-        date: format(new Date(), 'yyyy-MM-dd'),
+        category_id: defaultCategoryId,
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
         notes: '',
       });
     }
@@ -132,16 +112,22 @@ export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoadi
             <div>
               <Label htmlFor="category">Category</Label>
               <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ExpenseCategory }))}
+                value={formData.category_id.toString()}
+                onValueChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  category_id: parseInt(value, 10)
+                }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  {categories.map(category => (
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -150,12 +136,12 @@ export default function AddExpenseDialog({ open, onOpenChange, onSubmit, isLoadi
           </div>
 
           <div>
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="expense_date">Date</Label>
             <Input
-              id="date"
+              id="expense_date"
               type="date"
-              value={formData.date}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              value={formData.expense_date}
+              onChange={(e) => setFormData(prev => ({ ...prev, expense_date: e.target.value }))}
             />
           </div>
 

@@ -14,8 +14,15 @@ class ExpenseRepository:
         return expense
 
 
-    def get_all_personal_by_user_id(self, user_id: int) -> list[Expense]:
-        return self.db.query(Expense).filter(Expense.user_id == user_id, Expense.group_id.is_(None)).all()
+    def get_personal_by_user_id(self, user_id: int, limit: int, offset: int) -> list[Expense]:
+        return (
+            self.db.query(Expense)
+            .filter(Expense.user_id == user_id, Expense.group_id.is_(None))
+            .order_by(Expense.expense_date.desc(), Expense.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
     
 
     def get_all_group_by_group_id(self, group_id: int, limit: int, offset: int):

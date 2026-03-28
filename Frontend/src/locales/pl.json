@@ -1,0 +1,30 @@
+{
+  "category": {
+    "all": "Wszystkie",
+    "food": "Jedzenie",
+    "transport": "Transport",
+    "home": "Dom",
+    "bills": "Rachunki",
+    "lifestyle": "Styl życia",
+    "health": "Zdrowie",
+    "other": "Inne",
+    "custom": "Własne"
+  },
+  "ui": {
+    "selectLanguage": "Wybierz język",
+    "change": "Zmień",
+    "category": "Kategoria",
+    "allCategories": "Wszystkie kategorie",
+    "search": "Wyszukaj...",
+    "selectCategory": "Wybierz kategorię",
+    "chooseGroup": "Wybierz grupę po lewej i podkategorię po prawej.",
+    "noCategories": "Brak kategorii w tej grupie.",
+    "personalExpenses": "Wydatki Osobiste",
+    "trackSpending": "Śledź swoje wydatki",
+    "total": "Suma",
+    "addExpense": "Dodaj wydatek",
+    "loadMore": "Załaduj więcej",
+    "errorLoadingData": "Błąd ładowania danych",
+    "somethingWentWrong": "Coś poszło nie tak"
+  }
+}

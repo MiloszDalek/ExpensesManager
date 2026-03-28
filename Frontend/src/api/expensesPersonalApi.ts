@@ -11,8 +11,10 @@ export const expensesPersonalApi = {
     return data;
   },
 
-  listAll: async (): Promise<ApiPersonalExpenseResponse[]> => {
-    const { data } = await client.get<ApiPersonalExpenseResponse[]>("/expenses/personal/all");
+  list: async (limit = 20, offset = 0): Promise<ApiPersonalExpenseResponse[]> => {
+    const { data } = await client.get<ApiPersonalExpenseResponse[]>("/expenses/personal/", {
+      params: { limit, offset },
+    });
     return data;
   },
 

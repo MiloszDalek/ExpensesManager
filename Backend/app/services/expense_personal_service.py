@@ -45,8 +45,8 @@ class ExpensePersonalService:
             raise
     
 
-    def get_all_personal_expenses(self, user_id: int):
-        return self.expense_repo.get_all_personal_by_user_id(user_id)
+    def get_personal_expenses(self, user_id: int, limit: int, offset: int):
+        return self.expense_repo.get_personal_by_user_id(user_id, limit, offset)
 
 
     def edit_personal_expense(self, expense_id: int, expense_in: PersonalExpenseUpdate, user_id: int):

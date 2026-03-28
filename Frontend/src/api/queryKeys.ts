@@ -42,4 +42,11 @@ export const queryKeys = {
     contactByGroups: (otherUserId: number) =>
       ["balances", "contacts", otherUserId, "groups"] as const,
   },
+
+  settlements: {
+    group: (groupId: number, params?: { limit?: number; offset?: number }) =>
+      ["settlements", "group", groupId, params ?? {}] as const,
+    user: (params?: { limit?: number; offset?: number }) =>
+      ["settlements", "user", params ?? {}] as const,
+  },
 };

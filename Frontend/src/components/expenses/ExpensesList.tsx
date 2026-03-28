@@ -14,59 +14,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import type { ApiPersonalExpenseResponse } from "@/types/expense";
+import type { ApiCategoryResponse } from "@/types/category";
 
-const categoryIcons = {
-  food: Utensils,
-  transport: Car,
-  accommodation: Home,
-  shopping: ShoppingBag,
-  entertainment: Heart,
-  groceries: ShoppingBag,
-  other: Smartphone,
-};
+// TODO: Po dodaniu icon_key w API, renderuj ikonę kategorii obok jej nazwy
 
-const categoryColors = {
-  food: "from-orange-500 to-red-500",
-  transport: "from-blue-500 to-cyan-500",
-  accommodation: "from-purple-500 to-pink-500",
-  shopping: "from-pink-500 to-rose-500",
-  entertainment: "from-violet-500 to-purple-500",
-  utilities: "from-yellow-500 to-orange-500",
-  health: "from-green-500 to-emerald-500",
-  groceries: "from-lime-500 to-green-500",
-  other: "from-gray-500 to-slate-500",
-};
+// Default icon and color mappings
+const defaultIcon = Smartphone;
+const defaultColor = "from-gray-500 to-slate-500";
 
-export type ExpenseCategory =
-  | "food"
-  | "transport"
-  | "accommodation"
-  | "entertainment"
-  | "shopping"
-  | "utilities"
-  | "health"
-  | "groceries"
-  | "other";
-
-export type Expense = {
-  id: number;
-  title: string;
-  amount: number;
-  category: ExpenseCategory;
-  date: string;       // ISO string, np. "2026-01-20"
-  notes?: string;
-  is_personal: boolean;
-  paid_by: string;
+// Helper function to get category name by ID
+const getCategoryName = (categoryId: number, categories: ApiCategoryResponse[]): string => {
+  const category = categories.find(c => c.id === categoryId);
+  return category?.name || 'Other';
 };
 
 type ExpensesListProps = {
-  expenses: Expense[];
+  expenses: ApiPersonalExpenseResponse[];
+  categories: ApiCategoryResponse[];
   isLoading: boolean;
   onDelete: (id: number) => void;
 };
 
 
-export default function ExpensesList({ expenses, isLoading, onDelete }: ExpensesListProps) {
+export default function ExpensesList({ expenses, categories, isLoading, onDelete }: ExpensesListProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4">
@@ -97,8 +68,9 @@ export default function ExpensesList({ expenses, isLoading, onDelete }: Expenses
     <div className="grid gap-4">
       <AnimatePresence>
         {expenses.map((expense, index) => {
-          const Icon = categoryIcons[expense.category as keyof typeof categoryIcons] || Smartphone;
-          const gradient = categoryColors[expense.category] || categoryColors.other;
+          const categoryName = getCategoryName(expense.category_id, categories);
+          const Icon = defaultIcon; // We'll enhance this with proper icon mapping later
+          const gradient = defaultColor; // We'll enhance this with proper color mapping later
           
           return (
             <motion.div
@@ -120,12 +92,12 @@ export default function ExpensesList({ expenses, isLoading, onDelete }: Expenses
                         <h3 className="text-lg font-semibold text-gray-900">{expense.title}</h3>
                         <div className="flex items-center gap-3 mt-1">
                           <p className="text-sm text-gray-500">
-                            {format(new Date(expense.date), "MMM d, yyyy")}
+                            {format(new Date(expense.expense_date), "MMM d, yyyy")}
                           </p>
                           <span className="text-gray-300">•</span>
-                          <p className="text-sm text-gray-500 capitalize">{expense.category}</p>
+                          <p className="text-sm text-gray-500 capitalize">{categoryName}</p>
                         </div>
-                        {expense.notes && (
+                        {expense.notes && expense.notes !== '' && (
                           <p className="text-sm text-gray-600 mt-1">{expense.notes}</p>
                         )}
                       </div>
@@ -134,7 +106,7 @@ export default function ExpensesList({ expenses, isLoading, onDelete }: Expenses
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-2xl font-bold text-gray-900">
-                          ${expense.amount.toFixed(2)}
+                          ${Number(expense.amount).toFixed(2)}
                         </p>
                       </div>
                       

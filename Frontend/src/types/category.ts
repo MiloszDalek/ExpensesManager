@@ -10,4 +10,5 @@ export interface ApiCategoryResponse {
   user_id?: number | null;
   group_id?: number | null;
   created_at: ISODateTimeString;
+  // icon_key?: string; // TODO: obsługa ikon kategorii w przyszłości
 }

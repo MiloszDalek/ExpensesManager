@@ -1,0 +1,31 @@
+{
+  "category": {
+    "Groceries": "Groceries",
+    "Transport": "Transport",
+    "Home": "Home",
+    "Bills": "Bills",
+    "Lifestyle": "Lifestyle",
+    "Health": "Health",
+    "Other": "Other",
+    "Custom": "Custom",
+    "Food": "Food",
+    "All": "All"
+  },
+  "ui": {
+    "selectLanguage": "Select language",
+    "change": "Change",
+    "category": "Category",
+    "allCategories": "All categories",
+    "search": "Search...",
+    "selectCategory": "Select category",
+    "chooseGroup": "Choose a group on the left and a subcategory on the right.",
+    "noCategories": "No categories in this group.",
+    "personalExpenses": "Personal Expenses",
+    "trackSpending": "Track your spending",
+    "total": "Total",
+    "addExpense": "Add Expense",
+    "loadMore": "Load More",
+    "errorLoadingData": "Error Loading Data",
+    "somethingWentWrong": "Something went wrong"
+  }
+}

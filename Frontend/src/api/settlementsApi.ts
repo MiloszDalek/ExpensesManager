@@ -11,4 +11,14 @@ export const settlementsApi = {
     const { data } = await client.post<ApiSettlementResponse[]>("/settlements/total/cash", payload);
     return data;
   },
+
+  getByGroup: async (groupId: number, params?: { limit?: number; offset?: number }): Promise<ApiSettlementResponse[]> => {
+    const { data } = await client.get<ApiSettlementResponse[]>(`/settlements/groups/${groupId}/all`, { params });
+    return data;
+  },
+
+  getByUser: async (params?: { limit?: number; offset?: number }): Promise<ApiSettlementResponse[]> => {
+    const { data } = await client.get<ApiSettlementResponse[]>("/settlements/user/all", { params });
+    return data;
+  },
 };

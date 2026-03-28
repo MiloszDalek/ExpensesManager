@@ -34,7 +34,7 @@ def create_total_settlement(
     return service.create_total_settlement(settlement_in, current_user.id)
 
 
-@settlement_router.get("/{group_id}/group/all", response_model=list[SettlementResponse])
+@settlement_router.get("/groups/{group_id}/all", response_model=list[SettlementResponse])
 def get_settlements_from_group(
     group_id: int,
     limit: int = Query(20, le=100),

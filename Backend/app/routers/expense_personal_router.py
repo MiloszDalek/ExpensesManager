@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from app.services import ExpensePersonalService
 from app.database import get_db
@@ -24,12 +24,14 @@ def create_personal_expense(
     return service.create_personal_expense(expense_in, current_user.id)
 
 
-@expense_personal_router.get("/all", response_model=list[PersonalExpenseResponse], status_code=status.HTTP_200_OK) # only for debuging
-def get_all_personal_expenses(
+@expense_personal_router.get("/", response_model=list[PersonalExpenseResponse], status_code=status.HTTP_200_OK)
+def get_personal_expenses(
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
     service: ExpensePersonalService = Depends(get_expense_service),
     current_user: User = Depends(get_current_active_user)
 ):
-    return service.get_all_personal_expenses(current_user.id)
+    return service.get_personal_expenses(current_user.id, limit, offset)
 
 
 @expense_personal_router.patch("/{expense_id}", response_model=PersonalExpenseResponse, status_code=status.HTTP_200_OK)
