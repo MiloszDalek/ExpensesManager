@@ -64,8 +64,62 @@
     "errorLoadingData": "Błąd ładowania danych",
     "somethingWentWrong": "Coś poszło nie tak"
   },
+  "globalHeader": {
+    "appName": "Expenses Manager",
+    "appTagline": "Wydatki osobiste i grupowe",
+    "navDashboard": "Pulpit",
+    "navGroups": "Grupy",
+    "navPersonal": "Osobiste",
+    "navAdmin": "Admin",
+    "login": "Zaloguj",
+    "register": "Rejestracja",
+    "logout": "Wyloguj",
+    "openMenu": "Otwórz menu",
+    "closeMenu": "Zamknij menu",
+    "loggedAs": "Zalogowany jako {{username}}"
+  },
   "languageSwitcher": {
     "selectLanguage": "Wybierz język"
+  },
+  "authPages": {
+    "login": {
+      "title": "Logowanie",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Hasło",
+      "passwordPlaceholder": "********",
+      "submit": "Zaloguj",
+      "submitLoading": "Logowanie...",
+      "noAccount": "Nie masz konta?",
+      "signUp": "Zarejestruj się",
+      "errors": {
+        "loginFailed": "Logowanie nie powiodło się"
+      }
+    },
+    "register": {
+      "title": "Załóż konto",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "usernameLabel": "Nazwa użytkownika",
+      "usernamePlaceholder": "Twoje imię",
+      "passwordLabel": "Hasło",
+      "passwordPlaceholder": "********",
+      "confirmPasswordLabel": "Potwierdź hasło",
+      "confirmPasswordPlaceholder": "********",
+      "submit": "Zarejestruj",
+      "submitLoading": "Tworzenie konta...",
+      "alreadyHaveAccount": "Masz już konto?",
+      "logIn": "Zaloguj",
+      "errors": {
+        "passwordsDoNotMatch": "Hasła nie są takie same",
+        "registrationFailed": "Rejestracja nie powiodła się"
+      }
+    }
+  },
+  "homePage": {
+    "title": "Witaj w Expenses Manager",
+    "subtitle": "Łatwo śledź wydatki osobiste i grupowe",
+    "login": "Zaloguj"
   },
   "expenseFilters": {
     "category": "Kategoria",

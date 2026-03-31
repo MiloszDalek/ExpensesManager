@@ -10,28 +10,31 @@ import RegisterPage from "@/pages/RegisterPage";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
+import AppLayout from "@/components/layout/AppLayout";
 
 
 const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        {/* Admin */}
-        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route element={<AppLayout />}>
+          {/* Admin */}
+          <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
 
-         {/* Public */}
-        <Route path="/home" element={<PublicRoute><HomePage /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          {/* Public */}
+          <Route path="/home" element={<PublicRoute><HomePage /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-        {/* Private */}
-        <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-        <Route path="/groups" element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
-        <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
+          {/* Private */}
+          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/groups" element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
+          <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
 
-        {/* default redirect */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="*" element={<NotFoundPage />} />
+          {/* default redirect */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
     </Router>
   );

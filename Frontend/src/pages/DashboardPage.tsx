@@ -20,7 +20,7 @@ import MockData from "@/mocks/dashboard-mock-data.json";
 
 export default function DashboardPage() {
   
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
 
   if (!user) {
@@ -53,14 +53,6 @@ export default function DashboardPage() {
                 New Group
               </Button>
             </Link>
-
-            <Button
-              variant="outline"
-              onClick={logout}
-              className="border-red-500 text-red-600 hover:bg-red-50"
-            >
-              Logout
-            </Button>
           </div>
         </motion.div>
 

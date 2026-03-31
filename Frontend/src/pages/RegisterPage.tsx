@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { register } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -21,7 +23,7 @@ export default function RegisterPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError(t("authPages.register.errors.passwordsDoNotMatch"));
       return;
     }
 
@@ -32,7 +34,7 @@ export default function RegisterPage() {
       await register(email, username, password);
       navigate("/login");
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Registration failed");
+      setError(err.response?.data?.detail || t("authPages.register.errors.registrationFailed"));
     } finally {
       setLoading(false);
     }
@@ -41,9 +43,9 @@ export default function RegisterPage() {
   const passwordsMatch = password === confirmPassword;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+        <h1 className="text-2xl font-bold mb-6 text-center">{t("authPages.register.title")}</h1>
 
         {error && (
           <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
@@ -52,46 +54,46 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
 
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">{t("authPages.register.emailLabel")}</label>
             <Input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t("authPages.register.emailPlaceholder")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Username</label>
+            <label className="block text-sm font-medium mb-1">{t("authPages.register.usernameLabel")}</label>
             <Input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Your name"
+              placeholder={t("authPages.register.usernamePlaceholder")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label className="block text-sm font-medium mb-1">{t("authPages.register.passwordLabel")}</label>
             <Input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="********"
+              placeholder={t("authPages.register.passwordPlaceholder")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Confirm password</label>
+            <label className="block text-sm font-medium mb-1">{t("authPages.register.confirmPasswordLabel")}</label>
             <Input
               type="password"
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="********"
+              placeholder={t("authPages.register.confirmPasswordPlaceholder")}
               className={
                 !passwordsMatch && confirmPassword.length > 0
                   ? "border-red-500"
@@ -100,7 +102,7 @@ export default function RegisterPage() {
             />
 
             {!passwordsMatch && confirmPassword.length > 0 && (
-              <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+              <p className="text-red-500 text-sm mt-1">{t("authPages.register.errors.passwordsDoNotMatch")}</p>
             )}
 
             {passwordError && (
@@ -114,14 +116,14 @@ export default function RegisterPage() {
             className="w-full bg-purple-500 hover:bg-purple-600 text-white"
             disabled={loading}
           >
-            {loading ? "Creating account..." : "Sign up"}
+            {loading ? t("authPages.register.submitLoading") : t("authPages.register.submit")}
           </Button>
         </form>
 
         <p className="text-sm text-gray-500 mt-4 text-center">
-          Already have an account?{" "}
+          {t("authPages.register.alreadyHaveAccount")}{" "}
           <Link to="/login" className="text-purple-500 hover:underline">
-            Log in
+            {t("authPages.register.logIn")}
           </Link>
         </p>
       </div>

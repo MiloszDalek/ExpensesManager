@@ -74,8 +74,62 @@
     "errorLoadingData": "Error Loading Data",
     "somethingWentWrong": "Something went wrong"
   },
+  "globalHeader": {
+    "appName": "Expenses Manager",
+    "appTagline": "Personal and group spending",
+    "navDashboard": "Dashboard",
+    "navGroups": "Groups",
+    "navPersonal": "Personal",
+    "navAdmin": "Admin",
+    "login": "Log in",
+    "register": "Register",
+    "logout": "Log out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "loggedAs": "Signed in as {{username}}"
+  },
   "languageSwitcher": {
     "selectLanguage": "Select language"
+  },
+  "authPages": {
+    "login": {
+      "title": "Login",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "********",
+      "submit": "Login",
+      "submitLoading": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "errors": {
+        "loginFailed": "Login failed"
+      }
+    },
+    "register": {
+      "title": "Create Account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Your name",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "********",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "********",
+      "submit": "Sign up",
+      "submitLoading": "Creating account...",
+      "alreadyHaveAccount": "Already have an account?",
+      "logIn": "Log in",
+      "errors": {
+        "passwordsDoNotMatch": "Passwords do not match",
+        "registrationFailed": "Registration failed"
+      }
+    }
+  },
+  "homePage": {
+    "title": "Welcome to Expenses Manager",
+    "subtitle": "Track your personal and group expenses easily",
+    "login": "Login"
   },
   "expenseFilters": {
     "category": "Category",

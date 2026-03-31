@@ -9,7 +9,6 @@ import { format, startOfMonth, subMonths } from "date-fns";
 import AddExpenseDialog from "../components/expenses/AddExpenseDialog";
 import ExpensesList from "../components/expenses/ExpensesList";
 import ExpenseFilters from "../components/expenses/ExpenseFilters";
-import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { expensesPersonalApi } from "@/api/expensesPersonalApi";
 import { categoriesApi } from "@/api/categoriesApi";
@@ -293,7 +292,6 @@ export default function PersonalExpensesPage() {
               <Plus className="w-4 h-4 mr-2" />
               {t("personalExpensesPage.addExpense")}
             </Button>
-            <LanguageSwitcher />
           </div>
         </motion.div>
 
