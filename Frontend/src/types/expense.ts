@@ -33,6 +33,7 @@ export interface ApiPersonalExpenseListParams {
   date_from?: string;
   date_to?: string;
   category_id?: number;
+  category_ids?: number[];
   currency?: CurrencyEnum;
   sort_by?: PersonalExpenseSortBy;
   sort_order?: PersonalExpenseSortOrder;

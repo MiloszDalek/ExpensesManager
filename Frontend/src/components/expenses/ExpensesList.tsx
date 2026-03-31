@@ -40,7 +40,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
 
   const getCategoryLabel = (category: ApiCategoryResponse | null): string => {
     if (!category) {
-      return t("category.Other", { defaultValue: "Other" });
+      return t("category.other", { defaultValue: "Other" });
     }
 
     if (category.user_id == null) {

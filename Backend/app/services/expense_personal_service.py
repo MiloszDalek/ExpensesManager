@@ -18,6 +18,34 @@ class ExpensePersonalService:
     
     # -- Personal Expenses
 
+    def _resolve_category_ids(
+        self,
+        user_id: int,
+        category_id: int | None = None,
+        category_ids: list[int] | None = None,
+    ) -> list[int] | None:
+        resolved_ids: list[int] = []
+
+        if category_id is not None:
+            resolved_ids.append(category_id)
+
+        if category_ids:
+            resolved_ids.extend(category_ids)
+
+        if not resolved_ids:
+            return None
+
+        # Preserve insertion order while deduplicating.
+        unique_ids = list(dict.fromkeys(resolved_ids))
+
+        for current_category_id in unique_ids:
+            if current_category_id <= 0:
+                raise HTTPException(status_code=400, detail="category_ids must contain only positive integers")
+
+            self.category_service.validate_available_for_personal_expense(current_category_id, user_id)
+
+        return unique_ids
+
     def create_personal_expense(self, expense_in: PersonalExpenseCreate, user_id: int):
         if expense_in.amount <= 0:
             raise HTTPException(status_code=400, detail="Amount must be greater than 0")
@@ -57,6 +85,7 @@ class ExpensePersonalService:
         date_from: date | None = None,
         date_to: date | None = None,
         category_id: int | None = None,
+        category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         sort_by: Literal["expense_date", "amount", "created_at"] = "expense_date",
         sort_order: Literal["asc", "desc"] = "desc",
@@ -64,8 +93,11 @@ class ExpensePersonalService:
         if date_from and date_to and date_from > date_to:
             raise HTTPException(status_code=400, detail="date_from cannot be greater than date_to")
 
-        if category_id is not None:
-            self.category_service.validate_available_for_personal_expense(category_id, user_id)
+        resolved_category_ids = self._resolve_category_ids(
+            user_id=user_id,
+            category_id=category_id,
+            category_ids=category_ids,
+        )
 
         date_from_dt = datetime.combine(date_from, time.min) if date_from else None
         date_to_dt = datetime.combine(date_to, time.max) if date_to else None
@@ -76,7 +108,7 @@ class ExpensePersonalService:
             offset=offset,
             date_from=date_from_dt,
             date_to=date_to_dt,
-            category_id=category_id,
+            category_ids=resolved_category_ids,
             currency=currency,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -89,14 +121,18 @@ class ExpensePersonalService:
         date_from: date | None = None,
         date_to: date | None = None,
         category_id: int | None = None,
+        category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         top_categories_limit: int = 5,
     ):
         if date_from and date_to and date_from > date_to:
             raise HTTPException(status_code=400, detail="date_from cannot be greater than date_to")
 
-        if category_id is not None:
-            self.category_service.validate_available_for_personal_expense(category_id, user_id)
+        resolved_category_ids = self._resolve_category_ids(
+            user_id=user_id,
+            category_id=category_id,
+            category_ids=category_ids,
+        )
 
         date_from_dt = datetime.combine(date_from, time.min) if date_from else None
         date_to_dt = datetime.combine(date_to, time.max) if date_to else None
@@ -105,7 +141,7 @@ class ExpensePersonalService:
             user_id=user_id,
             date_from=date_from_dt,
             date_to=date_to_dt,
-            category_id=category_id,
+            category_ids=resolved_category_ids,
             currency=currency,
             top_categories_limit=top_categories_limit,
         )

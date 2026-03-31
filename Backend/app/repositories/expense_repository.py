@@ -24,7 +24,7 @@ class ExpenseRepository:
         user_id: int,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
-        category_id: int | None = None,
+        category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
     ):
         query = query.filter(Expense.user_id == user_id, Expense.group_id.is_(None))
@@ -35,8 +35,8 @@ class ExpenseRepository:
         if date_to:
             query = query.filter(Expense.expense_date <= date_to)
 
-        if category_id is not None:
-            query = query.filter(Expense.category_id == category_id)
+        if category_ids:
+            query = query.filter(Expense.category_id.in_(category_ids))
 
         if currency is not None:
             query = query.filter(Expense.currency == currency)
@@ -51,7 +51,7 @@ class ExpenseRepository:
         offset: int,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
-        category_id: int | None = None,
+        category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         sort_by: Literal["expense_date", "amount", "created_at"] = "expense_date",
         sort_order: Literal["asc", "desc"] = "desc",
@@ -61,7 +61,7 @@ class ExpenseRepository:
             user_id=user_id,
             date_from=date_from,
             date_to=date_to,
-            category_id=category_id,
+            category_ids=category_ids,
             currency=currency,
         )
 
@@ -94,7 +94,7 @@ class ExpenseRepository:
         user_id: int,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
-        category_id: int | None = None,
+        category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         top_categories_limit: int = 5,
     ):
@@ -104,7 +104,7 @@ class ExpenseRepository:
                 user_id=user_id,
                 date_from=date_from,
                 date_to=date_to,
-                category_id=category_id,
+                category_ids=category_ids,
                 currency=currency,
             )
             .scalar()
@@ -120,7 +120,7 @@ class ExpenseRepository:
                 user_id=user_id,
                 date_from=date_from,
                 date_to=date_to,
-                category_id=category_id,
+                category_ids=category_ids,
                 currency=currency,
             )
             .group_by(Expense.currency)
@@ -137,7 +137,7 @@ class ExpenseRepository:
                 user_id=user_id,
                 date_from=date_from,
                 date_to=date_to,
-                category_id=category_id,
+                category_ids=category_ids,
                 currency=currency,
             )
             .group_by(Expense.category_id, Category.name)

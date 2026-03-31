@@ -31,6 +31,9 @@ type CategoryGroupId =
   | "bills"
   | "lifestyle"
   | "health"
+  | "finance"
+  | "education"
+  | "family"
   | "other"
   | "custom";
 
@@ -44,17 +47,37 @@ const CATEGORY_GROUP_ORDER: CategoryGroupId[] = [
   "bills",
   "lifestyle",
   "health",
+  "finance",
+  "education",
+  "family",
   "other",
   "custom",
 ];
 
+// Explicit mapping for backend default categories (DefaultExpenseCategory enum values).
+const CATEGORY_GROUP_DEFAULT_CATEGORY_NAMES: Record<Exclude<CategoryBucketGroupId, "custom">, string[]> = {
+  food: ["groceries", "restaurants", "coffee_snacks", "food_delivery"],
+  transport: ["public_transport", "fuel", "taxi_rideshare", "parking_tolls", "vehicle_maintenance"],
+  home: ["rent_mortgage", "household_supplies", "home_repairs"],
+  bills: ["utilities", "internet_phone", "subscriptions", "insurance"],
+  lifestyle: ["entertainment", "clothing", "travel", "gifts", "personal_care"],
+  health: ["medical", "pharmacy", "fitness"],
+  finance: ["bank_fees", "savings_investments"],
+  education: ["courses_books"],
+  family: ["kids_family", "pets"],
+  other: ["other"],
+};
+
 const CATEGORY_GROUP_MATCHERS: Array<{ group: Exclude<CategoryBucketGroupId, "custom">; keywords: string[] }> = [
-  { group: "food", keywords: ["food", "meal", "restaurant", "grocery", "groceries", "jedzenie", "zakupy spozywcze"] },
-  { group: "transport", keywords: ["transport", "travel", "fuel", "car", "taxi", "bus", "train", "uber"] },
+  { group: "food", keywords: ["food", "foods", "meal", "meals", "restaurant", "restaurants", "grocery", "groceries", "coffee", "snack", "snacks", "delivery"] },
+  { group: "transport", keywords: ["transport", "transports", "fuel", "taxi", "bus", "train", "uber", "parking", "toll"] },
   { group: "home", keywords: ["home", "rent", "accommodation", "furniture", "house", "mieszkanie", "czynsz"] },
-  { group: "bills", keywords: ["bill", "subscription", "internet", "phone", "utility", "media", "oplata", "rachunek"] },
-  { group: "lifestyle", keywords: ["shopping", "entertainment", "hobby", "fun", "clothes", "gift", "rozrywka"] },
-  { group: "health", keywords: ["health", "medical", "doctor", "pharmacy", "sport", "gym", "zdrowie"] },
+  { group: "bills", keywords: ["bill", "bills", "subscription", "subscriptions", "internet", "phone", "utility", "utilities", "media", "insurance", "oplata", "rachunek"] },
+  { group: "lifestyle", keywords: ["shopping", "entertainment", "hobby", "fun", "clothes", "gift", "gifts", "personal care", "rozrywka"] },
+  { group: "health", keywords: ["health", "medical", "doctor", "pharmacy", "sport", "gym", "zdrowie", "fitness"] },
+  { group: "finance", keywords: ["finance", "finances", "bank", "fee", "fees", "saving", "savings", "investment", "investments", "oszczed", "finans"] },
+  { group: "education", keywords: ["education", "course", "book", "school", "university", "nauka", "kurs"] },
+  { group: "family", keywords: ["family", "kid", "child", "baby", "pet", "dzieci", "rodzin", "zwierzak"] },
 ];
 
 function normalizeCategoryName(name: string): string {
@@ -62,7 +85,35 @@ function normalizeCategoryName(name: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
     .trim();
+}
+
+function splitNameToTokens(normalizedName: string): string[] {
+  return normalizedName.split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function matchesKeyword(normalizedName: string, keyword: string): boolean {
+  const normalizedKeyword = normalizeCategoryName(keyword);
+
+  if (normalizedKeyword.includes(" ")) {
+    return normalizedName.includes(normalizedKeyword);
+  }
+
+  const tokens = splitNameToTokens(normalizedName);
+  return tokens.includes(normalizedKeyword);
+}
+
+function resolveCategoryGroupFromDefaultCategoryName(normalizedName: string): CategoryBucketGroupId | null {
+  for (const [group, categoryNames] of Object.entries(CATEGORY_GROUP_DEFAULT_CATEGORY_NAMES) as Array<
+    [Exclude<CategoryBucketGroupId, "custom">, string[]]
+  >) {
+    if (categoryNames.some((categoryName) => normalizeCategoryName(categoryName) === normalizedName)) {
+      return group;
+    }
+  }
+
+  return null;
 }
 
 function resolveCategoryGroup(category: ApiCategoryResponse): CategoryBucketGroupId {
@@ -71,9 +122,14 @@ function resolveCategoryGroup(category: ApiCategoryResponse): CategoryBucketGrou
   }
 
   const normalizedName = normalizeCategoryName(category.name);
+  const mappedDefaultGroup = resolveCategoryGroupFromDefaultCategoryName(normalizedName);
+
+  if (mappedDefaultGroup) {
+    return mappedDefaultGroup;
+  }
 
   for (const matcher of CATEGORY_GROUP_MATCHERS) {
-    if (matcher.keywords.some((keyword) => normalizedName.includes(keyword))) {
+    if (matcher.keywords.some((keyword) => matchesKeyword(normalizedName, keyword))) {
       return matcher.group;
     }
   }
@@ -93,7 +149,7 @@ export default function CategoryPicker({
 
   function getCategoryLabel(category: ApiCategoryResponse): string {
     if (category.user_id == null) {
-      return t(`category.${category.name}`);
+      return t(`category.${category.name}`, { defaultValue: category.name });
     }
     return category.name;
   }
@@ -114,6 +170,9 @@ export default function CategoryPicker({
       bills: [],
       lifestyle: [],
       health: [],
+      finance: [],
+      education: [],
+      family: [],
       other: [],
       custom: [],
     };
