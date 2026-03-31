@@ -145,6 +145,7 @@
     "allCategories": "Wszystkie kategorie",
     "search": "Wyszukaj...",
     "noCategories": "Brak kategorii w tej grupie.",
+    "noSearchResults": "Brak wyników dla podanej frazy.",
     "customCategoryPlaceholder": "Nowa kategoria...",
     "addCustomCategoryTile": "Dodaj własną kategorię",
     "addCustomCategoryTitle": "Dodaj własną kategorię",

@@ -281,6 +281,8 @@ export default function CategoryPicker({
     }
   };
 
+  const hasSearchQuery = search.trim().length > 0;
+
   return (
     <>
       {trigger === "button" && (
@@ -305,7 +307,7 @@ export default function CategoryPicker({
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-1rem)] sm:max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("expenseFilters.selectCategory")}</DialogTitle>
             <DialogDescription>
@@ -424,7 +426,9 @@ export default function CategoryPicker({
                 })}
 
                 {categoriesInSelectedGroup.length === 0 ? (
-                  <p className="text-sm text-gray-500 px-1 py-2">{t("expenseFilters.noCategories")}</p>
+                  <p className="text-sm text-gray-500 px-1 py-2">
+                    {hasSearchQuery ? t("expenseFilters.noSearchResults") : t("expenseFilters.noCategories")}
+                  </p>
                 ) : null}
 
                 {deleteCustomCategoryError ? (
@@ -437,7 +441,7 @@ export default function CategoryPicker({
       </Dialog>
 
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-1rem)] sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{t("expenseFilters.addCustomCategoryTitle")}</DialogTitle>
           </DialogHeader>

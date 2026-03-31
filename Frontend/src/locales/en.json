@@ -155,6 +155,7 @@
     "allCategories": "All categories",
     "search": "Search...",
     "noCategories": "No categories in this group.",
+    "noSearchResults": "No matching categories found.",
     "customCategoryPlaceholder": "New custom category...",
     "addCustomCategoryTile": "Add own custom category",
     "addCustomCategoryTitle": "Add custom category",
