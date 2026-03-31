@@ -37,6 +37,27 @@ class PersonalExpenseResponse(ExpenseBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PersonalExpenseSummaryCurrency(BaseModel):
+    currency: CurrencyEnum
+    total_amount: Decimal
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PersonalExpenseSummaryCategory(BaseModel):
+    category_id: int
+    category_name: str
+    total_amount: Decimal
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PersonalExpenseSummaryResponse(BaseModel):
+    total_count: int
+    totals_by_currency: list[PersonalExpenseSummaryCurrency]
+    top_categories: list[PersonalExpenseSummaryCategory]
+
+
 class ExpenseShareSchema(BaseModel):
     user_id: int
     share_amount: Decimal

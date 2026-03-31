@@ -181,7 +181,7 @@ export default function CategoryPicker({
   return (
     <>
       {trigger === "button" && (
-        <div className={mobileInset ? "px-4 sm:px-0" : ""}>
+        <div className={mobileInset ? "sm:px-0" : ""}>
           <Button
             variant="outline"
             className="w-full justify-between"

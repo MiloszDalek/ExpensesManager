@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingBag, Car, Home, Utensils, Smartphone, Heart, Wallet } from "lucide-react";
+import { Trash2, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,18 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ApiPersonalExpenseResponse } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
+import { getCategoryIcon } from "@/utils/category";
 
-// TODO: Po dodaniu icon_key w API, renderuj ikonę kategorii obok jej nazwy
-
-// Default icon and color mappings
-const defaultIcon = Smartphone;
+// TODO: Po dodaniu icon_key w API, użyj icon_key zamiast mapowania po name
 const defaultColor = "from-gray-500 to-slate-500";
-
-// Helper function to get category name by ID
-const getCategoryName = (categoryId: number, categories: ApiCategoryResponse[]): string => {
-  const category = categories.find(c => c.id === categoryId);
-  return category?.name || 'Other';
-};
 
 type ExpensesListProps = {
   expenses: ApiPersonalExpenseResponse[];
@@ -38,6 +32,24 @@ type ExpensesListProps = {
 
 
 export default function ExpensesList({ expenses, categories, isLoading, onDelete }: ExpensesListProps) {
+  const { t } = useTranslation();
+
+  const getCategory = (categoryId: number) => {
+    return categories.find((c) => c.id === categoryId) ?? null;
+  };
+
+  const getCategoryLabel = (category: ApiCategoryResponse | null): string => {
+    if (!category) {
+      return t("category.Other", { defaultValue: "Other" });
+    }
+
+    if (category.user_id == null) {
+      return t(`category.${category.name}`, { defaultValue: category.name });
+    }
+
+    return category.name;
+  };
+
   if (isLoading) {
     return (
       <div className="grid gap-4">
@@ -57,8 +69,8 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
       <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
         <CardContent className="p-12 text-center">
           <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No expenses yet</h3>
-          <p className="text-gray-500">Start tracking your spending by adding your first expense</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("expensesList.emptyTitle")}</h3>
+          <p className="text-gray-500">{t("expensesList.emptyDescription")}</p>
         </CardContent>
       </Card>
     );
@@ -68,9 +80,11 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
     <div className="grid gap-4">
       <AnimatePresence>
         {expenses.map((expense, index) => {
-          const categoryName = getCategoryName(expense.category_id, categories);
-          const Icon = defaultIcon; // We'll enhance this with proper icon mapping later
-          const gradient = defaultColor; // We'll enhance this with proper color mapping later
+          const category = getCategory(expense.category_id);
+          const categoryName = getCategoryLabel(category);
+          const iconLookupKey = (category?.name ?? "other").toLowerCase();
+          const Icon = getCategoryIcon(iconLookupKey);
+          const gradient = defaultColor;
           
           return (
             <motion.div
@@ -106,7 +120,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-2xl font-bold text-gray-900">
-                          ${Number(expense.amount).toFixed(2)}
+                          {Number(expense.amount).toFixed(2)} {expense.currency}
                         </p>
                       </div>
                       
@@ -122,15 +136,15 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("expensesList.deleteTitle")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete this expense. This action cannot be undone.
+                              {t("expensesList.deleteDescription")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t("expensesList.cancel")}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => onDelete(expense.id)} className="bg-red-600 hover:bg-red-700">
-                              Delete
+                              {t("expensesList.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

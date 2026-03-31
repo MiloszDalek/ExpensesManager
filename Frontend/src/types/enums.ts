@@ -1,4 +1,29 @@
-export type CurrencyEnum = "PLN" | "USD" | "EUR";
+export const SUPPORTED_CURRENCIES = [
+	"AED",
+	"AUD",
+	"CAD",
+	"CHF",
+	"CNY",
+	"CZK",
+	"DKK",
+	"PLN",
+	"EUR",
+	"GBP",
+	"HKD",
+	"HUF",
+	"ILS",
+	"JPY",
+	"NOK",
+	"NZD",
+	"RON",
+	"SEK",
+	"SGD",
+	"TRY",
+	"USD",
+	"ZAR",
+] as const;
+
+export type CurrencyEnum = (typeof SUPPORTED_CURRENCIES)[number];
 export type SplitType = "equal" | "percent" | "exact";
 
 export type GroupStatus = "active" | "archived";

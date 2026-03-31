@@ -23,6 +23,31 @@
 import type { DecimalLike, ISODateTimeString } from "./common";
 import type { CurrencyEnum, SplitType } from "./enums";
 
+export type PersonalExpenseSortBy = "expense_date" | "amount" | "created_at";
+export type PersonalExpenseSortOrder = "asc" | "desc";
+export type PersonalExpensePeriodPreset = "this_month" | "previous_month" | "custom";
+
+export interface ApiPersonalExpenseListParams {
+  limit?: number;
+  offset?: number;
+  date_from?: string;
+  date_to?: string;
+  category_id?: number;
+  currency?: CurrencyEnum;
+  sort_by?: PersonalExpenseSortBy;
+  sort_order?: PersonalExpenseSortOrder;
+}
+
+export interface PersonalExpensesFiltersState {
+  category: string;
+  currency: CurrencyEnum | "all";
+  periodPreset: PersonalExpensePeriodPreset;
+  dateFrom: string;
+  dateTo: string;
+  sortBy: PersonalExpenseSortBy;
+  sortOrder: PersonalExpenseSortOrder;
+}
+
 export interface ApiExpenseShare {
   user_id: number;
   share_amount: DecimalLike;
@@ -52,6 +77,23 @@ export interface ApiPersonalExpenseUpdate {
 export interface ApiPersonalExpenseResponse extends ApiPersonalExpenseCreate {
   id: number;
   created_at: ISODateTimeString;
+}
+
+export interface ApiPersonalExpenseSummaryCurrency {
+  currency: CurrencyEnum;
+  total_amount: DecimalLike;
+}
+
+export interface ApiPersonalExpenseSummaryCategory {
+  category_id: number;
+  category_name: string;
+  total_amount: DecimalLike;
+}
+
+export interface ApiPersonalExpenseSummaryResponse {
+  total_count: number;
+  totals_by_currency: ApiPersonalExpenseSummaryCurrency[];
+  top_categories: ApiPersonalExpenseSummaryCategory[];
 }
 
 export interface ApiGroupExpenseCreate extends ApiPersonalExpenseCreate {

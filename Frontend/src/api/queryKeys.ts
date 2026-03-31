@@ -1,3 +1,5 @@
+import type { ApiPersonalExpenseListParams } from "@/types";
+
 export const queryKeys = {
   groups: {
     all: ["groups", "all"] as const,
@@ -11,7 +13,11 @@ export const queryKeys = {
   },
 
   personalExpenses: {
-    all: ["expenses", "personal", "all"] as const,
+    all: ["expenses", "personal"] as const,
+    list: (params?: ApiPersonalExpenseListParams) =>
+      ["expenses", "personal", "list", params ?? {}] as const,
+    summary: (params?: Omit<ApiPersonalExpenseListParams, "limit" | "offset">) =>
+      ["expenses", "personal", "summary", params ?? {}] as const,
   },
 
   categories: {

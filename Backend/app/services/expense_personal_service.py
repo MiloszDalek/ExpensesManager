@@ -1,9 +1,13 @@
+from datetime import date, datetime, time
+from typing import Literal
+
 from sqlalchemy.orm import Session
 from app.repositories import ExpenseRepository
 from .category_service import CategoryService
 from app.models import Expense
 from app.schemas import PersonalExpenseCreate, PersonalExpenseUpdate
 from fastapi import HTTPException
+from app.enums import CurrencyEnum
 
 
 class ExpensePersonalService:
@@ -45,8 +49,66 @@ class ExpensePersonalService:
             raise
     
 
-    def get_personal_expenses(self, user_id: int, limit: int, offset: int):
-        return self.expense_repo.get_personal_by_user_id(user_id, limit, offset)
+    def get_personal_expenses(
+        self,
+        user_id: int,
+        limit: int,
+        offset: int,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        category_id: int | None = None,
+        currency: CurrencyEnum | None = None,
+        sort_by: Literal["expense_date", "amount", "created_at"] = "expense_date",
+        sort_order: Literal["asc", "desc"] = "desc",
+    ):
+        if date_from and date_to and date_from > date_to:
+            raise HTTPException(status_code=400, detail="date_from cannot be greater than date_to")
+
+        if category_id is not None:
+            self.category_service.validate_available_for_personal_expense(category_id, user_id)
+
+        date_from_dt = datetime.combine(date_from, time.min) if date_from else None
+        date_to_dt = datetime.combine(date_to, time.max) if date_to else None
+
+        return self.expense_repo.get_personal_by_user_id(
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            category_id=category_id,
+            currency=currency,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+
+
+    def get_personal_expenses_summary(
+        self,
+        user_id: int,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        category_id: int | None = None,
+        currency: CurrencyEnum | None = None,
+        top_categories_limit: int = 5,
+    ):
+        if date_from and date_to and date_from > date_to:
+            raise HTTPException(status_code=400, detail="date_from cannot be greater than date_to")
+
+        if category_id is not None:
+            self.category_service.validate_available_for_personal_expense(category_id, user_id)
+
+        date_from_dt = datetime.combine(date_from, time.min) if date_from else None
+        date_to_dt = datetime.combine(date_to, time.max) if date_to else None
+
+        return self.expense_repo.get_personal_summary(
+            user_id=user_id,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            category_id=category_id,
+            currency=currency,
+            top_categories_limit=top_categories_limit,
+        )
 
 
     def edit_personal_expense(self, expense_id: int, expense_in: PersonalExpenseUpdate, user_id: int):

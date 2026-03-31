@@ -1,6 +1,10 @@
+from datetime import datetime
+from typing import Literal
+
 from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy import func, case
-from app.models import Expense, ExpenseShare
+from app.models import Category, Expense, ExpenseShare
+from app.enums import CurrencyEnum
 
 
 class ExpenseRepository:
@@ -14,15 +18,139 @@ class ExpenseRepository:
         return expense
 
 
-    def get_personal_by_user_id(self, user_id: int, limit: int, offset: int) -> list[Expense]:
-        return (
-            self.db.query(Expense)
-            .filter(Expense.user_id == user_id, Expense.group_id.is_(None))
-            .order_by(Expense.expense_date.desc(), Expense.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+    def _apply_personal_expense_filters(
+        self,
+        query,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_id: int | None = None,
+        currency: CurrencyEnum | None = None,
+    ):
+        query = query.filter(Expense.user_id == user_id, Expense.group_id.is_(None))
+
+        if date_from:
+            query = query.filter(Expense.expense_date >= date_from)
+
+        if date_to:
+            query = query.filter(Expense.expense_date <= date_to)
+
+        if category_id is not None:
+            query = query.filter(Expense.category_id == category_id)
+
+        if currency is not None:
+            query = query.filter(Expense.currency == currency)
+
+        return query
+
+
+    def get_personal_by_user_id(
+        self,
+        user_id: int,
+        limit: int,
+        offset: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_id: int | None = None,
+        currency: CurrencyEnum | None = None,
+        sort_by: Literal["expense_date", "amount", "created_at"] = "expense_date",
+        sort_order: Literal["asc", "desc"] = "desc",
+    ) -> list[Expense]:
+        query = self._apply_personal_expense_filters(
+            query=self.db.query(Expense),
+            user_id=user_id,
+            date_from=date_from,
+            date_to=date_to,
+            category_id=category_id,
+            currency=currency,
+        )
+
+        sort_columns = {
+            "expense_date": Expense.expense_date,
+            "amount": Expense.amount,
+            "created_at": Expense.created_at,
+        }
+        primary_sort_column = sort_columns[sort_by]
+        secondary_sort_column = Expense.expense_date if sort_by != "expense_date" else Expense.created_at
+
+        if sort_order == "asc":
+            query = query.order_by(
+                primary_sort_column.asc(),
+                secondary_sort_column.asc(),
+                Expense.id.asc(),
+            )
+        else:
+            query = query.order_by(
+                primary_sort_column.desc(),
+                secondary_sort_column.desc(),
+                Expense.id.desc(),
+            )
+
+        return query.limit(limit).offset(offset).all()
+
+
+    def get_personal_summary(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_id: int | None = None,
+        currency: CurrencyEnum | None = None,
+        top_categories_limit: int = 5,
+    ):
+        total_count = (
+            self._apply_personal_expense_filters(
+                query=self.db.query(func.count(Expense.id)),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_id=category_id,
+                currency=currency,
+            )
+            .scalar()
+            or 0
+        )
+
+        totals_by_currency = (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.currency.label("currency"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                ),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_id=category_id,
+                currency=currency,
+            )
+            .group_by(Expense.currency)
             .all()
         )
+
+        top_categories = (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                ).join(Category, Category.id == Expense.category_id),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_id=category_id,
+                currency=currency,
+            )
+            .group_by(Expense.category_id, Category.name)
+            .order_by(func.sum(Expense.amount).desc())
+            .limit(top_categories_limit)
+            .all()
+        )
+
+        return {
+            "total_count": total_count,
+            "totals_by_currency": totals_by_currency,
+            "top_categories": top_categories,
+        }
     
 
     def get_all_group_by_group_id(self, group_id: int, limit: int, offset: int):

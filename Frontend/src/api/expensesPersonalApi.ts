@@ -1,7 +1,9 @@
 import client from "./client";
 import type {
   ApiPersonalExpenseCreate,
+  ApiPersonalExpenseListParams,
   ApiPersonalExpenseResponse,
+  ApiPersonalExpenseSummaryResponse,
   ApiPersonalExpenseUpdate,
 } from "@/types";
 
@@ -11,10 +13,26 @@ export const expensesPersonalApi = {
     return data;
   },
 
-  list: async (limit = 20, offset = 0): Promise<ApiPersonalExpenseResponse[]> => {
+  list: async (params: ApiPersonalExpenseListParams = {}): Promise<ApiPersonalExpenseResponse[]> => {
+    const { limit = 20, offset = 0, ...filters } = params;
+
     const { data } = await client.get<ApiPersonalExpenseResponse[]>("/expenses/personal/", {
-      params: { limit, offset },
+      params: {
+        limit,
+        offset,
+        ...filters,
+      },
     });
+    return data;
+  },
+
+  summary: async (
+    params: Omit<ApiPersonalExpenseListParams, "limit" | "offset"> = {}
+  ): Promise<ApiPersonalExpenseSummaryResponse> => {
+    const { data } = await client.get<ApiPersonalExpenseSummaryResponse>("/expenses/personal/summary", {
+      params,
+    });
+
     return data;
   },
 
