@@ -41,6 +41,8 @@ type AddExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (expenseData: ApiPersonalExpenseCreate) => void;
+  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
   categories: ApiCategoryResponse[];
 };
@@ -59,6 +61,8 @@ export default function AddExpenseDialog({
   open,
   onOpenChange,
   onSubmit,
+  onCreateCustomCategory,
+  onDeleteCustomCategory,
   isLoading,
   categories
 }: AddExpenseDialogProps) {
@@ -134,7 +138,7 @@ export default function AddExpenseDialog({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="amount">{t("addExpenseDialog.amount")}</Label>
               <Input
@@ -208,21 +212,24 @@ export default function AddExpenseDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="category">{t("addExpenseDialog.category")}</Label>
-              <CategoryPicker
-                value={formData.category_id.toString()}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  category_id: parseInt(value, 10)
-                }))}
-                categories={categories}
-                trigger="button"
-                showLabel={false}
-                mobileInset={false}
-              />
-            </div>
+          <div className="space-y-1">
+            <Label htmlFor="category">{t("addExpenseDialog.category")}</Label>
+            <CategoryPicker
+              value={formData.category_id.toString()}
+              onValueChange={(value) => setFormData(prev => ({
+                ...prev,
+                category_id: parseInt(value, 10)
+              }))}
+              categories={categories}
+              onCreateCustomCategory={onCreateCustomCategory}
+              onDeleteCustomCategory={onDeleteCustomCategory}
+              trigger="button"
+              showLabel={false}
+              mobileInset={false}
+              showSelectedGroupPrefix
+            />
           </div>
 
           <div className="space-y-1">

@@ -92,7 +92,7 @@ export default function PersonalExpensesPage() {
     isLoading: categoriesLoading,
     error: categoriesError
   } = useQuery<ApiCategoryResponse[]>({
-    queryKey: queryKeys.categories.personal,
+    queryKey: queryKeys.categories.availablePersonal,
     queryFn: () => categoriesApi.getAvailablePersonal(),
     enabled: !!user,
   });
@@ -179,6 +179,39 @@ export default function PersonalExpensesPage() {
     }
 
     setAppliedFilters(draftFilters);
+  };
+
+  const refetchAvailableCategories = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.categories.availablePersonal });
+    await queryClient.refetchQueries({ queryKey: queryKeys.categories.availablePersonal, exact: true });
+  };
+
+  const createCategoryMutation = useMutation<ApiCategoryResponse, Error, string>({
+    mutationFn: async (categoryName) => {
+      const normalizedName = categoryName.trim().toLowerCase();
+      return categoriesApi.createPersonal({ name: normalizedName });
+    },
+    onError: (error) => {
+      console.error("Failed to create personal category:", error);
+    },
+  });
+
+  const deleteCategoryMutation = useMutation<void, Error, number>({
+    mutationFn: (categoryId) => categoriesApi.deletePersonal(categoryId),
+    onError: (error) => {
+      console.error("Failed to delete personal category:", error);
+    },
+  });
+
+  const handleCreateCustomCategory = async (name: string): Promise<ApiCategoryResponse> => {
+    const created = await createCategoryMutation.mutateAsync(name);
+    await refetchAvailableCategories();
+    return created;
+  };
+
+  const handleDeleteCustomCategory = async (categoryId: number): Promise<void> => {
+    await deleteCategoryMutation.mutateAsync(categoryId);
+    await refetchAvailableCategories();
   };
 
   // Create expense mutation
@@ -271,6 +304,8 @@ export default function PersonalExpensesPage() {
           onApplyFilters={handleApplyFilters}
           isApplyDisabled={!hasPendingFilters || hasInvalidDraftDateRange}
           categories={categories}
+          onCreateCustomCategory={handleCreateCustomCategory}
+          onDeleteCustomCategory={handleDeleteCustomCategory}
         />
 
         <ExpensesList
@@ -309,6 +344,8 @@ export default function PersonalExpensesPage() {
         }}
         isLoading={createExpenseMutation.isPending}
         categories={categories}
+        onCreateCustomCategory={handleCreateCustomCategory}
+        onDeleteCustomCategory={handleDeleteCustomCategory}
       />
     </div>
   );

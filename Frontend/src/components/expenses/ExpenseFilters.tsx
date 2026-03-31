@@ -35,6 +35,8 @@ type ExpenseFiltersProps = {
   onApplyFilters: () => void;
   isApplyDisabled?: boolean;
   categories: ApiCategoryResponse[];
+  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
 };
 
 export default function ExpenseFilters({
@@ -44,6 +46,8 @@ export default function ExpenseFilters({
   onApplyFilters,
   isApplyDisabled,
   categories,
+  onCreateCustomCategory,
+  onDeleteCustomCategory,
 }: ExpenseFiltersProps) {
   const { t } = useTranslation();
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
@@ -114,6 +118,8 @@ export default function ExpenseFilters({
             value={filters.category}
             onValueChange={handleCategoryChange}
             categories={categories}
+            onCreateCustomCategory={onCreateCustomCategory}
+            onDeleteCustomCategory={onDeleteCustomCategory}
             trigger="button"
             mobileInset={true}
             showLabel={false}

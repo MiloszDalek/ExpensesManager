@@ -11,6 +11,14 @@ class CategoryService:
     def __init__(self, db: Session):
         self.category_repo = CategoryRepository(db)
         self.group_repo = GroupRepository(db)
+
+    @staticmethod
+    def _normalize_category_name(name: str) -> str:
+        stripped_name = name.strip()
+        if not stripped_name:
+            raise HTTPException(status_code=400, detail="Category name cannot be empty")
+
+        return stripped_name[0].upper() + stripped_name[1:].lower()
         
 
     def get_by_id(self, category_id: int) -> Category:
@@ -53,17 +61,19 @@ class CategoryService:
 
 
     def create_personal_category(self, category_in: CategoryCreate, user_id: int) -> Category:
+        normalized_name = self._normalize_category_name(category_in.name)
+
         existing = self.category_repo.get_by_name_and_user(
-            name=category_in.name,
+            name=normalized_name,
             user_id=user_id,
             group_id=None
         )
         if existing:
-            raise HTTPException(status_code=400, detail=f"Category '{category_in.name}' already exists")    
+            raise HTTPException(status_code=400, detail=f"Category '{normalized_name}' already exists")
 
         try:
             category = Category(
-                name=category_in.name,
+                name=normalized_name,
                 user_id=user_id,
                 group_id=None
             )
@@ -108,8 +118,10 @@ class CategoryService:
         if membership.role != GroupMemberRole.ADMIN:
             raise HTTPException(status_code=403, detail="Not authorized admin role required")
 
+        normalized_name = self._normalize_category_name(category_in.name)
+
         category = Category(
-            name=category_in.name.strip().lower(),
+            name=normalized_name,
             group_id=group_id,
             user_id=None
         )

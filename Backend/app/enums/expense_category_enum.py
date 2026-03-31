@@ -35,9 +35,11 @@ class DefaultExpenseCategory(str, Enum):
     PERSONAL_CARE = "personal_care"
 
     BANK_FEES = "bank_fees"
-    SAVINGS_INVESTMENTS = "savings_investments"
+    SAVINGS = "savings"
+    INVESTMENTS = "investments"
 
-    COURSES_BOOKS = "courses_books"
+    COURSES = "courses"
+    BOOKS = "books"
 
     KIDS_FAMILY = "kids_family"
     PETS = "pets"

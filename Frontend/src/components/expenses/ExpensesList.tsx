@@ -18,10 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ApiPersonalExpenseResponse } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
-import { getCategoryIcon } from "@/utils/category";
-
-// TODO: Po dodaniu icon_key w API, użyj icon_key zamiast mapowania po name
-const defaultColor = "from-gray-500 to-slate-500";
+import { getCategoryIcon, getCategoryVisualStyle } from "@/utils/category";
 
 type ExpensesListProps = {
   expenses: ApiPersonalExpenseResponse[];
@@ -82,9 +79,8 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
         {expenses.map((expense, index) => {
           const category = getCategory(expense.category_id);
           const categoryName = getCategoryLabel(category);
-          const iconLookupKey = (category?.name ?? "other").toLowerCase();
-          const Icon = getCategoryIcon(iconLookupKey);
-          const gradient = defaultColor;
+          const Icon = getCategoryIcon(category ?? "other");
+          const visualStyle = getCategoryVisualStyle(category ?? "other");
           
           return (
             <motion.div
@@ -95,11 +91,11 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
               transition={{ delay: index * 0.05 }}
             >
               <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
-                <div className={`h-1 bg-gradient-to-r ${gradient}`} />
-                <CardContent className="p-6">
+                <div className={`h-1 bg-gradient-to-r ${visualStyle.gradientClass}`} />
+                <CardContent className="py-6 pr-6 pl-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
+                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${visualStyle.gradientClass} flex items-center justify-center shadow-lg`}>
                         <Icon className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1">
