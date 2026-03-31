@@ -9,7 +9,7 @@ export default function LanguageSwitcher() {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <label htmlFor="lang-select">{t("ui.selectLanguage")}: </label>
+      <label htmlFor="lang-select">{t("languageSwitcher.selectLanguage")}: </label>
       <select id="lang-select" value={i18n.language} onChange={handleChange}>
         <option value="pl">Polski</option>
         <option value="en">English</option>

@@ -109,9 +109,9 @@ export default function PersonalExpensesPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-red-600 text-center">
-          <h2 className="text-2xl font-bold mb-2">{t("ui.errorLoadingData", "Error Loading Data")}</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("common.errorLoadingData")}</h2>
           <p className="text-gray-600">
-            {categoriesError?.message || expensesError?.message || t("ui.somethingWentWrong", "Something went wrong")}
+            {categoriesError?.message || expensesError?.message || t("common.somethingWentWrong")}
           </p>
         </div>
       </div>
@@ -138,9 +138,9 @@ export default function PersonalExpensesPage() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t("ui.personalExpenses", "Personal Expenses")}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t("personalExpensesPage.title")}</h1>
             <p className="text-gray-500 mt-2">
-              {t("ui.trackSpending", "Track your spending")} · {t("ui.total", "Total")}: <span className="font-semibold text-purple-600">${totalSpending.toFixed(2)}</span>
+              {t("personalExpensesPage.trackSpending")} · {t("personalExpensesPage.total")}: <span className="font-semibold text-purple-600">${totalSpending.toFixed(2)}</span>
             </p>
           </div>
           <div className="flex flex-row items-center gap-4 w-full md:w-auto justify-end">
@@ -149,7 +149,7 @@ export default function PersonalExpensesPage() {
               className="bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 text-white shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t("ui.addExpense", "Add Expense")}
+              {t("personalExpensesPage.addExpense")}
             </Button>
             <LanguageSwitcher />
           </div>
@@ -179,7 +179,7 @@ export default function PersonalExpensesPage() {
               {isFetchingNextPage ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
               ) : null}
-              {t("ui.loadMore", "Load More")}
+              {t("personalExpensesPage.loadMore")}
             </Button>
           </div>
         )}

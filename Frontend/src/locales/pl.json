@@ -10,21 +10,51 @@
     "other": "Inne",
     "custom": "Własne"
   },
-  "ui": {
-    "selectLanguage": "Wybierz język",
-    "change": "Zmień",
+  "categoryGroups": {
+    "all": "Wszystkie",
+    "food": "Jedzenie",
+    "transport": "Transport",
+    "home": "Dom",
+    "bills": "Rachunki",
+    "lifestyle": "Styl życia",
+    "health": "Zdrowie",
+    "other": "Inne",
+    "custom": "Własne"
+  },
+  "common": {
+    "errorLoadingData": "Błąd ładowania danych",
+    "somethingWentWrong": "Coś poszło nie tak"
+  },
+  "languageSwitcher": {
+    "selectLanguage": "Wybierz język"
+  },
+  "expenseFilters": {
     "category": "Kategoria",
-    "allCategories": "Wszystkie kategorie",
-    "search": "Wyszukaj...",
+    "change": "Zmień",
     "selectCategory": "Wybierz kategorię",
     "chooseGroup": "Wybierz grupę po lewej i podkategorię po prawej.",
-    "noCategories": "Brak kategorii w tej grupie.",
-    "personalExpenses": "Wydatki Osobiste",
+    "allCategories": "Wszystkie kategorie",
+    "search": "Wyszukaj...",
+    "noCategories": "Brak kategorii w tej grupie."
+  },
+  "personalExpensesPage": {
+    "title": "Wydatki Osobiste",
     "trackSpending": "Śledź swoje wydatki",
     "total": "Suma",
     "addExpense": "Dodaj wydatek",
-    "loadMore": "Załaduj więcej",
-    "errorLoadingData": "Błąd ładowania danych",
-    "somethingWentWrong": "Coś poszło nie tak"
+    "loadMore": "Załaduj więcej"
+  },
+  "addExpenseDialog": {
+    "title": "Dodaj wydatek osobisty",
+    "titleLabel": "Tytuł",
+    "titlePlaceholder": "Obiad, Zakupy spożywcze, itp.",
+    "amount": "Kwota",
+    "amountPlaceholder": "0.00",
+    "category": "Kategoria",
+    "date": "Data",
+    "notes": "Notatki (opcjonalnie)",
+    "notesPlaceholder": "Dodatkowe szczegóły...",
+    "cancel": "Anuluj",
+    "submit": "Dodaj wydatek"
   }
 }

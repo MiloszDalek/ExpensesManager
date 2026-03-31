@@ -11,21 +11,51 @@
     "Food": "Food",
     "All": "All"
   },
-  "ui": {
-    "selectLanguage": "Select language",
-    "change": "Change",
+  "categoryGroups": {
+    "all": "All",
+    "food": "Food",
+    "transport": "Transport",
+    "home": "Home",
+    "bills": "Bills",
+    "lifestyle": "Lifestyle",
+    "health": "Health",
+    "other": "Other",
+    "custom": "Custom"
+  },
+  "common": {
+    "errorLoadingData": "Error Loading Data",
+    "somethingWentWrong": "Something went wrong"
+  },
+  "languageSwitcher": {
+    "selectLanguage": "Select language"
+  },
+  "expenseFilters": {
     "category": "Category",
-    "allCategories": "All categories",
-    "search": "Search...",
+    "change": "Change",
     "selectCategory": "Select category",
     "chooseGroup": "Choose a group on the left and a subcategory on the right.",
-    "noCategories": "No categories in this group.",
-    "personalExpenses": "Personal Expenses",
+    "allCategories": "All categories",
+    "search": "Search...",
+    "noCategories": "No categories in this group."
+  },
+  "personalExpensesPage": {
+    "title": "Personal Expenses",
     "trackSpending": "Track your spending",
     "total": "Total",
     "addExpense": "Add Expense",
-    "loadMore": "Load More",
-    "errorLoadingData": "Error Loading Data",
-    "somethingWentWrong": "Something went wrong"
+    "loadMore": "Load More"
+  },
+  "addExpenseDialog": {
+    "title": "Add Personal Expense",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Lunch, Groceries, etc.",
+    "amount": "Amount",
+    "amountPlaceholder": "0.00",
+    "category": "Category",
+    "date": "Date",
+    "notes": "Notes (Optional)",
+    "notesPlaceholder": "Additional details...",
+    "cancel": "Cancel",
+    "submit": "Add Expense"
   }
 }
