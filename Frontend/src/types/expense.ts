@@ -71,6 +71,7 @@ export interface ApiPersonalExpenseUpdate {
   currency?: CurrencyEnum | null;
   expense_date?: ISODateTimeString | null;
   category_id?: number | null;
+  notes?: string | null;
   receipt_image_url?: string | null;
   receipt_text?: string | null;
 }

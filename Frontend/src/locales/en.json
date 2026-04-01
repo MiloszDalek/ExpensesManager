@@ -204,6 +204,14 @@
     "deleteTitle": "Delete Expense?",
     "deleteDescription": "This will permanently delete this expense. This action cannot be undone.",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "expand": "Expand details",
+    "collapse": "Collapse details",
+    "noNotes": "No note",
+    "edit": "Edit",
+    "editExpenseTitle": "Edit expense",
+    "save": "Save changes",
+    "mainCategory": "Main category",
+    "categoryLabel": "Category"
   }
 }

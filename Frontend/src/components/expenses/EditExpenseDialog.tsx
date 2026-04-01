@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,10 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { format } from "date-fns";
-import type { ApiPersonalExpenseCreate } from "@/types/expense";
+import type {
+  ApiPersonalExpenseResponse,
+  ApiPersonalExpenseUpdate,
+} from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
 import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
 import {
@@ -35,12 +38,11 @@ import {
 } from "@/utils/currency";
 import CategoryPicker from "./CategoryPicker";
 
-// TODO: Po dodaniu icon_key w API, umożliwić wybór ikony przy tworzeniu kategorii
-
-type AddExpenseDialogProps = {
+type EditExpenseDialogProps = {
   open: boolean;
+  expense: ApiPersonalExpenseResponse | null;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (expenseData: ApiPersonalExpenseCreate) => void;
+  onSubmit: (payload: ApiPersonalExpenseUpdate) => void;
   onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
@@ -56,16 +58,16 @@ type FormData = {
   notes: string;
 };
 
-
-export default function AddExpenseDialog({
+export default function EditExpenseDialog({
   open,
+  expense,
   onOpenChange,
   onSubmit,
   onCreateCustomCategory,
   onDeleteCustomCategory,
   isLoading,
-  categories
-}: AddExpenseDialogProps) {
+  categories,
+}: EditExpenseDialogProps) {
   const { t } = useTranslation();
   const defaultCategoryId = categories[0]?.id || 0;
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
@@ -76,97 +78,97 @@ export default function AddExpenseDialog({
     }
   }, [open]);
 
-  const orderedCurrencies = useMemo(
-    () => getCurrenciesWithRecentFirst(recentCurrencies),
-    [recentCurrencies]
-  );
+  const orderedCurrencies = getCurrenciesWithRecentFirst(recentCurrencies);
+  const recentCurrencySet = new Set(recentCurrencies);
 
-  const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
-  
   const [formData, setFormData] = useState<FormData>({
-    title: '',
-    amount: '',
-    currency: 'PLN',
+    title: "",
+    amount: "",
+    currency: "PLN",
     category_id: defaultCategoryId,
-    expense_date: format(new Date(), 'yyyy-MM-dd'),
-    notes: '',
+    expense_date: format(new Date(), "yyyy-MM-dd"),
+    notes: "",
   });
 
-  // Helper to handle currency change and update recent currencies
-  const handleCurrencyChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      currency: value as CurrencyEnum,
-    }));
-    setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
-  };
-
-  const handleSubmit = () => {
-    if (formData.title && formData.amount) {
-      setRecentCurrencies(rememberRecentCurrency(formData.currency));
-
-      onSubmit({
-        title: formData.title,
-        amount: formData.amount,
-        currency: formData.currency,
-        category_id: formData.category_id,
-        expense_date: formData.expense_date,
-        notes: formData.notes || null,
-      });
-      
-      setFormData({
-        title: '',
-        amount: '',
-        currency: 'PLN',
-        category_id: defaultCategoryId,
-        expense_date: format(new Date(), 'yyyy-MM-dd'),
-        notes: '',
-      });
+  useEffect(() => {
+    if (!open || !expense) {
+      return;
     }
+
+    setFormData({
+      title: expense.title ?? "",
+      amount: expense.amount?.toString() ?? "",
+      currency: (expense.currency ?? "PLN") as CurrencyEnum,
+      category_id: expense.category_id ?? defaultCategoryId,
+      expense_date: format(new Date(expense.expense_date), "yyyy-MM-dd"),
+      notes: expense.notes ?? "",
+    });
+  }, [open, expense, defaultCategoryId]);
+
+  const handleCurrencyChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, currency: value as CurrencyEnum }));
+    setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
   };
 
   const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
     setRecentCurrencies(removeRecentCurrency(currency));
   };
 
+  const handleSubmit = () => {
+    if (!expense || !formData.title || !formData.amount) {
+      return;
+    }
+
+    setRecentCurrencies(rememberRecentCurrency(formData.currency));
+
+    onSubmit({
+      title: formData.title,
+      amount: formData.amount,
+      currency: formData.currency,
+      category_id: formData.category_id,
+      expense_date: formData.expense_date,
+      notes: formData.notes || null,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>{t("addExpenseDialog.title")}</DialogTitle>
+          <DialogTitle>{t("expensesList.editExpenseTitle", { defaultValue: "Edit expense" })}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="title">{t("addExpenseDialog.titleLabel")}</Label>
+            <Label htmlFor="edit-title">{t("addExpenseDialog.titleLabel")}</Label>
             <Input
-              id="title"
+              id="edit-title"
               placeholder={t("addExpenseDialog.titlePlaceholder")}
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(event) => setFormData((prev) => ({ ...prev, title: event.target.value }))}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="amount">{t("addExpenseDialog.amount")}</Label>
+              <Label htmlFor="edit-amount">{t("addExpenseDialog.amount")}</Label>
               <Input
-                id="amount"
+                id="edit-amount"
                 type="number"
                 step="0.01"
                 placeholder={t("addExpenseDialog.amountPlaceholder")}
                 value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                onChange={(event) => setFormData((prev) => ({ ...prev, amount: event.target.value }))}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="currency">{t("addExpenseDialog.currency")}</Label>
+              <Label htmlFor="edit-currency">{t("addExpenseDialog.currency")}</Label>
               <Select
                 value={formData.currency}
                 onValueChange={handleCurrencyChange}
               >
-                <SelectTrigger id="currency" className="w-full">
+                <SelectTrigger id="edit-currency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,11 +209,13 @@ export default function AddExpenseDialog({
                     {recentCurrencies.length > 0 && (
                       <SelectLabel>{t("addExpenseDialog.allCurrencies")}</SelectLabel>
                     )}
-                    {SUPPORTED_CURRENCIES.filter((currency) => !recentCurrencySet.has(currency)).map((currency) => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency}
-                      </SelectItem>
-                    ))}
+                    {SUPPORTED_CURRENCIES
+                      .filter((currency) => !recentCurrencySet.has(currency))
+                      .map((currency) => (
+                        <SelectItem key={currency} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -219,13 +223,15 @@ export default function AddExpenseDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="category">{t("addExpenseDialog.category")}</Label>
+            <Label htmlFor="edit-category">{t("addExpenseDialog.category")}</Label>
             <CategoryPicker
               value={formData.category_id.toString()}
-              onValueChange={(value) => setFormData(prev => ({
-                ...prev,
-                category_id: parseInt(value, 10)
-              }))}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  category_id: parseInt(value, 10),
+                }))
+              }
               categories={categories}
               onCreateCustomCategory={onCreateCustomCategory}
               onDeleteCustomCategory={onDeleteCustomCategory}
@@ -237,22 +243,27 @@ export default function AddExpenseDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="expense_date">{t("addExpenseDialog.date")}</Label>
+            <Label htmlFor="edit-expense-date">{t("addExpenseDialog.date")}</Label>
             <Input
-              id="expense_date"
+              id="edit-expense-date"
               type="date"
               value={formData.expense_date}
-              onChange={(e) => setFormData(prev => ({ ...prev, expense_date: e.target.value }))}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  expense_date: event.target.value,
+                }))
+              }
             />
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="notes">{t("addExpenseDialog.notes")}</Label>
+            <Label htmlFor="edit-notes">{t("addExpenseDialog.notes")}</Label>
             <Textarea
-              id="notes"
+              id="edit-notes"
               placeholder={t("addExpenseDialog.notesPlaceholder")}
               value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={(event) => setFormData((prev) => ({ ...prev, notes: event.target.value }))}
               rows={2}
             />
           </div>
@@ -264,9 +275,10 @@ export default function AddExpenseDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!formData.title || !formData.amount || isLoading}
+            disabled={!expense || !formData.title || !formData.amount || isLoading}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {t("addExpenseDialog.submit")}
+            {t("expensesList.save", { defaultValue: "Save changes" })}
           </Button>
         </DialogFooter>
       </DialogContent>

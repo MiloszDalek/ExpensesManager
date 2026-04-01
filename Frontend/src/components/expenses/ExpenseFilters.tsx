@@ -155,7 +155,7 @@ export default function ExpenseFilters({
                             type="button"
                             tabIndex={-1}
                             aria-label={t("expenseFilters.removeRecentCurrency")}
-                            className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100"
+                            className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100 cursor-pointer"
                             onPointerDown={(event) => {
                               event.preventDefault();
                               event.stopPropagation();

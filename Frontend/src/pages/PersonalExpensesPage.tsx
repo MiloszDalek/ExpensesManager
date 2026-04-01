@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { format, startOfMonth, subMonths } from "date-fns";
 
 import AddExpenseDialog from "../components/expenses/AddExpenseDialog";
+import EditExpenseDialog from "../components/expenses/EditExpenseDialog";
 import ExpensesList from "../components/expenses/ExpensesList";
 import ExpenseFilters from "../components/expenses/ExpenseFilters";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +20,7 @@ import type {
   ApiPersonalExpenseCreate,
   ApiPersonalExpenseListParams,
   ApiPersonalExpenseSummaryResponse,
+  ApiPersonalExpenseUpdate,
   PersonalExpensePeriodPreset,
   PersonalExpensesFiltersState,
 } from "@/types/expense";
@@ -78,6 +80,7 @@ const areFiltersEqual = (
 export default function PersonalExpensesPage() {
   const { t } = useTranslation();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ApiPersonalExpenseResponse | null>(null);
   const [draftFilters, setDraftFilters] = useState<PersonalExpensesFiltersState>(getInitialFilters);
   const [appliedFilters, setAppliedFilters] = useState<PersonalExpensesFiltersState>(getInitialFilters);
   const queryClient = useQueryClient();
@@ -242,6 +245,23 @@ export default function PersonalExpensesPage() {
     }
   });
 
+  // Update expense mutation
+  const updateExpenseMutation = useMutation<
+    ApiPersonalExpenseResponse,
+    Error,
+    { expenseId: number; payload: ApiPersonalExpenseUpdate }
+  >({
+    mutationFn: ({ expenseId, payload }) => expensesPersonalApi.update(expenseId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      setEditingExpense(null);
+    },
+    onError: (error) => {
+      console.error("Failed to update expense:", error);
+      // TODO: Add error toast notification in Phase 2
+    },
+  });
+
   // Handle loading states
 
   if (!user || categoriesLoading || expensesLoading || summaryLoading) {
@@ -311,6 +331,7 @@ export default function PersonalExpensesPage() {
           categories={categories}
           isLoading={expensesLoading}
           onDelete={(id) => deleteExpenseMutation.mutate(id)}
+          onEdit={(expense) => setEditingExpense(expense)}
         />
 
         {hasNextPage && (
@@ -341,6 +362,30 @@ export default function PersonalExpensesPage() {
           createExpenseMutation.mutate(expenseData);
         }}
         isLoading={createExpenseMutation.isPending}
+        categories={categories}
+        onCreateCustomCategory={handleCreateCustomCategory}
+        onDeleteCustomCategory={handleDeleteCustomCategory}
+      />
+
+      <EditExpenseDialog
+        open={!!editingExpense}
+        expense={editingExpense}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingExpense(null);
+          }
+        }}
+        onSubmit={(payload) => {
+          if (!editingExpense) {
+            return;
+          }
+
+          updateExpenseMutation.mutate({
+            expenseId: editingExpense.id,
+            payload,
+          });
+        }}
+        isLoading={updateExpenseMutation.isPending}
         categories={categories}
         onCreateCustomCategory={handleCreateCustomCategory}
         onDeleteCustomCategory={handleDeleteCustomCategory}

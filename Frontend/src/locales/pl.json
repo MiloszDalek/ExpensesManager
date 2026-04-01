@@ -194,6 +194,14 @@
     "deleteTitle": "Usunąć wydatek?",
     "deleteDescription": "To trwale usunie ten wydatek. Tej operacji nie można cofnąć.",
     "cancel": "Anuluj",
-    "delete": "Usuń"
+    "delete": "Usuń",
+    "expand": "Rozwiń szczegóły",
+    "collapse": "Zwiń szczegóły",
+    "noNotes": "Brak notatki",
+    "edit": "Edytuj",
+    "editExpenseTitle": "Edytuj wydatek",
+    "save": "Zapisz zmiany",
+    "mainCategory": "Główna kategoria",
+    "categoryLabel": "Kategoria"
   }
 }
