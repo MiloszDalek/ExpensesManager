@@ -301,7 +301,7 @@ export default function CategoryPicker({
               {showLabel && `${t("expenseFilters.category")}: `}
               <span className="truncate">{selectedCategoryLabel}</span>
             </span>
-            <span className="text-xs text-gray-500">{t("expenseFilters.change")}</span>
+            <span className="text-xs text-muted-foreground">{t("expenseFilters.change")}</span>
           </Button>
         </div>
       )}
@@ -426,13 +426,13 @@ export default function CategoryPicker({
                 })}
 
                 {categoriesInSelectedGroup.length === 0 ? (
-                  <p className="text-sm text-gray-500 px-1 py-2">
+                  <p className="text-sm text-muted-foreground px-1 py-2">
                     {hasSearchQuery ? t("expenseFilters.noSearchResults") : t("expenseFilters.noCategories")}
                   </p>
                 ) : null}
 
                 {deleteCustomCategoryError ? (
-                  <p className="px-1 text-xs text-red-600">{deleteCustomCategoryError}</p>
+                  <p className="px-1 text-xs text-destructive">{deleteCustomCategoryError}</p>
                 ) : null}
               </div>
             </div>
@@ -461,7 +461,7 @@ export default function CategoryPicker({
             />
 
             {createCustomCategoryError ? (
-              <p className="px-1 text-xs text-red-600">{createCustomCategoryError}</p>
+              <p className="px-1 text-xs text-destructive">{createCustomCategoryError}</p>
             ) : null}
           </div>
 

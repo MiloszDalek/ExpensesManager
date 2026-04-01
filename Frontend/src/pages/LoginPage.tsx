@@ -31,11 +31,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-card-foreground shadow-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">{t("authPages.login.title")}</h1>
         {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          <p className="text-destructive text-sm mb-4 text-center">{error}</p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -60,14 +60,14 @@ export default function LoginPage() {
           </div>
           <Button
             type="submit"
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+            className="w-full"
             disabled={loading}
           >
             {loading ? t("authPages.login.submitLoading") : t("authPages.login.submit")}
           </Button>
         </form>
-        <p className="text-sm text-gray-500 mt-4 text-center">
-          {t("authPages.login.noAccount")} <Link to="/register" className="text-purple-500 hover:underline">{t("authPages.login.signUp")}</Link>
+        <p className="text-sm text-muted-foreground mt-4 text-center">
+          {t("authPages.login.noAccount")} <Link to="/register" className="text-primary hover:underline">{t("authPages.login.signUp")}</Link>
         </p>
       </div>
     </div>

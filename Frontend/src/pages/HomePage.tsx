@@ -8,7 +8,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 px-4 text-center">
       <h1 className="text-3xl font-bold">{t("homePage.title")}</h1>
-      <p className="text-gray-600">{t("homePage.subtitle")}</p>
+      <p className="text-muted-foreground">{t("homePage.subtitle")}</p>
       <Link to="/login">
         <Button>{t("homePage.login")}</Button>
       </Link>

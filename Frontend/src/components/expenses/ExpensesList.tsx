@@ -53,7 +53,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
         {[1, 2, 3].map(i => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-16 bg-gray-200 rounded"></div>
+              <div className="h-16 rounded bg-muted"></div>
             </CardContent>
           </Card>
         ))}
@@ -63,11 +63,11 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
 
   if (expenses.length === 0) {
     return (
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+      <Card className="border border-border shadow-xl bg-card/80 backdrop-blur-sm">
         <CardContent className="p-12 text-center">
-          <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("expensesList.emptyTitle")}</h3>
-          <p className="text-gray-500">{t("expensesList.emptyDescription")}</p>
+          <Wallet className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t("expensesList.emptyTitle")}</h3>
+          <p className="text-muted-foreground">{t("expensesList.emptyDescription")}</p>
         </CardContent>
       </Card>
     );
@@ -90,7 +90,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
               exit={{ opacity: 0, x: 20 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
+              <Card className="border border-border shadow-lg bg-card/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
                 <div className={`h-1 bg-gradient-to-r ${visualStyle.gradientClass}`} />
                 <CardContent className="py-6 pr-6 pl-0">
                   <div className="flex items-center justify-between">
@@ -99,23 +99,23 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         <Icon className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{expense.title}</h3>
+                        <h3 className="text-lg font-semibold text-foreground">{expense.title}</h3>
                         <div className="flex items-center gap-3 mt-1">
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-muted-foreground">
                             {format(new Date(expense.expense_date), "MMM d, yyyy")}
                           </p>
-                          <span className="text-gray-300">•</span>
-                          <p className="text-sm text-gray-500 capitalize">{categoryName}</p>
+                          <span className="text-muted-foreground/50">•</span>
+                          <p className="text-sm text-muted-foreground capitalize">{categoryName}</p>
                         </div>
                         {expense.notes && expense.notes !== '' && (
-                          <p className="text-sm text-gray-600 mt-1">{expense.notes}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{expense.notes}</p>
                         )}
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-foreground">
                           {Number(expense.amount).toFixed(2)} {expense.currency}
                         </p>
                       </div>
@@ -125,7 +125,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Trash2 className="w-5 h-5" />
                           </Button>
@@ -139,7 +139,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>{t("expensesList.cancel")}</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(expense.id)} className="bg-red-600 hover:bg-red-700">
+                            <AlertDialogAction onClick={() => onDelete(expense.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                               {t("expensesList.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>

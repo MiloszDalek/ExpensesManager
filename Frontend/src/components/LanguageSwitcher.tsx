@@ -83,7 +83,7 @@ export default function LanguageSwitcher({
   return (
     <div className={cn("flex items-center", size === "sm" ? "gap-1.5" : "gap-2", className)}>
       {showLabel ? (
-        <label htmlFor={selectId} className={cn("text-gray-600", "text-sm")}>
+        <label htmlFor={selectId} className={cn("text-muted-foreground", "text-sm")}>
           {t("languageSwitcher.selectLanguage")}
         </label>
       ) : null}
@@ -110,7 +110,7 @@ export default function LanguageSwitcher({
           value={activeLanguage}
           onChange={handleChange}
           className={cn(
-            "rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-200",
+            "rounded-md border border-input bg-background text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40",
             size === "sm" ? "h-8 text-xs" : "h-9 text-sm",
             compact
               ? size === "sm"

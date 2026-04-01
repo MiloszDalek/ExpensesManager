@@ -4,6 +4,7 @@ import { useEffect, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -58,15 +59,15 @@ export default function GlobalHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 md:px-8">
           <Link to={homePath} className="flex min-w-0 items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-sm">
               <Wallet className="h-4 w-4" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900">{t("globalHeader.appName")}</p>
-              <p className="truncate text-xs text-gray-500">{t("globalHeader.appTagline")}</p>
+              <p className="truncate text-sm font-semibold text-foreground">{t("globalHeader.appName")}</p>
+              <p className="truncate text-xs text-muted-foreground">{t("globalHeader.appTagline")}</p>
             </div>
           </Link>
 
@@ -80,8 +81,8 @@ export default function GlobalHeader() {
                     cn(
                       "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
                       isActive
-                        ? "bg-teal-50 text-teal-700"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     )
                   }
                 >
@@ -93,6 +94,8 @@ export default function GlobalHeader() {
           ) : null}
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
+
             <LanguageSwitcher
               compact
               showLabel={false}
@@ -101,8 +104,8 @@ export default function GlobalHeader() {
 
             {user ? (
               <>
-                <div className="hidden max-w-40 items-center gap-1 rounded-md bg-gray-100 px-3 py-2 text-sm text-gray-700 lg:flex">
-                  <Globe className="h-3.5 w-3.5 text-gray-500" />
+                <div className="hidden max-w-40 items-center gap-1 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground lg:flex">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="truncate">{user.username}</span>
                 </div>
 
@@ -110,7 +113,7 @@ export default function GlobalHeader() {
                   variant="outline"
                   size="sm"
                   onClick={logout}
-                  className="hidden border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 lg:inline-flex"
+                  className="hidden border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive lg:inline-flex"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>{t("globalHeader.logout")}</span>
@@ -162,13 +165,13 @@ export default function GlobalHeader() {
           <aside
             id="mobile-header-menu"
             className={cn(
-              "fixed right-0 top-0 z-50 h-screen w-[min(85vw,20rem)] border-l border-gray-200 bg-white shadow-xl transition-transform duration-300 ease-out lg:hidden",
+              "fixed right-0 top-0 z-50 h-screen w-[min(85vw,20rem)] border-l border-border bg-background shadow-xl transition-transform duration-300 ease-out lg:hidden",
               isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
             )}
             aria-hidden={!isMobileMenuOpen}
           >
             <div className="h-full overflow-y-auto px-4 pb-4 pt-0">
-              <div className="sticky top-0 z-10 -mx-4 mb-3 flex justify-end border-b border-gray-100 bg-white/95 px-4 py-3 backdrop-blur">
+              <div className="sticky top-0 z-10 -mx-4 mb-3 flex justify-end border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -179,14 +182,19 @@ export default function GlobalHeader() {
                 </Button>
               </div>
 
-              <div className="mb-3 flex items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm text-gray-700">
-                <Globe className="h-3.5 w-3.5 text-gray-500" />
+              <div className="mb-3 flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="truncate">{t("globalHeader.loggedAs", { username: user.username })}</span>
               </div>
 
-              <div className="mb-3 flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-sm font-medium text-gray-600">{t("languageSwitcher.selectLanguage")}</span>
+              <div className="mb-3 flex items-center justify-between rounded-md border border-border bg-card px-3 py-2">
+                <span className="text-sm font-medium text-muted-foreground">{t("languageSwitcher.selectLanguage")}</span>
                 <LanguageSwitcher compact showLabel={false} size="sm" />
+              </div>
+
+              <div className="mb-3 flex items-center justify-between rounded-md border border-border bg-card px-3 py-2">
+                <span className="text-sm font-medium text-muted-foreground">{t("globalHeader.theme")}</span>
+                <ThemeToggle />
               </div>
 
               <nav className="flex flex-col gap-1">
@@ -199,8 +207,8 @@ export default function GlobalHeader() {
                       cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
                         isActive
-                          ? "bg-teal-50 text-teal-700"
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       )
                     }
                   >
@@ -213,7 +221,7 @@ export default function GlobalHeader() {
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-3 w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="mt-3 w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   logout();

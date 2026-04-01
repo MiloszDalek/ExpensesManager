@@ -43,12 +43,12 @@ export default function RegisterPage() {
   const passwordsMatch = password === confirmPassword;
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-card-foreground shadow-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">{t("authPages.register.title")}</h1>
 
         {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          <p className="text-destructive text-sm mb-4 text-center">{error}</p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -96,33 +96,33 @@ export default function RegisterPage() {
               placeholder={t("authPages.register.confirmPasswordPlaceholder")}
               className={
                 !passwordsMatch && confirmPassword.length > 0
-                  ? "border-red-500"
+                  ? "border-destructive"
                   : ""
               }
             />
 
             {!passwordsMatch && confirmPassword.length > 0 && (
-              <p className="text-red-500 text-sm mt-1">{t("authPages.register.errors.passwordsDoNotMatch")}</p>
+              <p className="text-destructive text-sm mt-1">{t("authPages.register.errors.passwordsDoNotMatch")}</p>
             )}
 
             {passwordError && (
-              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+              <p className="text-destructive text-sm mt-1">{passwordError}</p>
             )}
           </div>
 
 
           <Button
             type="submit"
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+            className="w-full"
             disabled={loading}
           >
             {loading ? t("authPages.register.submitLoading") : t("authPages.register.submit")}
           </Button>
         </form>
 
-        <p className="text-sm text-gray-500 mt-4 text-center">
+        <p className="text-sm text-muted-foreground mt-4 text-center">
           {t("authPages.register.alreadyHaveAccount")}{" "}
-          <Link to="/login" className="text-purple-500 hover:underline">
+          <Link to="/login" className="text-primary hover:underline">
             {t("authPages.register.logIn")}
           </Link>
         </p>

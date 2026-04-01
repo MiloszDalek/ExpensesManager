@@ -110,7 +110,7 @@ export default function ExpenseFilters({
   };
 
   return (
-    <div className="mb-6 rounded-xl border border-gray-200 bg-white/80 p-4 backdrop-blur-sm">
+    <div className="mb-6 rounded-xl border border-border bg-card/80 p-4 text-card-foreground backdrop-blur-sm">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-1">
           <Label>{t("expenseFilters.category")}</Label>
@@ -155,7 +155,7 @@ export default function ExpenseFilters({
                             type="button"
                             tabIndex={-1}
                             aria-label={t("expenseFilters.removeRecentCurrency")}
-                            className="ml-auto mr-4 rounded p-0.5 text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                            className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100"
                             onPointerDown={(event) => {
                               event.preventDefault();
                               event.stopPropagation();

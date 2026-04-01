@@ -179,7 +179,7 @@ export default function AddExpenseDialog({
                                 type="button"
                                 tabIndex={-1}
                                 aria-label={t("addExpenseDialog.removeRecentCurrency")}
-                                className="ml-auto mr-4 rounded p-0.5 text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                                className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100"
                                 onPointerDown={(event) => {
                                   event.preventDefault();
                                   event.stopPropagation();
@@ -261,7 +261,6 @@ export default function AddExpenseDialog({
           <Button
             onClick={handleSubmit}
             disabled={!formData.title || !formData.amount || isLoading}
-            className="bg-gradient-to-r from-purple-500 to-teal-500 text-white"
           >
             {t("addExpenseDialog.submit")}
           </Button>

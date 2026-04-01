@@ -247,7 +247,7 @@ export default function PersonalExpensesPage() {
   if (!user || categoriesLoading || expensesLoading || summaryLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -256,9 +256,9 @@ export default function PersonalExpensesPage() {
   if (categoriesError || expensesError || summaryError) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-red-600 text-center">
+        <div className="text-destructive text-center">
           <h2 className="text-2xl font-bold mb-2">{t("common.errorLoadingData")}</h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {categoriesError?.message || expensesError?.message || summaryError?.message || t("common.somethingWentWrong")}
           </p>
         </div>
@@ -279,15 +279,15 @@ export default function PersonalExpensesPage() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t("personalExpensesPage.title")}</h1>
-            <p className="text-gray-500 mt-2">
-              {t("personalExpensesPage.trackSpending")} · {t("personalExpensesPage.total")}: <span className="font-semibold text-purple-600">{totalLabel || "0.00"}</span>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("personalExpensesPage.title")}</h1>
+            <p className="text-muted-foreground mt-2">
+              {t("personalExpensesPage.trackSpending")} · {t("personalExpensesPage.total")}: <span className="font-semibold text-primary">{totalLabel || "0.00"}</span>
             </p>
           </div>
           <div className="flex flex-row items-center gap-4 w-full md:w-auto justify-end">
             <Button
               onClick={() => setShowAddDialog(true)}
-              className="bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 text-white shadow-lg"
+              className="shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               {t("personalExpensesPage.addExpense")}
@@ -322,7 +322,7 @@ export default function PersonalExpensesPage() {
               className="w-full md:w-auto"
             >
               {isFetchingNextPage ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
               ) : null}
               {t("personalExpensesPage.loadMore")}
             </Button>
