@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getDashboard } from "@/api/dashboard";
-import type { DashboardSummaryResponse } from "@/types";
+import type { ApiNotificationResponse } from "@/types";
 
 export const useDashboardSummary = () =>
-  useQuery<DashboardSummaryResponse>({
-    queryKey: ["dashboardSummary"],
-    queryFn: getDashboard,
+  useQuery<ApiNotificationResponse[]>({
+    queryKey: ["dashboardSummary", "placeholder"],
+    queryFn: async () => [],
+    enabled: false,
   });

@@ -35,9 +35,22 @@ class InvitationService:
 
         raise HTTPException(status_code=400, detail="Missing invitation target")
 
+
+    def _resolve_contact_invitation_target(self, invitation_in: ContactInvitationCreate):
+        if invitation_in.to_user_id is not None and invitation_in.to_user_email is not None:
+            raise HTTPException(status_code=400, detail="Provide only one target: to_user_id or to_user_email")
+
+        if invitation_in.to_user_id is not None:
+            return self.user_service.get_user(invitation_in.to_user_id)
+
+        if invitation_in.to_user_email is not None:
+            return self.user_service.get_user_by_email(str(invitation_in.to_user_email))
+
+        raise HTTPException(status_code=400, detail="Missing invitation target")
+
     
     def send_invitation_to_contacts(self, invitation_in: ContactInvitationCreate, from_user_id: int) -> Invitation:
-        to_user = self.user_service.get_user(invitation_in.to_user_id)
+        to_user = self._resolve_contact_invitation_target(invitation_in)
 
         if from_user_id == to_user.id:
             raise HTTPException(status_code=400, detail="Cannot invite yourself")
@@ -50,7 +63,10 @@ class InvitationService:
 
             if invitation:
                 if invitation.status == InvitationStatus.PENDING:
-                    raise HTTPException(status_code=400, detail="Invitation already pending")
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Invitation is already pending. Wait for response or cancel the existing invitation.",
+                    )
                 elif invitation.status == InvitationStatus.ACCEPTED:
                     raise HTTPException(status_code=400, detail="Invitation already accepted")
                 
@@ -102,7 +118,10 @@ class InvitationService:
 
             if invitation:
                 if invitation.status == InvitationStatus.PENDING:
-                    raise HTTPException(status_code=400, detail="Invitation already pending")
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Group invitation is already pending. Wait for response or cancel the existing invitation.",
+                    )
                 elif invitation.status == InvitationStatus.ACCEPTED:
                     raise HTTPException(status_code=400, detail="Invitation already accepted")
                 
@@ -140,6 +159,25 @@ class InvitationService:
 
     def get_pending_invitations_for_user(self, user_id: int, limit: int, offset: int) -> list[Invitation]:
         return self.invitation_repo.get_pending_for_recipient(user_id, limit, offset)
+
+
+    def get_sent_invitations_for_user(
+        self,
+        user_id: int,
+        limit: int,
+        offset: int,
+        invitation_type: InvitationType | None = None,
+        invitation_status: InvitationStatus | None = None,
+        include_archived: bool = False,
+    ) -> list[Invitation]:
+        return self.invitation_repo.get_sent_by_sender(
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+            invitation_type=invitation_type,
+            invitation_status=invitation_status,
+            include_archived=include_archived,
+        )
 
 
     def get_group_pending_invitations(self, group_id: int, user_id: int, limit: int, offset: int) -> list[Invitation]:
@@ -196,8 +234,22 @@ class InvitationService:
         if not invitation:
             raise HTTPException(status_code=404, detail="Invitation not found")
 
+        if invitation.status in (InvitationStatus.ACCEPTED, InvitationStatus.REJECTED, InvitationStatus.CANCELLED):
+            if invitation.from_user_id != user_id:
+                raise HTTPException(status_code=403, detail="Not authorized")
+
+            invitation.status = InvitationStatus.ARCHIVED
+            if invitation.responded_at is None:
+                invitation.responded_at = datetime.now(timezone.utc)
+            self.invitation_repo.save_all()
+
+            return invitation
+
         if invitation.status != InvitationStatus.PENDING:
-            raise HTTPException(status_code=400, detail="Only pending invitation can be cancelled")
+            raise HTTPException(
+                status_code=400,
+                detail="Only pending invitation can be cancelled, and accepted/rejected/cancelled invitations can be archived by sender",
+            )
 
         if invitation.type == InvitationType.CONTACT:
             if invitation.from_user_id != user_id:
@@ -224,6 +276,12 @@ class InvitationService:
             self.contact_service.create_contact_pair(invitation.from_user_id, invitation.to_user_id)
             invitation.status = InvitationStatus.ACCEPTED
             invitation.responded_at = datetime.now(timezone.utc)
+
+            self._close_pending_contact_invitations_between(
+                invitation.from_user_id,
+                invitation.to_user_id,
+                exclude_invitation_id=invitation.id,
+            )
 
             self.invitation_repo.save_all()
         except Exception as e:
@@ -259,3 +317,20 @@ class InvitationService:
 
             if not self.contact_service.exists_between(new_user_id, other_user_id):
                 self.contact_service.create_contact_pair(new_user_id, other_user_id)
+                self._close_pending_contact_invitations_between(new_user_id, other_user_id)
+
+
+    def _close_pending_contact_invitations_between(
+        self,
+        user1_id: int,
+        user2_id: int,
+        exclude_invitation_id: int | None = None,
+    ):
+        pending_invitations = self.invitation_repo.get_pending_contact_invitations_between(user1_id, user2_id)
+
+        for pending_invitation in pending_invitations:
+            if exclude_invitation_id is not None and pending_invitation.id == exclude_invitation_id:
+                continue
+
+            pending_invitation.status = InvitationStatus.CANCELLED
+            pending_invitation.responded_at = datetime.now(timezone.utc)

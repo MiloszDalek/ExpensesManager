@@ -4,6 +4,7 @@ import type {
   ApiGroupInvitationCreate,
   ApiInvitationResponse,
 } from "@/types";
+import type { InvitationStatus, InvitationType } from "@/types/enums";
 
 export const invitationsApi = {
   sendToContact: async (payload: ApiContactInvitationCreate): Promise<ApiInvitationResponse> => {
@@ -18,6 +19,16 @@ export const invitationsApi = {
 
   listPending: async (params?: { limit?: number; offset?: number }): Promise<ApiInvitationResponse[]> => {
     const { data } = await client.get<ApiInvitationResponse[]>("/invitations/pending", { params });
+    return data;
+  },
+
+  listSent: async (params?: {
+    limit?: number;
+    offset?: number;
+    type?: InvitationType;
+    status?: InvitationStatus;
+  }): Promise<ApiInvitationResponse[]> => {
+    const { data } = await client.get<ApiInvitationResponse[]>("/invitations/sent", { params });
     return data;
   },
 

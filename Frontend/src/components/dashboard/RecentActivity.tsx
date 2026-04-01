@@ -1,17 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
 
-import type { User, Expense } from "@/types";
-import { getCategoryIcon } from "@/utils/category";
+import type { User } from "@/types";
 
 interface RecentActivityProps {
-  expenses: Expense[];
-  user: User;
+  expenses: Array<{
+    id: number;
+    title: string;
+    amount: number;
+    currency: string;
+    created_at: string;
+  }>;
+  user?: User;
 }
 
-export default function RecentActivity({ expenses, user }: RecentActivityProps) {
+export default function RecentActivity({ expenses }: RecentActivityProps) {
   const recentExpenses = expenses.slice(0, 8);
 
   return (
@@ -30,42 +34,22 @@ export default function RecentActivity({ expenses, user }: RecentActivityProps) 
           </div>
         ) : (
           <div className="space-y-3">
-            {recentExpenses.map((expense, index) => {
-              const Icon = getCategoryIcon(expense.category);
-              const isPaidByMe = expense.payer_id === user.id;
-              
-              return (
-                <motion.div
-                  key={expense.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-teal-100 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{expense.title}</h4>
-                      <p className="text-xs text-gray-500">
-                        {format(new Date(expense.created_at), "MMM d, yyyy")} · {expense.category}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-semibold ${isPaidByMe ? 'text-green-600' : 'text-gray-900'}`}>
-                      {expense.amount.toFixed(2)} {expense.currency}
-                    </p>
-                    {!expense.is_personal && (
-                      <p className="text-xs text-gray-500">
-                        {isPaidByMe ? 'You paid' : 'Split'}
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+            {recentExpenses.map((expense) => (
+              <div
+                key={expense.id}
+                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-gray-50"
+              >
+                <div>
+                  <h4 className="font-medium text-gray-900">{expense.title}</h4>
+                  <p className="text-xs text-gray-500">
+                    {format(new Date(expense.created_at), "MMM d, yyyy")}
+                  </p>
+                </div>
+                <p className="font-semibold text-gray-900">
+                  {expense.amount.toFixed(2)} {expense.currency}
+                </p>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

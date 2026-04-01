@@ -81,7 +81,7 @@
     "navGroups": "Groups",
     "navPersonal": "Personal",
     "navAdmin": "Admin",
-    "theme": "Theme",
+    "theme": "Select Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
@@ -95,7 +95,7 @@
     "loggedAs": "Signed in as {{username}}"
   },
   "languageSwitcher": {
-    "selectLanguage": "Select language"
+    "selectLanguage": "Select Language"
   },
   "authPages": {
     "login": {
@@ -310,5 +310,60 @@
     "cancel": "Cancel",
     "sendInvite": "Send invite",
     "sending": "Sending..."
+  },
+  "dashboardInbox": {
+    "title": "Welcome back, {{username}}!",
+    "subtitle": "Your notifications and contacts in one place",
+    "newGroup": "New Group",
+    "notificationsTitle": "Notifications",
+    "notificationsEmpty": "No notifications yet.",
+    "notificationFallback": "New notification",
+    "contactsTitle": "Contacts",
+    "contactsListTitle": "Your contacts",
+    "contactsEmpty": "No contacts yet.",
+    "contactEmailPlaceholder": "friend@example.com",
+    "sendInvite": "Invite",
+    "sendingInvite": "Sending...",
+    "contactInviteSent": "Invitation sent successfully.",
+    "contactInviteCancelled": "Invitation has been cancelled.",
+    "invitationArchived": "Invitation archived.",
+    "invitationAccepted": "Invitation accepted.",
+    "invitationDeclined": "Invitation declined.",
+    "receivedInvitationsTitle": "Received invitations",
+    "receivedInvitationsEmpty": "No invitations to respond to.",
+    "receivedContactInviteTitle": "Contact invitation",
+    "receivedGroupInviteTitle": "Group invitation: {{group}}",
+    "acceptInvite": "Accept",
+    "acceptingInvite": "Accepting...",
+    "declineInvite": "Decline",
+    "decliningInvite": "Declining...",
+    "sentInvitationsTitle": "Sent invitations",
+    "sentInvitationsEmpty": "No invitations sent yet.",
+    "cancelInvite": "Cancel",
+    "archiveInvite": "Archive",
+    "cancellingInvite": "Cancelling...",
+    "archivingInvite": "Archiving...",
+    "sentAt": "Sent",
+    "userFallback": "User",
+    "emailUnavailable": "Email unavailable",
+    "invitationStatus": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "archived": "Archived"
+    },
+    "errors": {
+      "cannotInviteYourself": "You cannot invite yourself.",
+      "contactAlreadyExists": "This contact already exists.",
+      "invitationAlreadyAccepted": "This invitation is already accepted.",
+      "invitationAlreadyPending": "This invitation is already pending.",
+      "groupInvitationAlreadyPending": "This group invitation is already pending.",
+      "userWithEmailNotFound": "No user account exists for this email address.",
+      "invitationNotFound": "Invitation not found.",
+      "notAuthorized": "You are not authorized to perform this action.",
+      "onlyPendingCanBeDeclined": "Only pending invitations can be declined.",
+      "onlyPendingCanBeCancelledOrArchived": "Only pending invitations can be cancelled, and completed invitations can be archived by sender."
+    }
   }
 }

@@ -1,5 +1,47 @@
 import axios, {AxiosError, type InternalAxiosRequestConfig} from "axios";
 
+const extractApiErrorMessage = (error: AxiosError): string | null => {
+  const data = error.response?.data;
+
+  if (typeof data === "string" && data.trim().length > 0) {
+    return data;
+  }
+
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const payload = data as Record<string, unknown>;
+  const detail = payload.detail;
+
+  if (typeof detail === "string" && detail.trim().length > 0) {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const validationMessages = detail
+      .map((item) => {
+        if (item && typeof item === "object") {
+          const message = (item as Record<string, unknown>).msg;
+          return typeof message === "string" ? message : null;
+        }
+        return null;
+      })
+      .filter((message): message is string => Boolean(message));
+
+    if (validationMessages.length > 0) {
+      return validationMessages.join("; ");
+    }
+  }
+
+  const message = payload.message;
+  if (typeof message === "string" && message.trim().length > 0) {
+    return message;
+  }
+
+  return null;
+};
+
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
@@ -39,6 +81,12 @@ client.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
+
+    const apiMessage = extractApiErrorMessage(error);
+    if (apiMessage) {
+      error.message = apiMessage;
+    }
+
     return Promise.reject(error);
   }
 );

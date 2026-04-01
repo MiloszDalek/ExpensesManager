@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import and_, or_
 from app.models import Invitation
 from app.enums import InvitationType, InvitationStatus
@@ -12,6 +12,11 @@ class InvitationRepository:
     def get_by_id(self, invitation_id: int):
         return (
             self.db.query(Invitation)
+            .options(
+                selectinload(Invitation.from_user),
+                selectinload(Invitation.to_user),
+                selectinload(Invitation.group),
+            )
             .filter(Invitation.id == invitation_id)
             .first()
         )
@@ -54,6 +59,27 @@ class InvitationRepository:
             )
             .one_or_none()
         )
+
+
+    def get_pending_contact_invitations_between(self, user1_id: int, user2_id: int) -> list[Invitation]:
+        return (
+            self.db.query(Invitation)
+            .filter(
+                Invitation.type == InvitationType.CONTACT,
+                Invitation.status == InvitationStatus.PENDING,
+                or_(
+                    and_(
+                        Invitation.from_user_id == user1_id,
+                        Invitation.to_user_id == user2_id,
+                    ),
+                    and_(
+                        Invitation.from_user_id == user2_id,
+                        Invitation.to_user_id == user1_id,
+                    ),
+                ),
+            )
+            .all()
+        )
     
     def get_group_invitation(self, group_id: int, to_user_id: int) -> Invitation | None:
         return (
@@ -70,6 +96,11 @@ class InvitationRepository:
     def get_pending_for_recipient(self, user_id: int, limit: int, offset: int) -> list[Invitation]:
         return (
             self.db.query(Invitation)
+            .options(
+                selectinload(Invitation.from_user),
+                selectinload(Invitation.to_user),
+                selectinload(Invitation.group),
+            )
             .filter(
                 Invitation.to_user_id == user_id,
                 Invitation.status == InvitationStatus.PENDING,
@@ -84,11 +115,49 @@ class InvitationRepository:
     def get_group_pending(self, group_id: int, limit: int, offset: int) -> list[Invitation]:
         return (
             self.db.query(Invitation)
+            .options(
+                selectinload(Invitation.from_user),
+                selectinload(Invitation.to_user),
+                selectinload(Invitation.group),
+            )
             .filter(
                 Invitation.type == InvitationType.GROUP,
                 Invitation.group_id == group_id,
                 Invitation.status == InvitationStatus.PENDING,
             )
+            .order_by(Invitation.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+
+    def get_sent_by_sender(
+        self,
+        user_id: int,
+        limit: int,
+        offset: int,
+        invitation_type: InvitationType | None = None,
+        invitation_status: InvitationStatus | None = None,
+        include_archived: bool = False,
+    ) -> list[Invitation]:
+        query = (
+            self.db.query(Invitation)
+            .options(selectinload(Invitation.to_user), selectinload(Invitation.group))
+            .filter(Invitation.from_user_id == user_id)
+        )
+
+        if not include_archived:
+            query = query.filter(Invitation.status != InvitationStatus.ARCHIVED)
+
+        if invitation_type is not None:
+            query = query.filter(Invitation.type == invitation_type)
+
+        if invitation_status is not None:
+            query = query.filter(Invitation.status == invitation_status)
+
+        return (
+            query
             .order_by(Invitation.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -103,6 +172,11 @@ class InvitationRepository:
 
     def save(self, invitation: Invitation):
         self.db.add(invitation)
+        self.db.flush()
+
+
+    def delete(self, invitation: Invitation):
+        self.db.delete(invitation)
         self.db.flush()
 
 

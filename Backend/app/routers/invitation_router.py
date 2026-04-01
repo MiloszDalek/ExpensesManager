@@ -4,6 +4,7 @@ from app.database import get_db
 from app.services import InvitationService
 from app.models import User
 from app.schemas import ContactInvitationCreate, GroupInvitationCreate, InvitationResponse
+from app.enums import InvitationType, InvitationStatus
 from app.utils.auth_dependencies import get_current_active_user
 import logging
 
@@ -46,6 +47,26 @@ def get_pending_invitations(
     current_user: User = Depends(get_current_active_user),
 ):
     return service.get_pending_invitations_for_user(current_user.id, limit, offset)
+
+
+@invitation_router.get("/sent", response_model=list[InvitationResponse])
+def get_sent_invitations(
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
+    invitation_type: InvitationType | None = Query(None, alias="type"),
+    invitation_status: InvitationStatus | None = Query(None, alias="status"),
+    include_archived: bool = Query(False),
+    service: InvitationService = Depends(get_invitation_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_sent_invitations_for_user(
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
+        invitation_type=invitation_type,
+        invitation_status=invitation_status,
+        include_archived=include_archived,
+    )
 
 
 @invitation_router.get("/groups/{group_id}/pending", response_model=list[InvitationResponse])

@@ -35,6 +35,12 @@ export const queryKeys = {
   invitations: {
     pending: (params?: { limit?: number; offset?: number }) =>
       ["invitations", "pending", params ?? {}] as const,
+    sent: (params?: {
+      limit?: number;
+      offset?: number;
+      type?: "contact" | "group";
+      status?: "pending" | "accepted" | "rejected" | "cancelled" | "archived";
+    }) => ["invitations", "sent", params ?? {}] as const,
     groupPending: (groupId: number, params?: { limit?: number; offset?: number }) =>
       ["invitations", "group", groupId, "pending", params ?? {}] as const,
   },

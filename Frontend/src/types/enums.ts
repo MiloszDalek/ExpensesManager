@@ -30,7 +30,7 @@ export type GroupStatus = "active" | "archived";
 export type GroupMemberRole = "admin" | "member";
 export type GroupMemberStatus = "active" | "left";
 
-export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled";
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled" | "archived";
 export type InvitationType = "contact" | "group";
 
 export type NotificationType = "invitation";

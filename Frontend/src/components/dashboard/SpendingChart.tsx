@@ -2,20 +2,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { TrendingUp } from "lucide-react";
 
-import type { User, Expense } from "@/types";
-
 const COLORS = ['#8B5CF6', '#14B8A6', '#EC4899', '#F59E0B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#6366F1'];
 
 interface SpendingChartProps {
-  expenses: Expense[];
-  user: User;
+  expenses: Array<{
+    category?: string | null;
+    amount: number;
+  }>;
 }
 
-export default function SpendingChart({ expenses, user }: SpendingChartProps) {
-  const personalExpenses = expenses.filter(e => e.is_personal && e.payer_id === user.id);
-
-  // Group expenses by category
-  const categoryData = personalExpenses.reduce((acc: Record<string, number>, expense) => {
+export default function SpendingChart({ expenses }: SpendingChartProps) {
+  const categoryData = expenses.reduce((acc: Record<string, number>, expense) => {
     const category = expense.category || 'other';
     acc[category] = (acc[category] || 0) + expense.amount;
     return acc;
@@ -40,7 +37,7 @@ export default function SpendingChart({ expenses, user }: SpendingChartProps) {
         {chartData.length === 0 ? (
           <div className="text-center py-12">
             <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No personal expenses yet</p>
+            <p className="text-gray-500">No data yet</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>

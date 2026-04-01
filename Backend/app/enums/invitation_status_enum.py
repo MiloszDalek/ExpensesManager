@@ -6,3 +6,4 @@ class InvitationStatus(str, Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     CANCELLED = "cancelled"
+    ARCHIVED = "archived"
