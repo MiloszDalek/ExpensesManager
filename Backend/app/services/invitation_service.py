@@ -6,8 +6,8 @@ from .notification_service import NotificationService
 from .user_service import UserService
 from .group_service import GroupService
 from .contact_service import ContactService
-from app.models import Invitation, Notification
-from app.enums import InvitationType, InvitationStatus, NotificationType
+from app.models import Invitation
+from app.enums import InvitationType, InvitationStatus, NotificationType, GroupMemberRole
 from app.schemas import ContactInvitationCreate, GroupInvitationCreate
 import logging
 
@@ -21,6 +21,19 @@ class InvitationService:
         self.notification_serivce = NotificationService(db)
         self.user_service = UserService(db)
         self.group_service = GroupService(db)
+
+
+    def _resolve_group_invitation_target(self, invitation_in: GroupInvitationCreate):
+        if invitation_in.to_user_id is not None and invitation_in.to_user_email is not None:
+            raise HTTPException(status_code=400, detail="Provide only one target: to_user_id or to_user_email")
+
+        if invitation_in.to_user_id is not None:
+            return self.user_service.get_user(invitation_in.to_user_id)
+
+        if invitation_in.to_user_email is not None:
+            return self.user_service.get_user_by_email(str(invitation_in.to_user_email))
+
+        raise HTTPException(status_code=400, detail="Missing invitation target")
 
     
     def send_invitation_to_contacts(self, invitation_in: ContactInvitationCreate, from_user_id: int) -> Invitation:
@@ -74,7 +87,7 @@ class InvitationService:
         
 
     def send_invitation_to_group(self, invitation_in: GroupInvitationCreate, from_user_id: int) -> Invitation:
-        to_user = self.user_service.get_user(invitation_in.to_user_id)
+        to_user = self._resolve_group_invitation_target(invitation_in)
 
         if from_user_id == to_user.id:
             raise HTTPException(status_code=400, detail="Cannot invite yourself")
@@ -125,6 +138,20 @@ class InvitationService:
             raise e
 
 
+    def get_pending_invitations_for_user(self, user_id: int, limit: int, offset: int) -> list[Invitation]:
+        return self.invitation_repo.get_pending_for_recipient(user_id, limit, offset)
+
+
+    def get_group_pending_invitations(self, group_id: int, user_id: int, limit: int, offset: int) -> list[Invitation]:
+        group = self.group_service.get_group(group_id, user_id)
+        current_member = self.group_service.get_member(group.id, user_id)
+
+        if current_member.role != GroupMemberRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+
+        return self.invitation_repo.get_group_pending(group.id, limit, offset)
+
+
     def accept_invitation(self, invitation_id: int, user_id: int):
         invitation = self.invitation_repo.get_by_id(invitation_id)
 
@@ -139,6 +166,52 @@ class InvitationService:
 
         elif invitation.type == InvitationType.GROUP:
             self.accept_group(invitation)
+
+        return invitation
+
+
+    def decline_invitation(self, invitation_id: int, user_id: int):
+        invitation = self.invitation_repo.get_by_id(invitation_id)
+
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invitation not found")
+
+        if invitation.to_user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise HTTPException(status_code=400, detail="Only pending invitation can be declined")
+
+        invitation.status = InvitationStatus.REJECTED
+        invitation.responded_at = datetime.now(timezone.utc)
+
+        self.invitation_repo.save_all()
+
+        return invitation
+
+
+    def cancel_invitation(self, invitation_id: int, user_id: int):
+        invitation = self.invitation_repo.get_by_id(invitation_id)
+
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invitation not found")
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise HTTPException(status_code=400, detail="Only pending invitation can be cancelled")
+
+        if invitation.type == InvitationType.CONTACT:
+            if invitation.from_user_id != user_id:
+                raise HTTPException(status_code=403, detail="Not authorized")
+        else:
+            if invitation.from_user_id != user_id:
+                member = self.group_service.get_member(invitation.group_id, user_id)
+                if member.role != GroupMemberRole.ADMIN:
+                    raise HTTPException(status_code=403, detail="Not authorized")
+
+        invitation.status = InvitationStatus.CANCELLED
+        invitation.responded_at = datetime.now(timezone.utc)
+
+        self.invitation_repo.save_all()
 
         return invitation
         

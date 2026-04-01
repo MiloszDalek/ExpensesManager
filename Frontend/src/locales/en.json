@@ -250,6 +250,12 @@
     "summaryTotal": "Total",
     "expensesSection": "Group expenses",
     "membersSection": "Members",
+    "addMember": "Add member",
+    "pendingInvitations": "Pending invitations",
+    "noPendingInvitations": "There are no pending invitations.",
+    "pendingInvitationUser": "Invitation sent to user #{{userId}}",
+    "cancelInvitation": "Cancel",
+    "cancelling": "Cancelling...",
     "loadMore": "Load More",
     "loadingMore": "Loading..."
   },
@@ -257,6 +263,17 @@
     "title": "Members",
     "emptyTitle": "No members",
     "emptyDescription": "There are no members in this group yet.",
+    "you": "You",
+    "grantAdmin": "Grant admin",
+    "grantingAdmin": "Granting...",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "leaveGroup": "Leave",
+    "cancel": "Cancel",
+    "removeConfirmTitle": "Remove member?",
+    "removeConfirmDescription": "{{username}} will be removed from this group.",
+    "leaveConfirmTitle": "Leave group?",
+    "leaveConfirmDescription": "You will lose access to this group until invited again.",
     "role": {
       "admin": "Admin",
       "member": "Member"
@@ -279,5 +296,19 @@
     },
     "userPrefix": "User",
     "noNotes": "No note"
+  },
+  "addGroupMemberDialog": {
+    "title": "Invite member",
+    "description": "Add people from your contacts or invite by email.",
+    "tabContacts": "From contacts",
+    "tabEmail": "By email",
+    "searchContacts": "Search contacts...",
+    "invite": "Invite",
+    "noContacts": "No available contacts to invite.",
+    "emailPlaceholder": "member@example.com",
+    "emailHint": "If the account does not exist, invitation will fail.",
+    "cancel": "Cancel",
+    "sendInvite": "Send invite",
+    "sending": "Sending..."
   }
 }

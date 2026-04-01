@@ -1,12 +1,32 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import type { ApiGroupMemberResponse } from "@/types";
 
 type GroupMembersPanelProps = {
   members: ApiGroupMemberResponse[];
+  currentUserId: number;
+  canManageMembers: boolean;
+  grantPendingUserId?: number | null;
+  removePendingUserId?: number | null;
+  leavePending?: boolean;
+  onGrantAdmin: (userId: number) => void;
+  onRemoveMember: (userId: number) => void;
+  onLeaveGroup: () => void;
   isLoading: boolean;
 };
 
@@ -15,7 +35,18 @@ const roleVariant: Record<ApiGroupMemberResponse["role"], "default" | "secondary
   member: "secondary",
 };
 
-export default function GroupMembersPanel({ members, isLoading }: GroupMembersPanelProps) {
+export default function GroupMembersPanel({
+  members,
+  currentUserId,
+  canManageMembers,
+  grantPendingUserId,
+  removePendingUserId,
+  leavePending,
+  onGrantAdmin,
+  onRemoveMember,
+  onLeaveGroup,
+  isLoading,
+}: GroupMembersPanelProps) {
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -49,12 +80,35 @@ export default function GroupMembersPanel({ members, isLoading }: GroupMembersPa
       <CardContent className="p-4">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-foreground">{t("groupMembersPanel.title")}</h3>
-          <Badge variant="outline">{members.length}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{members.length}</Badge>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={leavePending}>
+                  {t("groupMembersPanel.leaveGroup")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("groupMembersPanel.leaveConfirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("groupMembersPanel.leaveConfirmDescription")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onLeaveGroup}>
+                    {t("groupMembersPanel.leaveGroup")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         <div className="space-y-2">
           {members.map((member) => {
             const initials = (member.username || member.email).slice(0, 1).toUpperCase();
+            const isCurrentUser = member.user_id === currentUserId;
+            const canManageTarget = canManageMembers && !isCurrentUser;
             return (
               <div
                 key={member.id}
@@ -71,8 +125,50 @@ export default function GroupMembersPanel({ members, isLoading }: GroupMembersPa
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
+                  {isCurrentUser && <Badge variant="outline">{t("groupMembersPanel.you")}</Badge>}
                   <Badge variant={roleVariant[member.role]}>{t(`groupMembersPanel.role.${member.role}`)}</Badge>
                   <Badge variant="outline">{t(`groupMembersPanel.status.${member.status}`)}</Badge>
+                  {canManageTarget && member.role !== "admin" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={grantPendingUserId === member.user_id}
+                      onClick={() => onGrantAdmin(member.user_id)}
+                    >
+                      {grantPendingUserId === member.user_id
+                        ? t("groupMembersPanel.grantingAdmin")
+                        : t("groupMembersPanel.grantAdmin")}
+                    </Button>
+                  )}
+                  {canManageTarget && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={removePendingUserId === member.user_id}
+                        >
+                          {removePendingUserId === member.user_id
+                            ? t("groupMembersPanel.removing")
+                            : t("groupMembersPanel.remove")}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("groupMembersPanel.removeConfirmTitle")}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t("groupMembersPanel.removeConfirmDescription", { username: member.username })}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onRemoveMember(member.user_id)}>
+                            {t("groupMembersPanel.remove")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </div>
             );

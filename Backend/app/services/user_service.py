@@ -30,6 +30,13 @@ class UserService:
         return user        
 
 
+    def get_user_by_email(self, email: str) -> User:
+        user = self.user_repo.get_by_email(email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User with this email does not exist")
+        return user
+
+
     def get_all_users(self) -> list[User]:
         return self.user_repo.get_all()
 

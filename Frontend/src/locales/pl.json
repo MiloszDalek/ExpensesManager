@@ -240,6 +240,12 @@
     "summaryTotal": "Suma",
     "expensesSection": "Wydatki grupy",
     "membersSection": "Członkowie",
+    "addMember": "Dodaj członka",
+    "pendingInvitations": "Oczekujące zaproszenia",
+    "noPendingInvitations": "Brak oczekujących zaproszeń.",
+    "pendingInvitationUser": "Zaproszenie wysłane do użytkownika #{{userId}}",
+    "cancelInvitation": "Anuluj",
+    "cancelling": "Anulowanie...",
     "loadMore": "Załaduj więcej",
     "loadingMore": "Ładowanie..."
   },
@@ -247,6 +253,17 @@
     "title": "Członkowie",
     "emptyTitle": "Brak członków",
     "emptyDescription": "Ta grupa nie ma jeszcze członków.",
+    "you": "Ty",
+    "grantAdmin": "Nadaj admina",
+    "grantingAdmin": "Nadawanie...",
+    "remove": "Usuń",
+    "removing": "Usuwanie...",
+    "leaveGroup": "Opuść",
+    "cancel": "Anuluj",
+    "removeConfirmTitle": "Usunąć członka?",
+    "removeConfirmDescription": "{{username}} zostanie usunięty z tej grupy.",
+    "leaveConfirmTitle": "Opuścić grupę?",
+    "leaveConfirmDescription": "Stracisz dostęp do tej grupy do momentu ponownego zaproszenia.",
     "role": {
       "admin": "Administrator",
       "member": "Członek"
@@ -269,5 +286,19 @@
     },
     "userPrefix": "Użytkownik",
     "noNotes": "Brak notatki"
+  },
+  "addGroupMemberDialog": {
+    "title": "Zaproś członka",
+    "description": "Dodaj osoby z kontaktów lub zaproś po emailu.",
+    "tabContacts": "Z kontaktów",
+    "tabEmail": "Po emailu",
+    "searchContacts": "Szukaj kontaktów...",
+    "invite": "Zaproś",
+    "noContacts": "Brak dostępnych kontaktów do zaproszenia.",
+    "emailPlaceholder": "member@example.com",
+    "emailHint": "Jeśli konto nie istnieje, zaproszenie się nie powiedzie.",
+    "cancel": "Anuluj",
+    "sendInvite": "Wyślij zaproszenie",
+    "sending": "Wysyłanie..."
   }
 }

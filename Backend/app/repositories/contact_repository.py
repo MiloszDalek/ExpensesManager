@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from app.models import Contact
 
 
@@ -25,6 +25,7 @@ class ContactRepository:
         return (
             self.db.query(Contact)
             .filter(Contact.user_id == user_id)
+            .options(selectinload(Contact.contact))
             .order_by(Contact.created_at.desc())
             .limit(limit)
             .offset(offset)

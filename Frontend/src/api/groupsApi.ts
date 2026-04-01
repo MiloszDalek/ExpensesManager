@@ -38,4 +38,12 @@ export const groupsApi = {
     );
     return data;
   },
+
+  removeMember: async (groupId: number, userId: number): Promise<void> => {
+    await client.delete(`/groups/${groupId}/members/${userId}`);
+  },
+
+  leaveGroup: async (groupId: number): Promise<void> => {
+    await client.delete(`/groups/${groupId}/members/me`);
+  },
 };

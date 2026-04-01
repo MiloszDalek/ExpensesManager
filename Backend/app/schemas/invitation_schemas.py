@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from datetime import datetime
 from app.enums import InvitationStatus, InvitationType
 from typing import Optional, Union
@@ -25,6 +25,8 @@ class ContactInvitationResponse(ContactInvitationBase):
 
 class GroupInvitationCreate(ContactInvitationBase):
     group_id: int
+    to_user_id: Optional[int] = None
+    to_user_email: Optional[EmailStr] = None
 
 
 class GroupInvitationResponse(ContactInvitationBase):

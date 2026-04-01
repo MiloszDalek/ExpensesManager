@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from app.models import Invitation
-from app.enums import InvitationType
+from app.enums import InvitationType, InvitationStatus
 
 
 class InvitationRepository:
@@ -67,7 +67,41 @@ class InvitationRepository:
         )
 
 
+    def get_pending_for_recipient(self, user_id: int, limit: int, offset: int) -> list[Invitation]:
+        return (
+            self.db.query(Invitation)
+            .filter(
+                Invitation.to_user_id == user_id,
+                Invitation.status == InvitationStatus.PENDING,
+            )
+            .order_by(Invitation.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+
+    def get_group_pending(self, group_id: int, limit: int, offset: int) -> list[Invitation]:
+        return (
+            self.db.query(Invitation)
+            .filter(
+                Invitation.type == InvitationType.GROUP,
+                Invitation.group_id == group_id,
+                Invitation.status == InvitationStatus.PENDING,
+            )
+            .order_by(Invitation.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+
     def create(self, invitation: Invitation):
+        self.db.add(invitation)
+        self.db.flush()
+
+
+    def save(self, invitation: Invitation):
         self.db.add(invitation)
         self.db.flush()
 

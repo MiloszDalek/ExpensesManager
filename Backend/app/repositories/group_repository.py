@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
 from app.models import Expense
+from app.enums import GroupMemberRole, GroupMemberStatus
 
 
 class GroupRepository:
@@ -60,12 +61,43 @@ class GroupRepository:
         self.db.flush()
 
 
+    def delete_member(self, member: GroupMember):
+        self.db.delete(member)
+        self.db.flush()
+
+
     def get_all_members(self, group_id: int) -> list[GroupMember]:
         return (
             self.db.query(GroupMember)
             .filter(GroupMember.group_id == group_id)
             .options(selectinload(GroupMember.user))
             .all()
+        )
+
+
+    def get_active_admin_members(self, group_id: int) -> list[GroupMember]:
+        return (
+            self.db.query(GroupMember)
+            .filter(
+                GroupMember.group_id == group_id,
+                GroupMember.status == GroupMemberStatus.ACTIVE,
+                GroupMember.role == GroupMemberRole.ADMIN,
+            )
+            .order_by(GroupMember.joined_at.asc(), GroupMember.id.asc())
+            .all()
+        )
+
+
+    def get_oldest_active_member_except(self, group_id: int, excluded_user_id: int) -> GroupMember | None:
+        return (
+            self.db.query(GroupMember)
+            .filter(
+                GroupMember.group_id == group_id,
+                GroupMember.status == GroupMemberStatus.ACTIVE,
+                GroupMember.user_id != excluded_user_id,
+            )
+            .order_by(GroupMember.joined_at.asc(), GroupMember.id.asc())
+            .first()
         )
 
 

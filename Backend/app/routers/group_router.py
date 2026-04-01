@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.services import GroupService
 from app.database import get_db
-from app.schemas import GroupResponse, GroupCreate, GroupUpdate, UserResponse, GroupMemberResponse
+from app.schemas import GroupResponse, GroupCreate, GroupUpdate, GroupMemberResponse
 from app.models import User
-from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
+from app.utils.auth_dependencies import get_current_active_user
 
 group_router = APIRouter(
     prefix='/groups',
@@ -68,3 +68,22 @@ def grant_admin_role(
     current_user: User = Depends(get_current_active_user)
 ):
     return service.grant_admin_role(group_id, user_id, current_user.id)
+
+
+@group_router.delete("/{group_id}/members/me", status_code=status.HTTP_204_NO_CONTENT)
+def leave_group(
+    group_id: int,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    service.leave_group(group_id, current_user.id)
+
+
+@group_router.delete("/{group_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_member(
+    group_id: int,
+    user_id: int,
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    service.remove_member(group_id, user_id, current_user.id)

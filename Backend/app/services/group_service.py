@@ -62,6 +62,30 @@ class GroupService:
         if member is None:
             raise HTTPException(status_code=404, detail="Member not found")
         return member
+
+
+    def _require_admin(self, group_id: int, user_id: int) -> GroupMember:
+        member = self.get_member(group_id, user_id)
+        if member.role != GroupMemberRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+        return member
+
+
+    def _prepare_admin_reassignment_if_needed(self, group_id: int, member: GroupMember):
+        if member.role != GroupMemberRole.ADMIN:
+            return
+
+        active_admins = self.group_repo.get_active_admin_members(group_id)
+        is_last_admin = len(active_admins) == 1 and active_admins[0].user_id == member.user_id
+
+        if not is_last_admin:
+            return
+
+        replacement = self.group_repo.get_oldest_active_member_except(group_id, member.user_id)
+        if replacement is None:
+            raise HTTPException(status_code=400, detail="Cannot remove the last group member")
+
+        replacement.role = GroupMemberRole.ADMIN
         
 
     def grant_admin_role(self, group_id: int, user_id: int, current_admin_id: int) -> GroupMember:
@@ -70,8 +94,7 @@ class GroupService:
 
         group = self.get_group(group_id, current_admin_id)
 
-        if self.get_member(group.id, current_admin_id).role != GroupMemberRole.ADMIN:
-            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+        self._require_admin(group.id, current_admin_id)
 
         new_admin = self.get_member(group.id, user_id)
         
@@ -82,12 +105,37 @@ class GroupService:
         return new_admin
 
 
+    def remove_member(self, group_id: int, user_id: int, current_admin_id: int):
+        if user_id == current_admin_id:
+            raise HTTPException(status_code=400, detail="Use leave endpoint to leave group")
+
+        group = self.get_group(group_id, current_admin_id)
+
+        self._require_admin(group.id, current_admin_id)
+
+        member_to_remove = self.get_member(group.id, user_id)
+
+        self._prepare_admin_reassignment_if_needed(group.id, member_to_remove)
+
+        self.group_repo.delete_member(member_to_remove)
+        self.group_repo.save_all()
+
+
+    def leave_group(self, group_id: int, user_id: int):
+        group = self.get_group(group_id, user_id)
+
+        current_member = self.get_member(group.id, user_id)
+
+        self._prepare_admin_reassignment_if_needed(group.id, current_member)
+
+        self.group_repo.delete_member(current_member)
+        self.group_repo.save_all()
+
+
     def update_group(self, group_id: int, group_in: GroupUpdate, user_id: int) -> Group:
         group = self.get_group(group_id, user_id)
 
-        member = self.get_member(group.id, user_id)
-        if member.role != GroupMemberRole.ADMIN:
-            raise HTTPException(status_code=403, detail="Not authorized admin role required")
+        self._require_admin(group.id, user_id)
 
         update_data = group_in.model_dump(exclude_unset=True)
 

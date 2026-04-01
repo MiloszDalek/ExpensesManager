@@ -33,7 +33,10 @@ export const queryKeys = {
   },
 
   invitations: {
-    // currently only mutations in backend router
+    pending: (params?: { limit?: number; offset?: number }) =>
+      ["invitations", "pending", params ?? {}] as const,
+    groupPending: (groupId: number, params?: { limit?: number; offset?: number }) =>
+      ["invitations", "group", groupId, "pending", params ?? {}] as const,
   },
 
   notifications: {

@@ -5,8 +5,10 @@ export interface ApiContactInvitationCreate {
   to_user_id: number;
 }
 
-export interface ApiGroupInvitationCreate extends ApiContactInvitationCreate {
+export interface ApiGroupInvitationCreate {
   group_id: number;
+  to_user_id?: number;
+  to_user_email?: string;
 }
 
 export interface ApiInvitationBaseResponse {
