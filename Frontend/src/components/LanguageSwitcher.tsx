@@ -1,6 +1,12 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function PolishFlag({ className }: { className?: string }) {
   return (
@@ -72,18 +78,33 @@ export default function LanguageSwitcher({
   className,
 }: LanguageSwitcherProps) {
   const { i18n, t } = useTranslation();
-  const selectId = useId();
 
   const activeLanguage: "pl" | "en" = i18n.resolvedLanguage?.startsWith("pl") ? "pl" : "en";
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    i18n.changeLanguage(e.target.value);
+  const handleChange = (value: string) => {
+    i18n.changeLanguage(value);
   };
+
+  const triggerPadding = compact
+    ? size === "sm"
+      ? "pl-7 pr-2"
+      : "pl-8 pr-2"
+    : size === "sm"
+      ? "px-2"
+      : "px-3";
+
+  const triggerWidth = compact
+    ? size === "sm"
+      ? "min-w-[84px]"
+      : "min-w-[96px]"
+    : size === "sm"
+      ? "min-w-[112px]"
+      : "min-w-[130px]";
 
   return (
     <div className={cn("flex items-center", size === "sm" ? "gap-1.5" : "gap-2", className)}>
       {showLabel ? (
-        <label htmlFor={selectId} className={cn("text-muted-foreground", "text-sm")}>
+        <label className={cn("text-muted-foreground", "text-sm")}>
           {t("languageSwitcher.selectLanguage")}
         </label>
       ) : null}
@@ -105,26 +126,24 @@ export default function LanguageSwitcher({
           </span>
         ) : null}
 
-        <select
-          id={selectId}
-          value={activeLanguage}
-          onChange={handleChange}
-          className={cn(
-            "rounded-md border border-input bg-background text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/40",
-            size === "sm" ? "h-8 text-xs" : "h-9 text-sm",
-            compact
-              ? size === "sm"
-                ? "min-w-[84px] pl-7 pr-2"
-                : "min-w-[96px] pl-8 pr-2"
-              : size === "sm"
-                ? "min-w-[112px] px-2"
-                : "min-w-[130px] px-3"
-          )}
-          aria-label={t("languageSwitcher.selectLanguage")}
-        >
-          <option value="pl">Polski</option>
-          <option value="en">English</option>
-        </select>
+        <Select value={activeLanguage} onValueChange={handleChange}>
+          <SelectTrigger
+            size={size}
+            className={cn(
+              triggerWidth,
+              triggerPadding,
+              "text-muted-foreground hover:text-foreground"
+            )}
+            aria-label={t("languageSwitcher.selectLanguage")}
+            title={t("languageSwitcher.selectLanguage")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pl">Polski</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

@@ -94,7 +94,11 @@ export default function GlobalHeader() {
           ) : null}
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            {user ? (
+              <div className="hidden lg:flex">
+                <ThemeToggle />
+              </div>
+            ) : null}
 
             <LanguageSwitcher
               compact

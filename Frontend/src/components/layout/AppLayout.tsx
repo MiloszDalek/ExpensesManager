@@ -3,9 +3,9 @@ import GlobalHeader from "./GlobalHeader";
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-background text-foreground">
       <GlobalHeader />
-      <main>
+      <main className="min-h-[calc(100vh-4rem)]">
         <Outlet />
       </main>
     </div>
