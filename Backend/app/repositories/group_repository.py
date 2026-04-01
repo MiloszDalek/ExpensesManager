@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
 from app.models import Expense
@@ -64,6 +64,7 @@ class GroupRepository:
         return (
             self.db.query(GroupMember)
             .filter(GroupMember.group_id == group_id)
+            .options(selectinload(GroupMember.user))
             .all()
         )
 

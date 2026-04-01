@@ -1,7 +1,6 @@
 import { useState } from "react";
-// import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation } from "@tanstack/react-query";
-// import { createPageUrl } from "@/utils";
+import { useTranslation } from "react-i18next";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Users } from "lucide-react";
@@ -10,154 +9,114 @@ import { motion, AnimatePresence } from "framer-motion";
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
 import GroupCard from "../components/groups/GroupCard";
 import { useAuth } from "@/contexts/AuthContext";
-
-import groupsMock from "@/mocks/groups-mock-data.json";
-
-type CreateGroupInput = {
-  name: string;
-  description?: string;
-  currency?: string;
-};
-
-type GroupColor = "purple" | "blue" | "teal" | "pink" | "orange";
-
-type Group = {
-  id: string;
-  name: string;
-  color?: GroupColor;
-  description?: string;
-  currency?: string;
-  members: string[];
-  created_date: string;
-  total_expenses: number;
-};
-
-
+import { groupsApi } from "@/api/groupsApi";
+import { queryKeys } from "@/api/queryKeys";
+import type { ApiGroupCreate, ApiGroupResponse } from "@/types";
 
 export default function GroupsPage() {
+  const { t } = useTranslation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const queryClient = useQueryClient();
 
   const { user } = useAuth();
 
-const [mockGroups, setMockGroups] = useState<Group[]>(groupsMock as Group[]);
+  const { data: groups = [], isLoading, error } = useQuery<ApiGroupResponse[]>({
+    queryKey: queryKeys.groups.all,
+    queryFn: () => groupsApi.listAll(),
+    enabled: !!user,
+  });
 
-const { data: groups = [], isLoading } = useQuery({
-  queryKey: ["groups"],
-  queryFn: async () => mockGroups
-});
-
-const createGroupMutation = useMutation({
-  mutationFn: async (groupData: CreateGroupInput) => {
-    const newGroup = {
-      id: crypto.randomUUID(),
-      ...groupData,
-      members: [user?.email!],
-      created_date: new Date().toISOString(),
-      total_expenses: 0
-    };
-
-    setMockGroups(prev => [newGroup, ...prev]);
-    return newGroup;
-  },
-  onSuccess: () => {
-    setShowCreateDialog(false);
-  }
-});
-
-const deleteGroupMutation = useMutation({
-  mutationFn: async (groupId: String) => {
-    setMockGroups(prev =>
-      prev.filter(group => group.id !== groupId)
-    );
-    return groupId;
-  }
-});
-
-
-  // const createGroupMutation = useMutation({
-  //   mutationFn: (groupData) => base44.entities.Group.create(groupData),
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ['groups'] });
-  //     setShowCreateDialog(false);
-  //   },
-  // });
-
-  // const deleteGroupMutation = useMutation({
-  //   mutationFn: (groupId) => base44.entities.Group.delete(groupId),
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ['groups'] });
-  //   },
-  // });
+  const createGroupMutation = useMutation<ApiGroupResponse, Error, ApiGroupCreate>({
+    mutationFn: (groupData) => groupsApi.create(groupData),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
+      setShowCreateDialog(false);
+    },
+    onError: (mutationError) => {
+      console.error("Failed to create group:", mutationError);
+    },
+  });
 
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  const myGroups = groups.filter(g => g.members?.includes(user.email));
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-destructive text-center">
+          <h2 className="text-2xl font-bold mb-2">{t("common.errorLoadingData")}</h2>
+          <p className="text-muted-foreground">
+            {error.message || t("common.somethingWentWrong")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Your Groups</h1>
-            <p className="text-gray-500 mt-2">Manage shared expenses with friends and family</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("groupsPage.title")}</h1>
+            <p className="text-muted-foreground mt-2">
+              {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>
+            </p>
           </div>
           <Button
             onClick={() => setShowCreateDialog(true)}
-            className="bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 text-white shadow-lg"
+            className="shadow-lg"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create Group
+            {t("groupsPage.createGroup")}
           </Button>
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-6">
-                  <div className="h-20 bg-gray-200 rounded"></div>
+                  <div className="h-20 bg-muted rounded"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : myGroups.length === 0 ? (
+        ) : groups.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20"
           >
-            <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="w-12 h-12 text-purple-500" />
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+              <Users className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">No groups yet</h2>
-            <p className="text-gray-500 mb-6">Create your first group to start splitting expenses</p>
+            <h2 className="text-2xl font-bold text-foreground mb-3">{t("groupsPage.emptyTitle")}</h2>
+            <p className="text-muted-foreground mb-6">{t("groupsPage.emptyDescription")}</p>
             <Button
               onClick={() => setShowCreateDialog(true)}
-              className="bg-gradient-to-r from-purple-500 to-teal-500 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Your First Group
+              {t("groupsPage.createFirstGroup")}
             </Button>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AnimatePresence>
-              {myGroups.map((group, index) => (
+              {groups.map((group, index) => (
                 <GroupCard
                   key={group.id}
                   group={group}
                   index={index}
-                  onDelete={() => deleteGroupMutation.mutate(group.id)}
                 />
               ))}
             </AnimatePresence>
@@ -168,8 +127,7 @@ const deleteGroupMutation = useMutation({
       <CreateGroupDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onSubmit={(data: CreateGroupInput) => createGroupMutation.mutate(data)}
-        userEmail={user.email}
+        onSubmit={(data: ApiGroupCreate) => createGroupMutation.mutate(data)}
         isLoading={createGroupMutation.isPending}
       />
     </div>

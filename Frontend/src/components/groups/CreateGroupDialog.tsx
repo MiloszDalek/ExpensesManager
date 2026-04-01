@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -10,23 +11,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-
-const colors = ['purple', 'blue', 'teal', 'pink', 'orange'];
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SUPPORTED_CURRENCIES } from "@/types/enums";
 
 type CreateGroupFormData = {
   name: string;
   description: string;
-  members: string[];
-  color: (typeof colors)[number];
+  currency: (typeof SUPPORTED_CURRENCIES)[number];
 };
 
 type CreateGroupDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateGroupFormData) => void;
-  userEmail: string;
   isLoading?: boolean;
 };
 
@@ -34,70 +37,60 @@ export default function CreateGroupDialog({
   open,
   onOpenChange,
   onSubmit,
-  userEmail,
   isLoading,
 }: CreateGroupDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    members: [userEmail],
-    color: 'purple',
+    name: "",
+    description: "",
+    currency: "PLN" as (typeof SUPPORTED_CURRENCIES)[number],
   });
-  const [newMemberEmail, setNewMemberEmail] = useState('');
 
-  const handleAddMember = () => {
-    if (newMemberEmail && !formData.members.includes(newMemberEmail)) {
-      setFormData(prev => ({
-        ...prev,
-        members: [...prev.members, newMemberEmail]
-      }));
-      setNewMemberEmail('');
-    }
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      currency: "PLN",
+    });
   };
 
-  const handleRemoveMember = (email: string) => {
-    if (email === userEmail) return; // Can't remove self
-    setFormData(prev => ({
-      ...prev,
-      members: prev.members.filter(m => m !== email)
-    }));
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetForm();
+    }
+    onOpenChange(nextOpen);
   };
 
   const handleSubmit = () => {
-    if (formData.name && formData.members.length > 0) {
+    if (formData.name.trim()) {
       onSubmit(formData);
-      setFormData({
-        name: '',
-        description: '',
-        members: [userEmail],
-        color: 'purple',
-      });
+      resetForm();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Group</DialogTitle>
+          <DialogTitle>{t("createGroupDialog.title")}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Group Name</Label>
+            <Label htmlFor="name">{t("createGroupDialog.name")}</Label>
             <Input
               id="name"
-              placeholder="Weekend Trip, Roommates, etc."
+              placeholder={t("createGroupDialog.namePlaceholder")}
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="description">{t("createGroupDialog.description")}</Label>
             <Textarea
               id="description"
-              placeholder="What's this group for?"
+              placeholder={t("createGroupDialog.descriptionPlaceholder")}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
@@ -105,61 +98,39 @@ export default function CreateGroupDialog({
           </div>
 
           <div>
-            <Label>Color Theme</Label>
-            <div className="flex gap-2 mt-2">
-              {colors.map(color => (
-                <button
-                  key={color}
-                  onClick={() => setFormData(prev => ({ ...prev, color }))}
-                  className={`w-8 h-8 rounded-full bg-gradient-to-br from-${color}-500 to-${color}-600 ${
-                    formData.color === color ? 'ring-2 ring-offset-2 ring-gray-900' : ''
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label>Members</Label>
-            <div className="flex gap-2 mt-2 mb-2">
-              <Input
-                placeholder="Enter email address"
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddMember()}
-              />
-              <Button onClick={handleAddMember} size="sm">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.members.map(email => (
-                <Badge key={email} variant="secondary" className="pr-1">
-                  {email}
-                  {email !== userEmail && (
-                    <button
-                      onClick={() => handleRemoveMember(email)}
-                      className="ml-2 hover:text-red-500"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </Badge>
-              ))}
-            </div>
+            <Label>{t("createGroupDialog.currency")}</Label>
+            <Select
+              value={formData.currency}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  currency: value as (typeof SUPPORTED_CURRENCIES)[number],
+                }))
+              }
+            >
+              <SelectTrigger className="mt-2 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_CURRENCIES.map((currency) => (
+                  <SelectItem key={currency} value={currency}>
+                    {currency}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            {t("createGroupDialog.cancel")}
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!formData.name || isLoading}
-            className="bg-gradient-to-r from-purple-500 to-teal-500 text-white"
+            disabled={!formData.name.trim() || isLoading}
           >
-            Create Group
+            {isLoading ? t("createGroupDialog.creating") : t("createGroupDialog.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

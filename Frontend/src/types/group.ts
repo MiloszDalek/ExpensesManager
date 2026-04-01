@@ -54,6 +54,8 @@ export interface ApiGroupMemberResponse {
   id: number;
   group_id: number;
   user_id: number;
+  email: string;
+  username: string;
   joined_at: ISODateTimeString;
   role: GroupMemberRole;
   status: GroupMemberStatus;

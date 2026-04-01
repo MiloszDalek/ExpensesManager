@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, AliasPath, EmailStr
 from app.enums import GroupMemberRole, GroupMemberStatus
 
 
@@ -13,5 +13,7 @@ class GroupMemberResponse(GroupMemberBase):
     joined_at: datetime
     role: GroupMemberRole
     status: GroupMemberStatus
+    email: EmailStr = Field(validation_alias=AliasPath("user", "email"))
+    username: str = Field(validation_alias=AliasPath("user", "username"))
 
     model_config = ConfigDict(from_attributes=True)

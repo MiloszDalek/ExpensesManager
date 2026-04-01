@@ -1,106 +1,72 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils/url";
-import { Users, Trash2, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Users, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
 
-const groupColors = {
-  purple: "from-purple-500 to-purple-600",
-  blue: "from-blue-500 to-blue-600",
-  teal: "from-teal-500 to-teal-600",
-  pink: "from-pink-500 to-pink-600",
-  orange: "from-orange-500 to-orange-600",
-};
-
-type GroupColor = "purple" | "blue" | "teal" | "pink" | "orange";
-
-type Group = {
-  id: string;
-  name: string;
-  color?: GroupColor;
-  description?: string;
-  currency?: string;
-  members: string[];
-  created_date: string;
-  total_expenses: number;
-};
+import type { ApiGroupResponse } from "@/types";
 
 interface GroupCardProps {
-  group: Group;             // Twój typ Group z góry
+  group: ApiGroupResponse;
   index: number;
-  onDelete: () => void;
 }
 
+const accentGradients = [
+  "from-cyan-500 to-teal-500",
+  "from-emerald-500 to-lime-500",
+  "from-blue-500 to-indigo-500",
+  "from-amber-500 to-orange-500",
+  "from-rose-500 to-pink-500",
+];
 
+export default function GroupCard({ group, index }: GroupCardProps) {
+  const { t } = useTranslation();
+  const accent = accentGradients[index % accentGradients.length];
+  const isActive = group.status === "active";
 
-export default function GroupCard({group, index, onDelete }: GroupCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ delay: index * 0.1 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ delay: index * 0.05 }}
     >
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 overflow-hidden group">
-        <div className={`h-2 bg-gradient-to-r ${groupColors[group.color as GroupColor] || groupColors.purple}`} />
+      <Card className="group overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+        <div className={`h-1.5 bg-gradient-to-r ${accent}`} />
         <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${groupColors[group.color as GroupColor] || groupColors.purple} flex items-center justify-center shadow-lg`}>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${accent} shadow-md`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{group.name}</h3>
-                <p className="text-sm text-gray-500">{group.members?.length || 0} members</p>
+                <h3 className="text-lg font-semibold text-foreground">{group.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {t("groupsPage.currencyLabel")}: {group.currency}
+                </p>
               </div>
             </div>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Group?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete "{group.name}". This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
+            <Badge variant={isActive ? "default" : "secondary"}>
+              {t(isActive ? "groupsPage.statusActive" : "groupsPage.statusArchived")}
+            </Badge>
           </div>
 
           {group.description && (
-            <p className="text-gray-600 mb-4 line-clamp-2">{group.description}</p>
+            <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{group.description}</p>
           )}
 
-          <Link to={createPageUrl("GroupDetail") + `?id=${group.id}`}>
-            <Button className="w-full bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 text-white">
-              View Group
+          <p className="mb-4 text-xs text-muted-foreground">
+            {t("groupsPage.createdAt")}: {format(new Date(group.created_at), "MMM d, yyyy")}
+          </p>
+
+          <Link to={createPageUrl("GroupDetail", { id: group.id })}>
+            <Button className="w-full">
+              {t("groupsPage.viewGroup")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>

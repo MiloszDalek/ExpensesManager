@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import DashboardPage from "@/pages/DashboardPage";
 import GroupsPage from "@/pages/GroupsPage";
+import GroupDetailPage from "@/pages/GroupDetailPage";
 import PersonalExpensesPage from "@/pages/PersonalExpensesPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -29,6 +30,7 @@ const AppRouter = () => {
           {/* Private */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/groups" element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
+          <Route path="/groups/:id" element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
           <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
 
           {/* default redirect */}

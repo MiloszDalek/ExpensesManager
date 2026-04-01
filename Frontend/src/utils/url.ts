@@ -11,7 +11,7 @@ type PageName =
 const PAGE_PATHS: Record<PageName, string> = {
   Home: "/",
   Groups: "/groups",
-  GroupDetail: "/groups/detail",
+  GroupDetail: "/groups/:id",
   NewGroup: "/groups/new",
   Settings: "/settings",
   Dashboard: "/dashboard",

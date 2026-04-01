@@ -203,5 +203,71 @@
     "save": "Zapisz zmiany",
     "mainCategory": "Główna kategoria",
     "categoryLabel": "Kategoria"
+  },
+  "groupsPage": {
+    "title": "Twoje Grupy",
+    "subtitle": "Zarządzaj wspólnymi wydatkami",
+    "total": "Liczba grup",
+    "createGroup": "Utwórz grupę",
+    "createFirstGroup": "Utwórz pierwszą grupę",
+    "emptyTitle": "Brak grup",
+    "emptyDescription": "Utwórz grupę, aby zacząć dzielić wydatki",
+    "viewGroup": "Przejdź do grupy",
+    "currencyLabel": "Waluta",
+    "statusActive": "Aktywna",
+    "statusArchived": "Zarchiwizowana",
+    "createdAt": "Utworzono"
+  },
+  "createGroupDialog": {
+    "title": "Utwórz nową grupę",
+    "name": "Nazwa grupy",
+    "namePlaceholder": "Wyjazd weekendowy, Mieszkanie, Budżet zespołu...",
+    "description": "Opis (opcjonalnie)",
+    "descriptionPlaceholder": "Do czego służy ta grupa?",
+    "currency": "Waluta",
+    "cancel": "Anuluj",
+    "submit": "Utwórz grupę",
+    "creating": "Tworzenie..."
+  },
+  "groupDetailPage": {
+    "backToGroups": "Powrót do grup",
+    "invalidGroupTitle": "Nieprawidłowe ID grupy",
+    "invalidGroupDescription": "Podany adres grupy jest nieprawidłowy.",
+    "noDescription": "Brak opisu",
+    "currencyLabel": "Waluta",
+    "summaryMembers": "Członkowie",
+    "summaryExpenses": "Wydatki",
+    "summaryTotal": "Suma",
+    "expensesSection": "Wydatki grupy",
+    "membersSection": "Członkowie",
+    "loadMore": "Załaduj więcej",
+    "loadingMore": "Ładowanie..."
+  },
+  "groupMembersPanel": {
+    "title": "Członkowie",
+    "emptyTitle": "Brak członków",
+    "emptyDescription": "Ta grupa nie ma jeszcze członków.",
+    "role": {
+      "admin": "Administrator",
+      "member": "Członek"
+    },
+    "status": {
+      "active": "Aktywny",
+      "left": "Opuścił"
+    }
+  },
+  "groupExpensesList": {
+    "emptyTitle": "Brak wydatków grupowych",
+    "emptyDescription": "Dodaj pierwszy wydatek, aby zacząć śledzić rozliczenia.",
+    "paidBy": "Zapłacił",
+    "splitType": "Typ podziału",
+    "shares": "Udziały",
+    "split": {
+      "equal": "Równo",
+      "percent": "Procentowo",
+      "exact": "Dokładnie"
+    },
+    "userPrefix": "Użytkownik",
+    "noNotes": "Brak notatki"
   }
 }

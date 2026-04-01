@@ -213,5 +213,71 @@
     "save": "Save changes",
     "mainCategory": "Main category",
     "categoryLabel": "Category"
+  },
+  "groupsPage": {
+    "title": "Your Groups",
+    "subtitle": "Manage shared expenses with your people",
+    "total": "Total groups",
+    "createGroup": "Create Group",
+    "createFirstGroup": "Create Your First Group",
+    "emptyTitle": "No groups yet",
+    "emptyDescription": "Create a group to start sharing expenses",
+    "viewGroup": "View Group",
+    "currencyLabel": "Currency",
+    "statusActive": "Active",
+    "statusArchived": "Archived",
+    "createdAt": "Created"
+  },
+  "createGroupDialog": {
+    "title": "Create New Group",
+    "name": "Group name",
+    "namePlaceholder": "Weekend Trip, Roommates, Team budget...",
+    "description": "Description (optional)",
+    "descriptionPlaceholder": "What is this group for?",
+    "currency": "Currency",
+    "cancel": "Cancel",
+    "submit": "Create Group",
+    "creating": "Creating..."
+  },
+  "groupDetailPage": {
+    "backToGroups": "Back to groups",
+    "invalidGroupTitle": "Invalid group id",
+    "invalidGroupDescription": "The provided group path is not valid.",
+    "noDescription": "No description",
+    "currencyLabel": "Currency",
+    "summaryMembers": "Members",
+    "summaryExpenses": "Expenses",
+    "summaryTotal": "Total",
+    "expensesSection": "Group expenses",
+    "membersSection": "Members",
+    "loadMore": "Load More",
+    "loadingMore": "Loading..."
+  },
+  "groupMembersPanel": {
+    "title": "Members",
+    "emptyTitle": "No members",
+    "emptyDescription": "There are no members in this group yet.",
+    "role": {
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "status": {
+      "active": "Active",
+      "left": "Left"
+    }
+  },
+  "groupExpensesList": {
+    "emptyTitle": "No group expenses",
+    "emptyDescription": "Add the first expense to start tracking balances.",
+    "paidBy": "Paid by",
+    "splitType": "Split type",
+    "shares": "Shares",
+    "split": {
+      "equal": "Equal",
+      "percent": "Percent",
+      "exact": "Exact"
+    },
+    "userPrefix": "User",
+    "noNotes": "No note"
   }
 }
