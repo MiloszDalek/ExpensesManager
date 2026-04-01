@@ -127,6 +127,14 @@
     "subtitle": "Łatwo śledź wydatki osobiste i grupowe",
     "login": "Zaloguj"
   },
+  "notFoundPage": {
+    "title": "Ups, nic tu nie ma",
+    "subtitle": "Strona, której szukasz, nie istnieje albo została przeniesiona. Wróćmy do miejsca, gdzie ogarniasz wydatki.",
+    "requestedPath": "Żądana ścieżka",
+    "goBack": "Wróć",
+    "goHome": "Przejdź do strony głównej",
+    "goToDashboard": "Przejdź do pulpitu"
+  },
   "expenseFilters": {
     "category": "Kategoria",
     "currency": "Waluta",

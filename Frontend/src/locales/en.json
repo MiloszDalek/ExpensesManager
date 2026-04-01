@@ -137,6 +137,14 @@
     "subtitle": "Track your personal and group expenses easily",
     "login": "Login"
   },
+  "notFoundPage": {
+    "title": "You took a wrong turn",
+    "subtitle": "The page you are looking for does not exist or has been moved. Let's get you back to where your expenses live.",
+    "requestedPath": "Requested path",
+    "goBack": "Go back",
+    "goHome": "Go to home",
+    "goToDashboard": "Go to dashboard"
+  },
   "expenseFilters": {
     "category": "Category",
     "currency": "Currency",
