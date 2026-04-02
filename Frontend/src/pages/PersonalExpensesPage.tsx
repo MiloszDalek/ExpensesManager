@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ScanSearch } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, startOfMonth, subMonths } from "date-fns";
 
@@ -84,6 +85,7 @@ export default function PersonalExpensesPage() {
   const [draftFilters, setDraftFilters] = useState<PersonalExpensesFiltersState>(getInitialFilters);
   const [appliedFilters, setAppliedFilters] = useState<PersonalExpensesFiltersState>(getInitialFilters);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const LIMIT = 20;
 
   const { user } = useAuth();
@@ -305,6 +307,13 @@ export default function PersonalExpensesPage() {
             </p>
           </div>
           <div className="flex flex-row items-center gap-4 w-full md:w-auto justify-end">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/receipt-scan")}
+            >
+              <ScanSearch className="w-4 h-4 mr-2" />
+              {t("personalExpensesPage.scanReceipt")}
+            </Button>
             <Button
               onClick={() => setShowAddDialog(true)}
               className="shadow-lg"

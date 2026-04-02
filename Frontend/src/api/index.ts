@@ -8,4 +8,5 @@ export * from "./expensesPersonalApi";
 export * from "./invitationsApi";
 export * from "./notificationsApi";
 export * from "./settlementsApi";
+export * from "./receiptsApi";
 export * from "./queryKeys";

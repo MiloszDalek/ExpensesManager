@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { receiptsApi } from "@/api/receiptsApi";
 
 import type {
   ApiCategoryResponse,
@@ -28,6 +29,7 @@ import type {
   ApiGroupExpenseCreate,
   ApiGroupExpenseResponse,
   ApiGroupMemberResponse,
+  ApiReceiptLineItem,
 } from "@/types";
 import type { CurrencyEnum, SplitType } from "@/types/enums";
 
@@ -55,6 +57,17 @@ type FormData = {
 };
 
 const parseDecimal = (value: string): number => Number(value.replace(",", "."));
+
+const extractErrorMessage = (error: unknown): string => {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+  }
+
+  return "";
+};
 
 const toAmountString = (value: number) => (Math.round(value * 100) / 100).toFixed(2);
 
@@ -238,6 +251,17 @@ export default function AddGroupExpenseDialog({
   const [exactShareInputs, setExactShareInputs] = useState<Record<number, string>>({});
   const [percentShareInputs, setPercentShareInputs] = useState<Record<number, string>>({});
   const [localError, setLocalError] = useState<string | null>(null);
+  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null);
+  const [receiptText, setReceiptText] = useState<string | null>(null);
+  const [receiptItems, setReceiptItems] = useState<ApiReceiptLineItem[]>([]);
+  const [parsedReceiptVendor, setParsedReceiptVendor] = useState<string | null>(null);
+  const [parsedReceiptDate, setParsedReceiptDate] = useState<string | null>(null);
+  const [parsedReceiptTotal, setParsedReceiptTotal] = useState<string | null>(null);
+  const [detectedReceiptAmount, setDetectedReceiptAmount] = useState<string | null>(null);
+  const [receiptOcrStatus, setReceiptOcrStatus] = useState<string | null>(null);
+  const [receiptUploadError, setReceiptUploadError] = useState<string | null>(null);
+  const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -264,6 +288,16 @@ export default function AddGroupExpenseDialog({
       });
       setExactShareInputs(exactInputs);
       setPercentShareInputs(buildPercentInputsFromShares(expense.shares, expenseTotalCents, participantIds));
+      setReceiptImageUrl(expense.receipt_image_url ?? null);
+      setReceiptText(expense.receipt_text ?? null);
+      setReceiptItems([]);
+      setParsedReceiptVendor(null);
+      setParsedReceiptDate(null);
+      setParsedReceiptTotal(null);
+      setDetectedReceiptAmount(null);
+      setReceiptOcrStatus(null);
+      setReceiptUploadError(null);
+      setReceiptFileName(null);
       setLocalError(null);
       return;
     }
@@ -271,6 +305,16 @@ export default function AddGroupExpenseDialog({
     setFormData(buildInitialState());
     setExactShareInputs({});
     setPercentShareInputs(buildEqualPercentInputs(activeMembers.map((member) => member.user_id)));
+    setReceiptImageUrl(null);
+    setReceiptText(null);
+    setReceiptItems([]);
+    setParsedReceiptVendor(null);
+    setParsedReceiptDate(null);
+    setParsedReceiptTotal(null);
+    setDetectedReceiptAmount(null);
+    setReceiptOcrStatus(null);
+    setReceiptUploadError(null);
+    setReceiptFileName(null);
     setLocalError(null);
   }, [open, defaultCategoryId, activeMembers, isEditMode, expense]);
 
@@ -410,6 +454,90 @@ export default function AddGroupExpenseDialog({
     }));
   };
 
+  const handleReceiptFileUpload = async (file: File) => {
+    setReceiptUploadError(null);
+    setIsUploadingReceipt(true);
+
+    try {
+      const uploadResult = await receiptsApi.upload(file);
+      const parsedTotal = uploadResult.parsed_total ?? uploadResult.detected_amount ?? null;
+      const parsedDate = uploadResult.parsed_date ?? null;
+      const parsedVendor = uploadResult.parsed_vendor ?? null;
+
+      setReceiptFileName(file.name);
+      setReceiptImageUrl(uploadResult.image_url ?? null);
+      setReceiptText(uploadResult.receipt_text ?? null);
+      setReceiptItems(uploadResult.parsed_items ?? uploadResult.detected_items ?? []);
+      setDetectedReceiptAmount(uploadResult.detected_amount ?? parsedTotal);
+      setParsedReceiptTotal(parsedTotal);
+      setParsedReceiptDate(parsedDate);
+      setParsedReceiptVendor(parsedVendor);
+      setReceiptOcrStatus(uploadResult.ocr_status);
+
+      if (parsedTotal && (!formData.amount || Number(formData.amount) <= 0)) {
+        setFormData((previous) => ({
+          ...previous,
+          amount: parsedTotal,
+        }));
+      }
+
+      if (parsedVendor && !formData.title.trim()) {
+        setFormData((previous) => ({
+          ...previous,
+          title: parsedVendor,
+        }));
+      }
+
+      const today = format(new Date(), "yyyy-MM-dd");
+      if (parsedDate && formData.expense_date === today) {
+        setFormData((previous) => ({
+          ...previous,
+          expense_date: parsedDate,
+        }));
+      }
+    } catch (error) {
+      const message = extractErrorMessage(error);
+      setReceiptUploadError(message || t("addGroupExpenseDialog.errors.receiptUploadFailed"));
+    } finally {
+      setIsUploadingReceipt(false);
+    }
+  };
+
+  const handleApplyDetectedAmount = () => {
+    const nextAmount = parsedReceiptTotal ?? detectedReceiptAmount;
+    if (!nextAmount) {
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      amount: nextAmount,
+    }));
+    setLocalError(null);
+  };
+
+  const handleApplyDetectedVendor = () => {
+    if (!parsedReceiptVendor) {
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      title: parsedReceiptVendor,
+    }));
+  };
+
+  const handleApplyDetectedDate = () => {
+    if (!parsedReceiptDate) {
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      expense_date: parsedReceiptDate,
+    }));
+  };
+
   const handleSubmit = () => {
     const title = formData.title.trim();
 
@@ -504,6 +632,8 @@ export default function AddGroupExpenseDialog({
       category_id: formData.category_id,
       expense_date: formData.expense_date,
       notes: formData.notes.trim() ? formData.notes.trim() : null,
+      receipt_image_url: receiptImageUrl,
+      receipt_text: receiptText,
     });
   };
 
@@ -612,6 +742,125 @@ export default function AddGroupExpenseDialog({
               }}
               rows={2}
             />
+          </div>
+
+          <div className="space-y-2 rounded-md border border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="group-expense-receipt">{t("addGroupExpenseDialog.receiptImage")}</Label>
+              {receiptImageUrl ? (
+                <a
+                  href={receiptImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  {t("addGroupExpenseDialog.viewReceipt")}
+                </a>
+              ) : null}
+            </div>
+
+            <Input
+              id="group-expense-receipt"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={isUploadingReceipt || isLoading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) {
+                  return;
+                }
+
+                void handleReceiptFileUpload(file);
+                event.target.value = "";
+              }}
+            />
+
+            {isUploadingReceipt ? (
+              <p className="text-xs text-muted-foreground">{t("addGroupExpenseDialog.receiptUploading")}</p>
+            ) : null}
+
+            {receiptFileName ? (
+              <p className="text-xs text-muted-foreground">
+                {t("addGroupExpenseDialog.receiptUploadedFile", { fileName: receiptFileName })}
+              </p>
+            ) : null}
+
+            {receiptOcrStatus ? (
+              <p className="text-xs text-muted-foreground">
+                {receiptOcrStatus === "done"
+                  ? t("addGroupExpenseDialog.ocrDone")
+                  : receiptOcrStatus === "unavailable"
+                    ? t("addGroupExpenseDialog.ocrUnavailable")
+                    : t("addGroupExpenseDialog.ocrFailed")}
+              </p>
+            ) : null}
+
+            {detectedReceiptAmount ? (
+              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                <p className="text-xs text-foreground">
+                  {t("addGroupExpenseDialog.detectedAmount", {
+                    amount: parsedReceiptTotal ?? detectedReceiptAmount,
+                    currency: groupCurrency,
+                  })}
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedAmount}>
+                  {t("addGroupExpenseDialog.useDetectedAmount")}
+                </Button>
+              </div>
+            ) : null}
+
+            {parsedReceiptVendor ? (
+              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                <p className="text-xs text-foreground">
+                  {t("addGroupExpenseDialog.detectedVendor", {
+                    vendor: parsedReceiptVendor,
+                  })}
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedVendor}>
+                  {t("addGroupExpenseDialog.useDetectedVendor")}
+                </Button>
+              </div>
+            ) : null}
+
+            {parsedReceiptDate ? (
+              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                <p className="text-xs text-foreground">
+                  {t("addGroupExpenseDialog.detectedDate", {
+                    date: parsedReceiptDate,
+                  })}
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedDate}>
+                  {t("addGroupExpenseDialog.useDetectedDate")}
+                </Button>
+              </div>
+            ) : null}
+
+            {receiptItems.length > 0 ? (
+              <div className="space-y-1 rounded-md bg-muted/50 px-2 py-2">
+                <p className="text-xs font-medium text-foreground">{t("addGroupExpenseDialog.detectedItemsLabel")}</p>
+                <div className="space-y-1">
+                  {receiptItems.slice(0, 6).map((item, index) => (
+                    <p key={`${item.name}-${item.amount}-${index}`} className="text-xs text-muted-foreground">
+                      {item.name} - {item.amount} {groupCurrency}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {receiptText ? (
+              <div className="space-y-1">
+                <Label htmlFor="group-expense-ocr-text">{t("addGroupExpenseDialog.ocrText")}</Label>
+                <Textarea
+                  id="group-expense-ocr-text"
+                  rows={4}
+                  value={receiptText}
+                  onChange={(event) => setReceiptText(event.target.value)}
+                />
+              </div>
+            ) : null}
+
+            {receiptUploadError ? <p className="text-xs text-destructive">{receiptUploadError}</p> : null}
           </div>
 
           <div className="space-y-2">
@@ -724,7 +973,7 @@ export default function AddGroupExpenseDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("addGroupExpenseDialog.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button onClick={handleSubmit} disabled={isLoading || isUploadingReceipt}>
             {isLoading
               ? isEditMode
                 ? t("addGroupExpenseDialog.submittingEdit")

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -395,10 +395,18 @@ export default function GroupDetailPage() {
           <div className="lg:col-span-2">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
-              <Button size="sm" onClick={() => setShowAddExpenseDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("groupDetailPage.addExpense")}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
+                    <ScanSearch className="mr-2 h-4 w-4" />
+                    {t("groupDetailPage.scanReceipt")}
+                  </Link>
+                </Button>
+                <Button size="sm" onClick={() => setShowAddExpenseDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("groupDetailPage.addExpense")}
+                </Button>
+              </div>
             </div>
             <GroupExpensesList
               expenses={expenses}

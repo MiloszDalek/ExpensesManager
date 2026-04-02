@@ -10,3 +10,4 @@ export * from "./invitation";
 export * from "./notification";
 export * from "./balance";
 export * from "./settlement";
+export * from "./receipt";

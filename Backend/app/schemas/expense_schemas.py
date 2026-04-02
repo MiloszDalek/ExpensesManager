@@ -80,6 +80,8 @@ class GroupExpenseUpdate(BaseModel):
     expense_date: Optional[datetime] = None
     category_id: Optional[int] = None
     notes: Optional[str] = None
+    receipt_image_url: Optional[str] = None
+    receipt_text: Optional[str] = None
     split_type: Optional[SplitType] = None
     shares: Optional[list[ExpenseShareSchema]] = None
 

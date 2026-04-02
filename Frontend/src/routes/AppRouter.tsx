@@ -3,6 +3,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import GroupsPage from "@/pages/GroupsPage";
 import GroupDetailPage from "@/pages/GroupDetailPage";
 import PersonalExpensesPage from "@/pages/PersonalExpensesPage";
+import ReceiptScannerPage from "@/pages/ReceiptScannerPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import HomePage from "@/pages/HomePage";
@@ -32,6 +33,7 @@ const AppRouter = () => {
           <Route path="/groups" element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
           <Route path="/groups/:id" element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
           <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
+          <Route path="/receipt-scan" element={<PrivateRoute><ReceiptScannerPage /></PrivateRoute>} />
 
           {/* default redirect */}
           <Route path="/" element={<Navigate to="/home" replace />} />

@@ -110,6 +110,8 @@ export interface ApiGroupExpenseUpdate {
   expense_date?: ISODateTimeString | null;
   category_id?: number | null;
   notes?: string | null;
+  receipt_image_url?: string | null;
+  receipt_text?: string | null;
   split_type?: SplitType | null;
   shares?: ApiExpenseShare[] | null;
 }

@@ -19,3 +19,4 @@ from .category_schemas import CategoryCreate, CategoryResponse
 from .notification_schemas import NotificationResponse, UnreadNotificationCountResponse
 from .invitation_schemas import ContactInvitationCreate, ContactInvitationResponse, GroupInvitationCreate, GroupInvitationResponse, InvitationResponse
 from .balance_schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
+from .receipt_schemas import ReceiptUploadResponse
