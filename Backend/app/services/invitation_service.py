@@ -110,7 +110,9 @@ class InvitationService:
 
         group = self.group_service.get_group(invitation_in.group_id, from_user_id)
 
-        if self.group_service.group_repo.get_membership(group.id, to_user.id):
+        membership = self.group_service.group_repo.get_membership(group.id, to_user.id)
+
+        if membership:
             raise HTTPException(status_code=400, detail="User already in group")
         
         try:
@@ -123,7 +125,10 @@ class InvitationService:
                         detail="Group invitation is already pending. Wait for response or cancel the existing invitation.",
                     )
                 elif invitation.status == InvitationStatus.ACCEPTED:
-                    raise HTTPException(status_code=400, detail="Invitation already accepted")
+                    # Recovery path for historical inconsistent data where invitation
+                    # is accepted but membership was never created.
+                    if self.group_service.group_repo.get_membership(group.id, to_user.id):
+                        raise HTTPException(status_code=400, detail="Invitation already accepted")
                 
                 invitation.status = InvitationStatus.PENDING
                 invitation.responded_at = None
@@ -198,6 +203,9 @@ class InvitationService:
         
         if invitation.to_user_id != user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
+
+        if invitation.status != InvitationStatus.PENDING:
+            raise HTTPException(status_code=400, detail="Only pending invitation can be accepted")
         
         if invitation.type == InvitationType.CONTACT:
             self.accept_contact(invitation)

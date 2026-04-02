@@ -19,6 +19,7 @@ import { contactsApi } from "@/api/contactsApi";
 import { invitationsApi } from "@/api/invitationsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { createPageUrl } from "@/utils/url";
+import { formatGroupName } from "@/utils/group";
 
 import type {
   ApiContactResponse,
@@ -252,7 +253,7 @@ export default function GroupDetailPage() {
             </Button>
           </Link>
 
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{group.name}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{formatGroupName(group.name)}</h1>
           <p className="mt-2 text-muted-foreground">
             {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}
           </p>

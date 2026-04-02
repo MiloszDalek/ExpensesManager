@@ -15,6 +15,7 @@ import { contactsApi } from "@/api/contactsApi";
 import { invitationsApi } from "@/api/invitationsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { createPageUrl } from "@/utils/url";
+import { formatGroupName } from "@/utils/group";
 import { format } from "date-fns";
 
 import type {
@@ -47,6 +48,7 @@ const INVITATION_ERROR_TRANSLATIONS: Record<string, string> = {
   "User with this email does not exist": "dashboardInbox.errors.userWithEmailNotFound",
   "Invitation not found": "dashboardInbox.errors.invitationNotFound",
   "Not authorized": "dashboardInbox.errors.notAuthorized",
+  "Only pending invitation can be accepted": "dashboardInbox.errors.onlyPendingCanBeAccepted",
   "Only pending invitation can be declined": "dashboardInbox.errors.onlyPendingCanBeDeclined",
   "Only pending invitation can be cancelled, and accepted/rejected/cancelled invitations can be archived by sender": "dashboardInbox.errors.onlyPendingCanBeCancelledOrArchived",
 };
@@ -412,7 +414,9 @@ export default function DashboardPage() {
                             <p className="truncate text-sm font-medium text-foreground">
                               {invitation.type === "group"
                                 ? t("dashboardInbox.receivedGroupInviteTitle", {
-                                    group: invitation.group_name || `#${invitation.group_id}`,
+                                    group: invitation.group_name
+                                      ? formatGroupName(invitation.group_name)
+                                      : `#${invitation.group_id}`,
                                   })
                                 : t("dashboardInbox.receivedContactInviteTitle")}
                             </p>

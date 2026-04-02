@@ -29,7 +29,7 @@ class GroupService:
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:
         try:       
             new_group = Group(
-                name=group_in.name.strip().lower(),
+                name=group_in.name.strip(),
                 description=group_in.description,
                 status=GroupStatus.ACTIVE,
                 currency=group_in.currency,
@@ -125,8 +125,13 @@ class GroupService:
         group = self.get_group(group_id, user_id)
 
         current_member = self.get_member(group.id, user_id)
+        replacement = self.group_repo.get_oldest_active_member_except(group.id, current_member.user_id)
 
-        self._prepare_admin_reassignment_if_needed(group.id, current_member)
+        if replacement is None:
+            # If user is the last active member, leaving archives the group.
+            group.status = GroupStatus.ARCHIVED
+        elif current_member.role == GroupMemberRole.ADMIN:
+            replacement.role = GroupMemberRole.ADMIN
 
         self.group_repo.delete_member(current_member)
         self.group_repo.save_all()
@@ -140,7 +145,7 @@ class GroupService:
         update_data = group_in.model_dump(exclude_unset=True)
 
         if "name" in update_data and update_data["name"] is not None:
-            update_data["name"] = update_data["name"].strip().lower()
+            update_data["name"] = update_data["name"].strip()
 
         if "currency" in update_data and update_data["currency"] is not None:
             if update_data["currency"] != group.currency and self.group_repo.has_any_expenses(group.id):

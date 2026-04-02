@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils/url";
+import { formatGroupName } from "@/utils/group";
 import { useTranslation } from "react-i18next";
 import { Users, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -44,7 +45,7 @@ export default function GroupCard({ group, index }: GroupCardProps) {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">{group.name}</h3>
+                <h3 className="text-lg font-semibold text-foreground">{formatGroupName(group.name)}</h3>
                 <p className="text-sm text-muted-foreground">
                   {t("groupsPage.currencyLabel")}: {group.currency}
                 </p>

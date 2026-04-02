@@ -48,6 +48,10 @@ export default function GroupMembersPanel({
   isLoading,
 }: GroupMembersPanelProps) {
   const { t } = useTranslation();
+  const activeMembers = members.filter((member) => member.status === "active");
+  const currentMember = members.find((member) => member.user_id === currentUserId) ?? null;
+  const isCurrentUserLastActiveMember =
+    currentMember?.status === "active" && activeMembers.length === 1;
 
   if (isLoading) {
     return (
@@ -91,7 +95,11 @@ export default function GroupMembersPanel({
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t("groupMembersPanel.leaveConfirmTitle")}</AlertDialogTitle>
-                  <AlertDialogDescription>{t("groupMembersPanel.leaveConfirmDescription")}</AlertDialogDescription>
+                  <AlertDialogDescription>
+                    {isCurrentUserLastActiveMember
+                      ? t("groupMembersPanel.leaveConfirmDescriptionLastMember")
+                      : t("groupMembersPanel.leaveConfirmDescription")}
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>

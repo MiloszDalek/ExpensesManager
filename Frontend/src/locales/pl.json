@@ -233,6 +233,9 @@
     "description": "Opis (opcjonalnie)",
     "descriptionPlaceholder": "Do czego służy ta grupa?",
     "currency": "Waluta",
+    "recentCurrencies": "Ostatnio używane",
+    "removeRecentCurrency": "Usuń z ostatnio używanych",
+    "allCurrencies": "Wszystkie waluty",
     "cancel": "Anuluj",
     "submit": "Utwórz grupę",
     "creating": "Tworzenie..."
@@ -272,8 +275,9 @@
     "removeConfirmDescription": "{{username}} zostanie usunięty z tej grupy.",
     "leaveConfirmTitle": "Opuścić grupę?",
     "leaveConfirmDescription": "Stracisz dostęp do tej grupy do momentu ponownego zaproszenia.",
+    "leaveConfirmDescriptionLastMember": "Jesteś jedynym członkiem tej grupy. Jej opuszczenie spowoduje zarchiwizowanie grupy.",
     "role": {
-      "admin": "Administrator",
+      "admin": "Admin",
       "member": "Członek"
     },
     "status": {
@@ -360,6 +364,7 @@
       "userWithEmailNotFound": "Nie istnieje konto użytkownika dla tego adresu email.",
       "invitationNotFound": "Nie znaleziono zaproszenia.",
       "notAuthorized": "Brak uprawnień do wykonania tej akcji.",
+      "onlyPendingCanBeAccepted": "Akceptować można tylko zaproszenia oczekujące.",
       "onlyPendingCanBeDeclined": "Odrzucić można tylko zaproszenia oczekujące.",
       "onlyPendingCanBeCancelledOrArchived": "Anulować można tylko zaproszenia oczekujące, a zakończone zaproszenia może archiwizować nadawca."
     }

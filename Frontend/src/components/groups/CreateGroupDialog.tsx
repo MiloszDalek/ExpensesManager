@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -14,16 +14,26 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SUPPORTED_CURRENCIES } from "@/types/enums";
+import { X } from "lucide-react";
+import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
+import {
+  getCurrenciesWithRecentFirst,
+  getRecentCurrencies,
+  rememberRecentCurrency,
+  removeRecentCurrency,
+} from "@/utils/currency";
 
 type CreateGroupFormData = {
   name: string;
   description: string;
-  currency: (typeof SUPPORTED_CURRENCIES)[number];
+  currency: CurrencyEnum;
 };
 
 type CreateGroupDialogProps = {
@@ -40,11 +50,25 @@ export default function CreateGroupDialog({
   isLoading,
 }: CreateGroupDialogProps) {
   const { t } = useTranslation();
+  const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    currency: "PLN" as (typeof SUPPORTED_CURRENCIES)[number],
+    currency: "PLN" as CurrencyEnum,
   });
+
+  useEffect(() => {
+    if (open) {
+      setRecentCurrencies(getRecentCurrencies());
+    }
+  }, [open]);
+
+  const orderedCurrencies = useMemo(
+    () => getCurrenciesWithRecentFirst(recentCurrencies),
+    [recentCurrencies]
+  );
+
+  const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
 
   const resetForm = () => {
     setFormData({
@@ -52,6 +76,18 @@ export default function CreateGroupDialog({
       description: "",
       currency: "PLN",
     });
+  };
+
+  const handleCurrencyChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      currency: value as CurrencyEnum,
+    }));
+    setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
+  };
+
+  const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
+    setRecentCurrencies(removeRecentCurrency(currency));
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -63,6 +99,7 @@ export default function CreateGroupDialog({
 
   const handleSubmit = () => {
     if (formData.name.trim()) {
+      setRecentCurrencies(rememberRecentCurrency(formData.currency));
       onSubmit(formData);
       resetForm();
     }
@@ -76,7 +113,7 @@ export default function CreateGroupDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
+          <div className="space-y-1">
             <Label htmlFor="name">{t("createGroupDialog.name")}</Label>
             <Input
               id="name"
@@ -86,7 +123,7 @@ export default function CreateGroupDialog({
             />
           </div>
 
-          <div>
+          <div className="space-y-1">
             <Label htmlFor="description">{t("createGroupDialog.description")}</Label>
             <Textarea
               id="description"
@@ -101,22 +138,52 @@ export default function CreateGroupDialog({
             <Label>{t("createGroupDialog.currency")}</Label>
             <Select
               value={formData.currency}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  currency: value as (typeof SUPPORTED_CURRENCIES)[number],
-                }))
-              }
+              onValueChange={handleCurrencyChange}
             >
               <SelectTrigger className="mt-2 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SUPPORTED_CURRENCIES.map((currency) => (
-                  <SelectItem key={currency} value={currency}>
-                    {currency}
-                  </SelectItem>
-                ))}
+                {recentCurrencies.length > 0 && (
+                  <>
+                    <SelectGroup>
+                      <SelectLabel>{t("createGroupDialog.recentCurrencies")}</SelectLabel>
+                      {orderedCurrencies
+                        .filter((currency) => recentCurrencySet.has(currency))
+                        .map((currency) => (
+                          <SelectItem key={`recent-${currency}`} value={currency} className="group pr-12">
+                            <span>{currency}</span>
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              aria-label={t("createGroupDialog.removeRecentCurrency")}
+                              className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100 cursor-pointer"
+                              onPointerDown={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                              onPointerUp={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleRemoveRecentCurrency(currency);
+                              }}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                    <SelectSeparator />
+                  </>
+                )}
+
+                <SelectGroup>
+                  {SUPPORTED_CURRENCIES.filter((currency) => !recentCurrencySet.has(currency)).map((currency) => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>

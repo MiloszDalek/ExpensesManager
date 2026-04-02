@@ -243,6 +243,9 @@
     "description": "Description (optional)",
     "descriptionPlaceholder": "What is this group for?",
     "currency": "Currency",
+    "recentCurrencies": "Recently used",
+    "removeRecentCurrency": "Remove from recently used",
+    "allCurrencies": "All currencies",
     "cancel": "Cancel",
     "submit": "Create Group",
     "creating": "Creating..."
@@ -282,6 +285,7 @@
     "removeConfirmDescription": "{{username}} will be removed from this group.",
     "leaveConfirmTitle": "Leave group?",
     "leaveConfirmDescription": "You will lose access to this group until invited again.",
+    "leaveConfirmDescriptionLastMember": "You are the only member of this group. Leaving will archive the group.",
     "role": {
       "admin": "Admin",
       "member": "Member"
@@ -370,6 +374,7 @@
       "userWithEmailNotFound": "No user account exists for this email address.",
       "invitationNotFound": "Invitation not found.",
       "notAuthorized": "You are not authorized to perform this action.",
+      "onlyPendingCanBeAccepted": "Only pending invitations can be accepted.",
       "onlyPendingCanBeDeclined": "Only pending invitations can be declined.",
       "onlyPendingCanBeCancelledOrArchived": "Only pending invitations can be cancelled, and completed invitations can be archived by sender."
     }
