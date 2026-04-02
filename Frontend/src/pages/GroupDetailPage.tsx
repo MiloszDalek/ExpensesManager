@@ -37,6 +37,7 @@ import type {
   ApiCategoryResponse,
   ApiSettlementResponse,
 } from "@/types";
+import type { PaymentMethod } from "@/types/enums";
 
 const LIMIT = 20;
 const CONTACTS_LIMIT = 100;
@@ -448,6 +449,14 @@ export default function GroupDetailPage() {
     );
   };
 
+  const getSettlementMethodLabel = (paymentMethod: PaymentMethod) => {
+    if (paymentMethod === "offset_applied" || paymentMethod === "offset_forgiven") {
+      return t("groupDetailPage.settlementMethodOffset");
+    }
+
+    return t("groupDetailPage.settlementMethodCash");
+  };
+
   if (!isValidGroupId) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -745,7 +754,7 @@ export default function GroupDetailPage() {
                           })}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {Number(settlement.amount).toFixed(2)} {settlement.currency} · {t("groupDetailPage.settlementMethodCash")} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
+                          {Number(settlement.amount).toFixed(2)} {settlement.currency} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
                         </p>
                       </div>
                     ))}

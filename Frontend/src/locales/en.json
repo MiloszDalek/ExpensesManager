@@ -356,6 +356,7 @@
     "settlementsLoadError": "Could not load settlements history.",
     "settlementItem": "{{from}} paid {{to}}",
     "settlementMethodCash": "Cash",
+    "settlementMethodOffset": "Offset",
     "youLabel": "You",
     "userFallback": "User #{{userId}}",
     "settlementErrors": {
@@ -583,13 +584,32 @@
     "mixedDirections": "Mixed directions",
     "settleTotalCash": "Settle total cash",
     "settlingTotalCash": "Settling total...",
+    "totalSettleConfirmTitle": "Confirm total settlement",
+    "totalSettleConfirmDescription": "Record total cash settlement with {{contact}} across all groups?",
+    "totalSettleCancel": "Cancel",
+    "totalSettleConfirm": "Confirm",
+    "totalSettleConfirming": "Saving...",
     "settlementSuccess": "Total settlement recorded across groups.",
+    "settleGroupCash": "Settle in group",
+    "settlingGroupCash": "Settling group...",
+    "settlementGroupSuccess": "Settlement recorded in group: {{groupName}}.",
+    "groupSettleConfirmTitle": "Confirm group settlement",
+    "groupSettleConfirmDescription": "Record cash settlement of {{amount}} {{currency}} with {{contact}} in group {{group}}?",
+    "groupSettleCancel": "Cancel",
+    "groupSettleConfirm": "Confirm",
+    "groupSettleConfirming": "Saving...",
     "settlementErrors": {
       "cannotSettleWithYourself": "You cannot settle with yourself.",
+      "groupIdRequired": "Group is required for this settlement.",
+      "memberNotFound": "Member not found in this group.",
+      "noBalanceWithUser": "No balance with this user.",
+      "noDebtBetweenUsers": "There is no debt to settle with this user.",
+      "otherUserOwesYou": "This user owes you money.",
       "noDebtsToSettle": "There are no debts to settle.",
       "groupNotFound": "Group not found.",
       "notAuthorized": "You are not authorized to settle this.",
-      "settleFailed": "Could not record total settlement."
+      "settleFailed": "Could not record total settlement.",
+      "settleGroupFailed": "Could not record group settlement."
     }
   }
 }

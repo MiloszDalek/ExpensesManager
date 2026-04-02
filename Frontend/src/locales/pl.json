@@ -346,6 +346,7 @@
     "settlementsLoadError": "Nie udało się załadować historii rozliczeń.",
     "settlementItem": "{{from}} zapłacił/a {{to}}",
     "settlementMethodCash": "Gotówka",
+    "settlementMethodOffset": "Kompensata",
     "youLabel": "Ty",
     "userFallback": "Użytkownik #{{userId}}",
     "settlementErrors": {
@@ -573,13 +574,32 @@
     "mixedDirections": "Mieszane kierunki",
     "settleTotalCash": "Rozlicz całkowicie gotówką",
     "settlingTotalCash": "Rozliczanie całości...",
+    "totalSettleConfirmTitle": "Potwierdź całkowite rozliczenie",
+    "totalSettleConfirmDescription": "Zapisać całkowite rozliczenie gotówkowe z użytkownikiem {{contact}} we wszystkich grupach?",
+    "totalSettleCancel": "Anuluj",
+    "totalSettleConfirm": "Potwierdź",
+    "totalSettleConfirming": "Zapisywanie...",
     "settlementSuccess": "Całkowite rozliczenie zostało zapisane we wszystkich grupach.",
+    "settleGroupCash": "Rozlicz w grupie",
+    "settlingGroupCash": "Rozliczanie grupy...",
+    "settlementGroupSuccess": "Rozliczenie zapisano w grupie: {{groupName}}.",
+    "groupSettleConfirmTitle": "Potwierdź rozliczenie grupowe",
+    "groupSettleConfirmDescription": "Zapisać rozliczenie gotówkowe {{amount}} {{currency}} z użytkownikiem {{contact}} w grupie {{group}}?",
+    "groupSettleCancel": "Anuluj",
+    "groupSettleConfirm": "Potwierdź",
+    "groupSettleConfirming": "Zapisywanie...",
     "settlementErrors": {
       "cannotSettleWithYourself": "Nie możesz rozliczyć się sam ze sobą.",
+      "groupIdRequired": "Do tego rozliczenia wymagana jest grupa.",
+      "memberNotFound": "Nie znaleziono członka w tej grupie.",
+      "noBalanceWithUser": "Brak salda z tym użytkownikiem.",
+      "noDebtBetweenUsers": "Brak długu do rozliczenia z tym użytkownikiem.",
+      "otherUserOwesYou": "To ten użytkownik jest Ci winny pieniądze.",
       "noDebtsToSettle": "Brak długów do rozliczenia.",
       "groupNotFound": "Nie znaleziono grupy.",
       "notAuthorized": "Nie masz uprawnień do tego rozliczenia.",
-      "settleFailed": "Nie udało się zapisać całkowitego rozliczenia."
+      "settleFailed": "Nie udało się zapisać całkowitego rozliczenia.",
+      "settleGroupFailed": "Nie udało się zapisać rozliczenia grupowego."
     }
   }
 }

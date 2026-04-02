@@ -4,6 +4,16 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, ChevronUp, HandCoins, UsersRound } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +35,20 @@ type ContactBalanceRow = {
   absoluteTotal: number;
 };
 
+type GroupSettlementTarget = {
+  contactUserId: number;
+  contactUsername: string;
+  groupId: number;
+  groupName: string;
+  amount: number;
+  currency: string;
+};
+
+type TotalSettlementTarget = {
+  contactUserId: number;
+  contactUsername: string;
+};
+
 export default function ContactsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -34,6 +58,8 @@ export default function ContactsPage() {
     tone: "success" | "error";
     message: string;
   } | null>(null);
+  const [groupSettlementTarget, setGroupSettlementTarget] = useState<GroupSettlementTarget | null>(null);
+  const [totalSettlementTarget, setTotalSettlementTarget] = useState<TotalSettlementTarget | null>(null);
 
   const mapTotalSettlementError = (message: string | undefined) => {
     return message === "Cannot settle with yourself"
@@ -45,6 +71,26 @@ export default function ContactsPage() {
           : message === "Group not found"
             ? t("contactsBalancesPage.settlementErrors.groupNotFound")
             : message || t("contactsBalancesPage.settlementErrors.settleFailed");
+  };
+
+  const mapGroupSettlementError = (message: string | undefined) => {
+    return message === "Cannot settle with yourself"
+      ? t("contactsBalancesPage.settlementErrors.cannotSettleWithYourself")
+      : message === "Group id is required"
+        ? t("contactsBalancesPage.settlementErrors.groupIdRequired")
+        : message === "Member not found"
+          ? t("contactsBalancesPage.settlementErrors.memberNotFound")
+          : message === "No balance with this user"
+            ? t("contactsBalancesPage.settlementErrors.noBalanceWithUser")
+            : message === "No debt between users"
+              ? t("contactsBalancesPage.settlementErrors.noDebtBetweenUsers")
+              : message === "This user owes you money"
+                ? t("contactsBalancesPage.settlementErrors.otherUserOwesYou")
+                : message === "Group not found"
+                  ? t("contactsBalancesPage.settlementErrors.groupNotFound")
+                  : message === "Not authorized"
+                    ? t("contactsBalancesPage.settlementErrors.notAuthorized")
+                    : message || t("contactsBalancesPage.settlementErrors.settleGroupFailed");
   };
 
   const settleTotalCashMutation = useMutation({
@@ -64,11 +110,48 @@ export default function ContactsPage() {
         tone: "success",
         message: t("contactsBalancesPage.settlementSuccess"),
       });
+      setTotalSettlementTarget(null);
     },
     onError: (mutationError: Error) => {
       setSettlementFeedback({
         tone: "error",
         message: mapTotalSettlementError(mutationError.message),
+      });
+    },
+  });
+
+  const settleGroupCashMutation = useMutation({
+    mutationFn: (payload: { toUserId: number; groupId: number }) =>
+      settlementsApi.createGroupCash({
+        to_user_id: payload.toUserId,
+        group_id: payload.groupId,
+      }),
+    onMutate: () => {
+      setSettlementFeedback(null);
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["balances"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(variables.groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(variables.toUserId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(variables.groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+
+      const groupName = groupById[variables.groupId]
+        ? formatGroupName(groupById[variables.groupId].name)
+        : t("contactsBalancesPage.unknownGroup", { groupId: variables.groupId });
+
+      setSettlementFeedback({
+        tone: "success",
+        message: t("contactsBalancesPage.settlementGroupSuccess", {
+          groupName,
+        }),
+      });
+      setGroupSettlementTarget(null);
+    },
+    onError: (mutationError: Error) => {
+      setSettlementFeedback({
+        tone: "error",
+        message: mapGroupSettlementError(mutationError.message),
       });
     },
   });
@@ -376,7 +459,12 @@ export default function ContactsPage() {
                                   settleTotalCashMutation.isPending &&
                                   settleTotalCashMutation.variables === row.contact.contact_id
                                 }
-                                onClick={() => settleTotalCashMutation.mutate(row.contact.contact_id)}
+                                onClick={() => {
+                                  setTotalSettlementTarget({
+                                    contactUserId: row.contact.contact_id,
+                                    contactUsername: row.contact.username,
+                                  });
+                                }}
                               >
                                 {settleTotalCashMutation.isPending &&
                                 settleTotalCashMutation.variables === row.contact.contact_id
@@ -404,9 +492,38 @@ export default function ContactsPage() {
                                         : t("contactsBalancesPage.youOweContact")}
                                     </p>
                                   </div>
-                                  <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                                    {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                                      {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
+                                    </p>
+                                    {groupRow.amount < 0 ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={
+                                          settleGroupCashMutation.isPending &&
+                                          settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
+                                          settleGroupCashMutation.variables?.toUserId === row.contact.contact_id
+                                        }
+                                        onClick={() => {
+                                          setGroupSettlementTarget({
+                                            contactUserId: row.contact.contact_id,
+                                            contactUsername: row.contact.username,
+                                            groupId: groupRow.groupId,
+                                            groupName: groupRow.groupName,
+                                            amount: groupRow.absoluteAmount,
+                                            currency: groupRow.groupCurrency,
+                                          });
+                                        }}
+                                      >
+                                        {settleGroupCashMutation.isPending &&
+                                        settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
+                                        settleGroupCashMutation.variables?.toUserId === row.contact.contact_id
+                                          ? t("contactsBalancesPage.settlingGroupCash")
+                                          : t("contactsBalancesPage.settleGroupCash")}
+                                      </Button>
+                                    ) : null}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -421,6 +538,94 @@ export default function ContactsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog
+        open={groupSettlementTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGroupSettlementTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("contactsBalancesPage.groupSettleConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {groupSettlementTarget
+                ? t("contactsBalancesPage.groupSettleConfirmDescription", {
+                    contact: groupSettlementTarget.contactUsername,
+                    group: groupSettlementTarget.groupName,
+                    amount: groupSettlementTarget.amount.toFixed(2),
+                    currency: groupSettlementTarget.currency,
+                  })
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={settleGroupCashMutation.isPending}>
+              {t("contactsBalancesPage.groupSettleCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!groupSettlementTarget || settleGroupCashMutation.isPending}
+              onClick={() => {
+                if (!groupSettlementTarget) {
+                  return;
+                }
+
+                settleGroupCashMutation.mutate({
+                  toUserId: groupSettlementTarget.contactUserId,
+                  groupId: groupSettlementTarget.groupId,
+                });
+              }}
+            >
+              {settleGroupCashMutation.isPending
+                ? t("contactsBalancesPage.groupSettleConfirming")
+                : t("contactsBalancesPage.groupSettleConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={totalSettlementTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTotalSettlementTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("contactsBalancesPage.totalSettleConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {totalSettlementTarget
+                ? t("contactsBalancesPage.totalSettleConfirmDescription", {
+                    contact: totalSettlementTarget.contactUsername,
+                  })
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={settleTotalCashMutation.isPending}>
+              {t("contactsBalancesPage.totalSettleCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!totalSettlementTarget || settleTotalCashMutation.isPending}
+              onClick={() => {
+                if (!totalSettlementTarget) {
+                  return;
+                }
+
+                settleTotalCashMutation.mutate(totalSettlementTarget.contactUserId);
+              }}
+            >
+              {settleTotalCashMutation.isPending
+                ? t("contactsBalancesPage.totalSettleConfirming")
+                : t("contactsBalancesPage.totalSettleConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
