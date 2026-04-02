@@ -238,7 +238,12 @@
     "allCurrencies": "Wszystkie waluty",
     "cancel": "Anuluj",
     "submit": "Utwórz grupę",
-    "creating": "Tworzenie..."
+    "creating": "Tworzenie...",
+    "errors": {
+      "activeGroupNameTaken": "Masz już aktywną grupę o tej nazwie.",
+      "emptyName": "Nazwa grupy nie może być pusta.",
+      "createFailed": "Nie udało się utworzyć grupy."
+    }
   },
   "groupDetailPage": {
     "backToGroups": "Powrót do grup",

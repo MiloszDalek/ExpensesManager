@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
 from app.models import Expense
-from app.enums import GroupMemberRole, GroupMemberStatus
+from app.enums import GroupMemberRole, GroupMemberStatus, GroupStatus
 
 
 class GroupRepository:
@@ -31,6 +31,19 @@ class GroupRepository:
             .filter(GroupMember.user_id == user_id)
             .all()
         )
+
+
+    def exists_active_name_for_user(self, user_id: int, name: str, exclude_group_id: int | None = None) -> bool:
+        query = self.db.query(Group.id).filter(
+            Group.created_by == user_id,
+            Group.name == name,
+            Group.status == GroupStatus.ACTIVE,
+        )
+
+        if exclude_group_id is not None:
+            query = query.filter(Group.id != exclude_group_id)
+
+        return query.first() is not None
 
 
     def save_all(self):

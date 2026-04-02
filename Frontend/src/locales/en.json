@@ -248,7 +248,12 @@
     "allCurrencies": "All currencies",
     "cancel": "Cancel",
     "submit": "Create Group",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "errors": {
+      "activeGroupNameTaken": "You already have an active group with this name.",
+      "emptyName": "Group name cannot be empty.",
+      "createFailed": "Could not create group."
+    }
   },
   "groupDetailPage": {
     "backToGroups": "Back to groups",

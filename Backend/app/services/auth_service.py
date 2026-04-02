@@ -50,18 +50,16 @@ class AuthService:
 
 
     def create_admin(self):
-        db = next(get_db())
-        if not db.query(User).filter(User.role == "admin").first():
+        if not self.db.query(User).filter(User.role == "admin").first():
             admin = User(
                 email="admin@gmail.com",
                 username="Admin",            
                 hashed_password=get_password_hash("password"),
                 role="admin"
             )
-            db.add(admin)
-            db.commit()
-            db.refresh(admin)
-        db.close()
+            self.db.add(admin)
+            self.db.commit()
+            self.db.refresh(admin)
 
 
 def get_auth_service(db: Session = Depends(get_db)):

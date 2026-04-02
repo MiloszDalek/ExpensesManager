@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Enum as SAEnum, Integer, String, ForeignKey, DateTime, Text, UniqueConstraint
+from sqlalchemy import Column, Enum as SAEnum, Integer, String, ForeignKey, DateTime, Text, Index, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -25,5 +25,11 @@ class Group(Base):
     settlements = relationship("Settlement", back_populates="group", cascade="all, delete-orphan")
 
     __table_args__ = (
-        UniqueConstraint("created_by", "name", name="uq_user_group_name"),
+        Index(
+            "uq_user_group_active_name",
+            "created_by",
+            "name",
+            unique=True,
+            postgresql_where=text("status = 'ACTIVE'"),
+        ),
     )

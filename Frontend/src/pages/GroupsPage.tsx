@@ -16,6 +16,7 @@ import type { ApiGroupCreate, ApiGroupResponse } from "@/types";
 export default function GroupsPage() {
   const { t } = useTranslation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createGroupError, setCreateGroupError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
@@ -30,12 +31,27 @@ export default function GroupsPage() {
     mutationFn: (groupData) => groupsApi.create(groupData),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
+      setCreateGroupError(null);
       setShowCreateDialog(false);
     },
     onError: (mutationError) => {
-      console.error("Failed to create group:", mutationError);
+      const translated =
+        mutationError.message === "You already have an active group with this name"
+          ? t("createGroupDialog.errors.activeGroupNameTaken")
+          : mutationError.message === "Group name cannot be empty"
+            ? t("createGroupDialog.errors.emptyName")
+            : mutationError.message || t("createGroupDialog.errors.createFailed");
+
+      setCreateGroupError(translated);
     },
   });
+
+  const handleCreateDialogOpenChange = (nextOpen: boolean) => {
+    setShowCreateDialog(nextOpen);
+    if (!nextOpen) {
+      setCreateGroupError(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -126,9 +142,10 @@ export default function GroupsPage() {
 
       <CreateGroupDialog
         open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+        onOpenChange={handleCreateDialogOpenChange}
         onSubmit={(data: ApiGroupCreate) => createGroupMutation.mutate(data)}
         isLoading={createGroupMutation.isPending}
+        errorMessage={createGroupError}
       />
     </div>
   );

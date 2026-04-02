@@ -27,9 +27,17 @@ class GroupService:
 
 
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:
+        normalized_name = group_in.name.strip()
+
+        if not normalized_name:
+            raise HTTPException(status_code=400, detail="Group name cannot be empty")
+
+        if self.group_repo.exists_active_name_for_user(user_id, normalized_name):
+            raise HTTPException(status_code=400, detail="You already have an active group with this name")
+
         try:       
             new_group = Group(
-                name=group_in.name.strip(),
+                name=normalized_name,
                 description=group_in.description,
                 status=GroupStatus.ACTIVE,
                 currency=group_in.currency,
@@ -48,7 +56,7 @@ class GroupService:
         
         except IntegrityError:
             self.group_repo.db.rollback()
-            raise HTTPException(status_code=400, detail="You have already created a group with this name")
+            raise HTTPException(status_code=400, detail="You already have an active group with this name")
         
 
     def get_all_members(self, group_id: int, user_id: int) -> list[GroupMember]:
@@ -146,6 +154,17 @@ class GroupService:
 
         if "name" in update_data and update_data["name"] is not None:
             update_data["name"] = update_data["name"].strip()
+            if not update_data["name"]:
+                raise HTTPException(status_code=400, detail="Group name cannot be empty")
+
+        candidate_name = update_data.get("name", group.name)
+        candidate_status = update_data.get("status", group.status)
+        if candidate_status == GroupStatus.ACTIVE and self.group_repo.exists_active_name_for_user(
+            user_id,
+            candidate_name,
+            exclude_group_id=group.id,
+        ):
+            raise HTTPException(status_code=400, detail="You already have an active group with this name")
 
         if "currency" in update_data and update_data["currency"] is not None:
             if update_data["currency"] != group.currency and self.group_repo.has_any_expenses(group.id):
@@ -160,4 +179,4 @@ class GroupService:
             return group
         except IntegrityError:
             self.group_repo.db.rollback()
-            raise HTTPException(status_code=400, detail="You have already created a group with this name")
+            raise HTTPException(status_code=400, detail="You already have an active group with this name")
