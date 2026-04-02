@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Users, Wallet, Coins, UserPlus } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
 import AddGroupMemberDialog from "@/components/groups/AddGroupMemberDialog";
+import AddGroupExpenseDialog from "@/components/groups/AddGroupExpenseDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { groupsApi } from "@/api/groupsApi";
 import { expensesGroupApi } from "@/api/expensesGroupApi";
@@ -23,6 +24,8 @@ import { formatGroupName } from "@/utils/group";
 
 import type {
   ApiContactResponse,
+  ApiGroupExpenseCreate,
+  ApiGroupExpenseUpdate,
   ApiGroupExpenseResponse,
   ApiGroupInvitationCreate,
   ApiGroupMemberResponse,
@@ -41,6 +44,11 @@ export default function GroupDetailPage() {
   const { user } = useAuth();
   const { id } = useParams();
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
+  const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
+  const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
+  const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
@@ -163,6 +171,82 @@ export default function GroupDetailPage() {
     },
   });
 
+  const mapGroupExpenseError = (message: string | undefined, fallbackKey: string) => {
+    return message === "Participant not found in group"
+      ? t("addGroupExpenseDialog.errors.participantNotFoundInGroup")
+      : message === "Duplicate participants"
+        ? t("addGroupExpenseDialog.errors.duplicateParticipants")
+        : message === "Expense must have at least one participant"
+          ? t("addGroupExpenseDialog.errors.participantsRequired")
+          : message === "Share amounts must be positive"
+            ? t("addGroupExpenseDialog.errors.sharesPositive")
+            : message === "Split amounts must add up to total expense amount"
+              ? t("addGroupExpenseDialog.errors.sharesSumMismatch")
+              : message === "Expense currency must match group currency"
+                ? t("addGroupExpenseDialog.errors.currencyMismatch")
+                : message === "Group not found"
+                  ? t("addGroupExpenseDialog.errors.groupNotFound")
+                  : message === "Expense not found"
+                    ? t("addGroupExpenseDialog.errors.expenseNotFound")
+                    : message === "Updating amount requires expense shares"
+                      ? t("addGroupExpenseDialog.errors.updateRequiresShares")
+                      : message === "Not authorized admin group role required or being expense creator"
+                        ? t("addGroupExpenseDialog.errors.managePermissionRequired")
+                        : message === "Not authorized"
+                          ? t("addGroupExpenseDialog.errors.notAuthorized")
+                          : message || t(fallbackKey);
+  };
+
+  const createExpenseMutation = useMutation<ApiGroupExpenseResponse, Error, ApiGroupExpenseCreate>({
+    mutationFn: (expenseData) => expensesGroupApi.create(groupId, expenseData),
+    onMutate: () => {
+      setCreateExpenseError(null);
+      setDeleteExpenseError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      setCreateExpenseError(null);
+      setShowAddExpenseDialog(false);
+    },
+    onError: (mutationError) => {
+      setCreateExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.createFailed"));
+    },
+  });
+
+  const updateExpenseMutation = useMutation<
+    ApiGroupExpenseResponse,
+    Error,
+    { expenseId: number; payload: ApiGroupExpenseUpdate }
+  >({
+    mutationFn: ({ expenseId, payload }) => expensesGroupApi.update(groupId, expenseId, payload),
+    onMutate: () => {
+      setEditExpenseError(null);
+      setDeleteExpenseError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      setEditExpenseError(null);
+      setEditingExpense(null);
+    },
+    onError: (mutationError) => {
+      setEditExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.updateFailed"));
+    },
+  });
+
+  const deleteExpenseMutation = useMutation<void, Error, number>({
+    mutationFn: (expenseId) => expensesGroupApi.delete(groupId, expenseId),
+    onMutate: () => {
+      setDeleteExpenseError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      setDeleteExpenseError(null);
+    },
+    onError: (mutationError) => {
+      setDeleteExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.deleteFailed"));
+    },
+  });
+
   const handleInviteByContact = async (toUserId: number) => {
     await inviteMemberMutation.mutateAsync({
       group_id: groupId,
@@ -175,6 +259,22 @@ export default function GroupDetailPage() {
       group_id: groupId,
       to_user_email: email,
     });
+  };
+
+  const handleAddExpenseDialogOpenChange = (nextOpen: boolean) => {
+    setShowAddExpenseDialog(nextOpen);
+    if (!nextOpen) {
+      setCreateExpenseError(null);
+    }
+    setDeleteExpenseError(null);
+  };
+
+  const handleEditExpenseDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setEditingExpense(null);
+      setEditExpenseError(null);
+    }
+    setDeleteExpenseError(null);
   };
 
   const memberNameById = useMemo(() => {
@@ -293,14 +393,33 @@ export default function GroupDetailPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <h2 className="mb-3 text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
+              <Button size="sm" onClick={() => setShowAddExpenseDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.addExpense")}
+              </Button>
+            </div>
             <GroupExpensesList
               expenses={expenses}
               categories={categories}
               memberNameById={memberNameById}
               fallbackCurrency={group.currency}
               isLoading={false}
+              onEdit={(expense) => {
+                setEditingExpense(expense);
+                setEditExpenseError(null);
+                setDeleteExpenseError(null);
+              }}
+              onDelete={(expenseId) => {
+                deleteExpenseMutation.mutate(expenseId);
+              }}
+              canManageExpense={(expense) => isCurrentUserAdmin || expense.user_id === user.id}
             />
+
+            {deleteExpenseError ? (
+              <p className="mt-3 text-sm text-destructive">{deleteExpenseError}</p>
+            ) : null}
 
             {hasNextPage && (
               <Button
@@ -400,6 +519,41 @@ export default function GroupDetailPage() {
         isSubmitting={inviteMemberMutation.isPending || contactsLoading}
         onInviteByContact={handleInviteByContact}
         onInviteByEmail={handleInviteByEmail}
+      />
+
+      <AddGroupExpenseDialog
+        open={showAddExpenseDialog}
+        onOpenChange={handleAddExpenseDialogOpenChange}
+        onSubmit={(data) => createExpenseMutation.mutate(data)}
+        isLoading={createExpenseMutation.isPending}
+        categories={categories}
+        members={members}
+        groupCurrency={group.currency}
+        errorMessage={createExpenseError}
+        mode="create"
+        expense={null}
+      />
+
+      <AddGroupExpenseDialog
+        open={!!editingExpense}
+        onOpenChange={handleEditExpenseDialogOpenChange}
+        onSubmit={(data) => {
+          if (!editingExpense) {
+            return;
+          }
+
+          updateExpenseMutation.mutate({
+            expenseId: editingExpense.id,
+            payload: data,
+          });
+        }}
+        isLoading={updateExpenseMutation.isPending}
+        categories={categories}
+        members={members}
+        groupCurrency={group.currency}
+        errorMessage={editExpenseError}
+        mode="edit"
+        expense={editingExpense}
       />
     </div>
   );

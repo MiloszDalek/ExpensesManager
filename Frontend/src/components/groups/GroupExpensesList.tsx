@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Wallet, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -14,6 +26,9 @@ type GroupExpensesListProps = {
   memberNameById: Record<number, string>;
   fallbackCurrency: string;
   isLoading: boolean;
+  onEdit?: (expense: ApiGroupExpenseResponse) => void;
+  onDelete?: (expenseId: number) => void;
+  canManageExpense?: (expense: ApiGroupExpenseResponse) => boolean;
 };
 
 export default function GroupExpensesList({
@@ -22,6 +37,9 @@ export default function GroupExpensesList({
   memberNameById,
   fallbackCurrency,
   isLoading,
+  onEdit,
+  onDelete,
+  canManageExpense,
 }: GroupExpensesListProps) {
   const { t } = useTranslation();
   const [expandedExpenseId, setExpandedExpenseId] = useState<number | null>(null);
@@ -77,6 +95,7 @@ export default function GroupExpensesList({
           const isExpanded = expandedExpenseId === expense.id;
           const hasNotes = !!expense.notes?.trim();
           const displayCurrency = expense.currency ?? fallbackCurrency;
+          const canManage = canManageExpense ? canManageExpense(expense) : Boolean(onEdit || onDelete);
 
           return (
             <motion.div
@@ -117,6 +136,46 @@ export default function GroupExpensesList({
                     <p className="shrink-0 text-sm font-bold text-foreground">
                       {Number(expense.amount).toFixed(2)} {displayCurrency}
                     </p>
+
+                    {canManage && onDelete ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t("groupExpensesList.delete")}
+                            className="h-7 w-7 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                            onPointerDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("groupExpensesList.deleteTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("groupExpensesList.deleteDescription")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("groupExpensesList.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDelete(expense.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {t("groupExpensesList.delete")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : null}
                   </div>
 
                   <AnimatePresence initial={false}>
@@ -130,6 +189,20 @@ export default function GroupExpensesList({
                         className="overflow-hidden"
                       >
                         <div className="mt-2.5 border-t border-border pt-2.5 text-xs text-muted-foreground">
+                          {canManage && onEdit ? (
+                            <div className="mb-2 flex justify-end">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-8 shrink-0 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                                onClick={() => onEdit(expense)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                {t("groupExpensesList.edit")}
+                              </Button>
+                            </div>
+                          ) : null}
+
                           <p>
                             <span className="font-medium">{t("groupExpensesList.paidBy")}: </span>
                             <span>{memberNameById[expense.user_id] ?? `${t("groupExpensesList.userPrefix")}#${expense.user_id}`}</span>
