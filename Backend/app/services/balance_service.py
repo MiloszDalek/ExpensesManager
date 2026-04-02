@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.repositories import ExpenseRepository, SettlementRepository
-from app.services import ExpenseGroupService, GroupService
+from app.services import GroupService
 from app.schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
 from decimal import Decimal
 import logging
@@ -31,18 +31,26 @@ class BalanceService:
         logger.info("Owed by others: %s", owed_by_others)
 
         for row in paid_to_others:
-            balances[row[0]] += row[1] # index 0 = other_user_id, index 1 = sum share_amount
+            other_user_id = row[0]
+            amount = row[1] or Decimal("0.00")
+            balances.setdefault(other_user_id, Decimal("0.00"))
+            balances[other_user_id] += amount
 
         for row in owed_by_others:
-            balances[row[0]] -= row[1] # index 0 = other_user_id, index 1 = sum share_amount
+            other_user_id = row[0]
+            amount = row[1] or Decimal("0.00")
+            balances.setdefault(other_user_id, Decimal("0.00"))
+            balances[other_user_id] -= amount
 
         completed_settlements = self.settlement_repo.get_completed_settlements(group_id, user_id)
 
         for s in completed_settlements:
             if s.from_user_id == user_id:
-                balances[s.to_user_id] -= s.amount
+                balances.setdefault(s.to_user_id, Decimal("0.00"))
+                balances[s.to_user_id] += s.amount
             elif s.to_user_id == user_id:
-                balances[s.from_user_id] += s.amount
+                balances.setdefault(s.from_user_id, Decimal("0.00"))
+                balances[s.from_user_id] -= s.amount
 
         total_balance = sum(balances.values())
 
@@ -63,9 +71,9 @@ class BalanceService:
         completed_settlements = self.settlement_repo.get_completed_settlements_for_user(user_id)
         for s in completed_settlements:
             if s.from_user_id == user_id:
-                balances[s.to_user_id] = balances.get(s.to_user_id, 0) - s.amount
+                balances[s.to_user_id] = balances.get(s.to_user_id, Decimal("0.00")) + s.amount
             elif s.to_user_id == user_id:
-                balances[s.from_user_id] = balances.get(s.from_user_id, 0) + s.amount
+                balances[s.from_user_id] = balances.get(s.from_user_id, Decimal("0.00")) - s.amount
 
         return [UserBalanceItem(user_id=uid, amount=amount) for uid, amount in balances.items() if uid != user_id]
     
@@ -81,9 +89,9 @@ class BalanceService:
         completed_settlements = self.settlement_repo.get_completed_settlements_between_users(current_user_id, other_user_id)
         for s in completed_settlements:
             if s.from_user_id == current_user_id:
-                balances_map[s.group_id] = balances_map.get(s.group_id, 0) - s.amount
+                balances_map[s.group_id] = balances_map.get(s.group_id, Decimal("0.00")) + s.amount
             elif s.to_user_id == current_user_id:
-                balances_map[s.group_id] = balances_map.get(s.group_id, 0) + s.amount
+                balances_map[s.group_id] = balances_map.get(s.group_id, Decimal("0.00")) - s.amount
 
         balances = [ContactBalanceByGroup(group_id=gid, balance=bal) for gid, bal in balances_map.items()]
         return balances

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import DashboardPage from "@/pages/DashboardPage";
 import GroupsPage from "@/pages/GroupsPage";
 import GroupDetailPage from "@/pages/GroupDetailPage";
+import ContactsPage from "@/pages/ContactsPage";
 import PersonalExpensesPage from "@/pages/PersonalExpensesPage";
 import ReceiptScannerPage from "@/pages/ReceiptScannerPage";
 import LoginPage from "@/pages/LoginPage";
@@ -32,6 +33,7 @@ const AppRouter = () => {
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/groups" element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
           <Route path="/groups/:id" element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
+          <Route path="/contacts" element={<PrivateRoute><ContactsPage /></PrivateRoute>} />
           <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
           <Route path="/receipt-scan" element={<PrivateRoute><ReceiptScannerPage /></PrivateRoute>} />
 

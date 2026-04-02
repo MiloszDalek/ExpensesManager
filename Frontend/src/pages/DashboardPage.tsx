@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Bell, CheckCircle2, Plus, Users, XCircle } from "lucide-react";
+import { ArrowRight, Bell, CheckCircle2, Plus, Users, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -353,10 +353,18 @@ export default function DashboardPage() {
 
           <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
             <CardHeader className="border-b border-border">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Users className="h-5 w-5 text-primary" />
-                {t("dashboardInbox.contactsTitle")}
-              </CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Users className="h-5 w-5 text-primary" />
+                  {t("dashboardInbox.contactsTitle")}
+                </CardTitle>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={createPageUrl("Contacts")}>
+                    {t("dashboardInbox.openContactsBalances")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               <div className="flex gap-2">

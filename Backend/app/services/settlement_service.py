@@ -18,11 +18,16 @@ class SettlementService:
     def create_group_settlement(self, settlement_in: SettlementCreate, from_user_id: int) -> Settlement:
         if from_user_id == settlement_in.to_user_id:
             raise HTTPException(400, "Cannot settle with yourself")
-        
-        self.group_service.get_member(settlement_in.group_id, from_user_id)
-        self.group_service.get_member(settlement_in.group_id, settlement_in.to_user_id)
 
-        balances = self.balance_service.get_group_balances(settlement_in.group_id, from_user_id)
+        if settlement_in.group_id is None:
+            raise HTTPException(400, "Group id is required")
+        
+        group = self.group_service.get_group(settlement_in.group_id, from_user_id)
+
+        self.group_service.get_member(group.id, from_user_id)
+        self.group_service.get_member(group.id, settlement_in.to_user_id)
+
+        balances = self.balance_service.get_group_balances(group.id, from_user_id)
 
         balance_with_user = None
         for item in balances.balances:
@@ -42,8 +47,9 @@ class SettlementService:
         settlement = Settlement(
             from_user_id=from_user_id,
             to_user_id=settlement_in.to_user_id,
-            group_id=settlement_in.group_id,
+            group_id=group.id,
             amount=abs(balance_with_user),
+            currency=group.currency,
             payment_method=PaymentMethod.CASH
         )
 
@@ -73,6 +79,7 @@ class SettlementService:
                 to_user_id=settlement_in.to_user_id,
                 group_id=item.group_id,
                 amount=abs(item.balance),
+                currency=self.group_service.get_group(item.group_id, from_user_id).currency,
                 payment_method=PaymentMethod.CASH
             )
             self.settlement_repo.create(settlement)
@@ -89,7 +96,7 @@ class SettlementService:
     def get_settlements_by_group(self, group_id: int, limit: int, offset: int, user_id: int):
         group = self.group_service.get_group(group_id, user_id)
 
-        return self.settlement_repo.get_by_group_id(group.id, limit, offset, user_id)
+        return self.settlement_repo.get_by_group_id(group.id, limit, offset)
     
 
     def get_settlements_by_user(self, limit: int, offset: int, user_id: int):

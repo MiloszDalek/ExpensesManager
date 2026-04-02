@@ -18,11 +18,14 @@ import { expensesGroupApi } from "@/api/expensesGroupApi";
 import { categoriesApi } from "@/api/categoriesApi";
 import { contactsApi } from "@/api/contactsApi";
 import { invitationsApi } from "@/api/invitationsApi";
+import { balancesApi } from "@/api/balancesApi";
+import { settlementsApi } from "@/api/settlementsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
 
 import type {
+  ApiGroupBalances,
   ApiContactResponse,
   ApiGroupExpenseCreate,
   ApiGroupExpenseUpdate,
@@ -32,10 +35,12 @@ import type {
   ApiGroupResponse,
   ApiInvitationResponse,
   ApiCategoryResponse,
+  ApiSettlementResponse,
 } from "@/types";
 
 const LIMIT = 20;
 const CONTACTS_LIMIT = 100;
+const SETTLEMENTS_LIMIT = 20;
 
 export default function GroupDetailPage() {
   const { t } = useTranslation();
@@ -49,6 +54,10 @@ export default function GroupDetailPage() {
   const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
   const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
   const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
+  const [groupSettlementFeedback, setGroupSettlementFeedback] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
@@ -110,6 +119,16 @@ export default function GroupDetailPage() {
   });
 
   const {
+    data: groupBalances,
+    isLoading: balancesLoading,
+    error: balancesError,
+  } = useQuery<ApiGroupBalances>({
+    queryKey: queryKeys.balances.group(groupId),
+    queryFn: () => balancesApi.getGroup(groupId),
+    enabled: !!user && isValidGroupId,
+  });
+
+  const {
     data: expensePages,
     isLoading: expensesLoading,
     error: expensesError,
@@ -127,6 +146,16 @@ export default function GroupDetailPage() {
       return lastPage.length === LIMIT ? allPages.length * LIMIT : undefined;
     },
     initialPageParam: 0,
+    enabled: !!user && isValidGroupId,
+  });
+
+  const {
+    data: settlements = [],
+    isLoading: settlementsLoading,
+    error: settlementsError,
+  } = useQuery<ApiSettlementResponse[]>({
+    queryKey: queryKeys.settlements.group(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
+    queryFn: () => settlementsApi.getByGroup(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
     enabled: !!user && isValidGroupId,
   });
 
@@ -153,6 +182,7 @@ export default function GroupDetailPage() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(groupId) });
       await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
       await queryClient.invalidateQueries({ queryKey: ["invitations", "group", groupId, "pending"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
     },
   });
 
@@ -160,6 +190,7 @@ export default function GroupDetailPage() {
     mutationFn: () => groupsApi.leaveGroup(groupId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
       navigate(createPageUrl("Groups"));
     },
   });
@@ -197,6 +228,55 @@ export default function GroupDetailPage() {
                           : message || t(fallbackKey);
   };
 
+  const mapGroupSettlementError = (message: string | undefined) => {
+    return message === "Cannot settle with yourself"
+      ? t("groupDetailPage.settlementErrors.cannotSettleWithYourself")
+      : message === "Group id is required"
+        ? t("groupDetailPage.settlementErrors.groupIdRequired")
+        : message === "Member not found"
+          ? t("groupDetailPage.settlementErrors.memberNotFound")
+          : message === "No balance with this user"
+            ? t("groupDetailPage.settlementErrors.noBalanceWithUser")
+            : message === "No debt between users"
+              ? t("groupDetailPage.settlementErrors.noDebtBetweenUsers")
+              : message === "This user owes you money"
+                ? t("groupDetailPage.settlementErrors.otherUserOwesYou")
+                : message === "Group not found"
+                  ? t("groupDetailPage.settlementErrors.groupNotFound")
+                  : message === "Not authorized"
+                    ? t("groupDetailPage.settlementErrors.notAuthorized")
+                    : message || t("groupDetailPage.settlementErrors.settleFailed");
+  };
+
+  const settleGroupCashMutation = useMutation({
+    mutationFn: (toUserId: number) =>
+      settlementsApi.createGroupCash({
+        to_user_id: toUserId,
+        group_id: groupId,
+      }),
+    onMutate: () => {
+      setGroupSettlementFeedback(null);
+    },
+    onSuccess: async (_data, toUserId) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contacts });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+
+      setGroupSettlementFeedback({
+        tone: "success",
+        message: t("groupDetailPage.settlementSuccess"),
+      });
+    },
+    onError: (mutationError: Error) => {
+      setGroupSettlementFeedback({
+        tone: "error",
+        message: mapGroupSettlementError(mutationError.message),
+      });
+    },
+  });
+
   const createExpenseMutation = useMutation<ApiGroupExpenseResponse, Error, ApiGroupExpenseCreate>({
     mutationFn: (expenseData) => expensesGroupApi.create(groupId, expenseData),
     onMutate: () => {
@@ -205,6 +285,7 @@ export default function GroupDetailPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
       setCreateExpenseError(null);
       setShowAddExpenseDialog(false);
     },
@@ -225,6 +306,7 @@ export default function GroupDetailPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
       setEditExpenseError(null);
       setEditingExpense(null);
     },
@@ -240,6 +322,7 @@ export default function GroupDetailPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
       setDeleteExpenseError(null);
     },
     onError: (mutationError) => {
@@ -297,6 +380,73 @@ export default function GroupDetailPage() {
       .map(([currency, amount]) => `${amount.toFixed(2)} ${currency}`)
       .join(" · ");
   }, [expenses, defaultCurrency]);
+
+  const userBalanceSummary = useMemo(() => {
+    const balances = groupBalances?.balances ?? [];
+
+    return balances.reduce(
+      (accumulator, item) => {
+        const amount = Number(item.amount);
+        if (amount > 0) {
+          accumulator.othersOweMe += amount;
+          accumulator.unsettledCount += 1;
+        } else if (amount < 0) {
+          accumulator.iOweOthers += Math.abs(amount);
+          accumulator.unsettledCount += 1;
+        }
+        return accumulator;
+      },
+      { othersOweMe: 0, iOweOthers: 0, unsettledCount: 0 }
+    );
+  }, [groupBalances]);
+
+  const balanceRows = useMemo(() => {
+    const balances = groupBalances?.balances ?? [];
+
+    return balances
+      .map((item) => {
+        const amount = Number(item.amount);
+        const absoluteAmount = Math.abs(amount);
+        const memberName =
+          memberNameById[item.user_id] ??
+          t("groupDetailPage.balanceUnknownUser", {
+            userId: item.user_id,
+          });
+
+        const relationLabel = amount > 0
+          ? t("groupDetailPage.balanceRowOwesYou")
+          : amount < 0
+            ? t("groupDetailPage.balanceRowYouOwe")
+            : t("groupDetailPage.balanceRowSettled");
+
+        return {
+          userId: item.user_id,
+          memberName,
+          relationLabel,
+          amount,
+          absoluteAmount,
+        };
+      })
+      .filter((row) => row.amount !== 0)
+      .sort((left, right) => right.absoluteAmount - left.absoluteAmount);
+  }, [groupBalances, memberNameById, t]);
+
+  const completedSettlements = useMemo(() => {
+    return settlements.filter((settlement) => settlement.status === "completed");
+  }, [settlements]);
+
+  const getMemberDisplayName = (userId: number) => {
+    if (userId === user?.id) {
+      return t("groupDetailPage.youLabel");
+    }
+
+    return (
+      memberNameById[userId] ??
+      t("groupDetailPage.userFallback", {
+        userId,
+      })
+    );
+  };
 
   if (!isValidGroupId) {
     return (
@@ -391,6 +541,106 @@ export default function GroupDetailPage() {
           </Card>
         </div>
 
+        <Card className="mb-6 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+          <CardContent className="p-4 md:p-5">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-foreground">
+                {t("groupDetailPage.balanceSummarySection")}
+              </h2>
+              <span className="text-xs text-muted-foreground">{group.currency}</span>
+            </div>
+
+            {balancesLoading ? (
+              <p className="text-sm text-muted-foreground">{t("groupDetailPage.balanceSummaryLoading")}</p>
+            ) : balancesError ? (
+              <p className="text-sm text-destructive">{t("groupDetailPage.balanceSummaryError")}</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                    <p className="text-sm text-emerald-700">{t("groupDetailPage.balanceOthersOweYou")}</p>
+                    <p className="mt-1 text-xl font-semibold text-emerald-900">
+                      {userBalanceSummary.othersOweMe.toFixed(2)} {group.currency}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                    <p className="text-sm text-rose-700">{t("groupDetailPage.balanceYouOwe")}</p>
+                    <p className="mt-1 text-xl font-semibold text-rose-900">
+                      {userBalanceSummary.iOweOthers.toFixed(2)} {group.currency}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {userBalanceSummary.unsettledCount === 0
+                    ? t("groupDetailPage.balanceAllSettled")
+                    : t("groupDetailPage.balanceOpenCount", {
+                        count: userBalanceSummary.unsettledCount,
+                      })}
+                </p>
+
+                {groupSettlementFeedback ? (
+                  <p
+                    className={`mt-2 text-sm ${
+                      groupSettlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+                    }`}
+                  >
+                    {groupSettlementFeedback.message}
+                  </p>
+                ) : null}
+
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="mb-2 text-sm font-medium text-foreground">
+                    {t("groupDetailPage.balanceBreakdownTitle")}
+                  </p>
+
+                  {balanceRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("groupDetailPage.balanceNoBreakdownRows")}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {balanceRows.map((row) => (
+                        <div
+                          key={row.userId}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">{row.memberName}</p>
+                            <p className="truncate text-xs text-muted-foreground">{row.relationLabel}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="whitespace-nowrap text-sm font-semibold text-foreground">
+                              {row.absoluteAmount.toFixed(2)} {group.currency}
+                            </p>
+
+                            {row.amount < 0 ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  settleGroupCashMutation.isPending &&
+                                  settleGroupCashMutation.variables === row.userId
+                                }
+                                onClick={() => settleGroupCashMutation.mutate(row.userId)}
+                              >
+                                {settleGroupCashMutation.isPending &&
+                                settleGroupCashMutation.variables === row.userId
+                                  ? t("groupDetailPage.settlingCash")
+                                  : t("groupDetailPage.settleCash")}
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="mb-3 flex items-center justify-between gap-2">
@@ -463,6 +713,46 @@ export default function GroupDetailPage() {
               onLeaveGroup={() => leaveGroupMutation.mutate()}
               isLoading={false}
             />
+
+            <Card className="mt-4 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+              <CardContent className="p-4">
+                <h3 className="mb-3 text-base font-semibold text-foreground">
+                  {t("groupDetailPage.settlementsSection")}
+                </h3>
+
+                {settlementsLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2].map((item) => (
+                      <div key={item} className="h-14 animate-pulse rounded bg-muted" />
+                    ))}
+                  </div>
+                ) : settlementsError ? (
+                  <p className="text-sm text-destructive">
+                    {t("groupDetailPage.settlementsLoadError")}
+                  </p>
+                ) : completedSettlements.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+                    {t("groupDetailPage.settlementsEmpty")}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {completedSettlements.map((settlement) => (
+                      <div key={settlement.id} className="rounded-lg border border-border p-3">
+                        <p className="text-sm font-medium text-foreground">
+                          {t("groupDetailPage.settlementItem", {
+                            from: getMemberDisplayName(settlement.from_user_id),
+                            to: getMemberDisplayName(settlement.to_user_id),
+                          })}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {Number(settlement.amount).toFixed(2)} {settlement.currency} · {t("groupDetailPage.settlementMethodCash")} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {isCurrentUserAdmin && (
               <Card className="mt-4 border border-border bg-card/80 shadow-sm backdrop-blur-sm">

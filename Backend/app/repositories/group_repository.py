@@ -82,7 +82,10 @@ class GroupRepository:
     def get_all_members(self, group_id: int) -> list[GroupMember]:
         return (
             self.db.query(GroupMember)
-            .filter(GroupMember.group_id == group_id)
+            .filter(
+                GroupMember.group_id == group_id,
+                GroupMember.status == GroupMemberStatus.ACTIVE,
+            )
             .options(selectinload(GroupMember.user))
             .all()
         )
