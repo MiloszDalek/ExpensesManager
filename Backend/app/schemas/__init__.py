@@ -12,7 +12,15 @@ from .expense_schemas import (
     ExpenseShareSchema,
     GroupExpenseUpdate,
 )
-from .settlement_schemas import SettlementCreate, SettlementResponse
+from .settlement_schemas import (
+    SettlementCreate,
+    SettlementResponse,
+    PayPalSettlementInitiateCreate,
+    PayPalSettlementInitiateResponse,
+    PayPalTotalSettlementInitiateCreate,
+    PayPalTotalSettlementInitiateResponse,
+    PayPalSettlementFinalizeRequest,
+)
 from .bank_token_schemas import BankTokenCreate, BankTokenResponse
 from .contact_schemas import ContactCreate, ContactResponse
 from .category_schemas import CategoryCreate, CategoryResponse

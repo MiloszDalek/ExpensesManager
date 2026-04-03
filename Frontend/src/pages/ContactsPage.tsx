@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import { useAuth } from "@/contexts/AuthContext";
 import { contactsApi } from "@/api/contactsApi";
 import { balancesApi } from "@/api/balancesApi";
@@ -25,7 +26,11 @@ import { queryKeys } from "@/api/queryKeys";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
 
-import type { ApiContactBalanceByGroup, ApiContactResponse, ApiGroupResponse } from "@/types";
+import type {
+  ApiContactBalanceByGroup,
+  ApiContactResponse,
+  ApiGroupResponse,
+} from "@/types";
 
 const CONTACTS_LIMIT = 100;
 
@@ -60,6 +65,7 @@ export default function ContactsPage() {
   } | null>(null);
   const [groupSettlementTarget, setGroupSettlementTarget] = useState<GroupSettlementTarget | null>(null);
   const [totalSettlementTarget, setTotalSettlementTarget] = useState<TotalSettlementTarget | null>(null);
+  const isPayPalSdkEnabled = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 
   const mapTotalSettlementError = (message: string | undefined) => {
     return message === "Cannot settle with yourself"
@@ -91,6 +97,69 @@ export default function ContactsPage() {
                   : message === "Not authorized"
                     ? t("contactsBalancesPage.settlementErrors.notAuthorized")
                     : message || t("contactsBalancesPage.settlementErrors.settleGroupFailed");
+  };
+
+  const mapPayPalSettlementError = (message: string | undefined) => {
+    return message === "PayPal integration not configured"
+      ? t("contactsBalancesPage.settlementErrors.paypalNotConfigured")
+      : message === "Could not create PayPal order"
+        ? t("contactsBalancesPage.settlementErrors.paypalCreateOrderFailed")
+        : message === "PayPal request failed"
+          ? t("contactsBalancesPage.settlementErrors.paypalCreateOrderFailed")
+          : message === "PayPal capture was not completed"
+            ? t("contactsBalancesPage.settlementErrors.paypalCaptureFailed")
+          : message === "Total PayPal settlement supports one currency at a time"
+            ? t("contactsBalancesPage.settlementErrors.paypalMultiCurrencyNotSupported")
+            : message === "No payable amount for PayPal settlement"
+              ? t("contactsBalancesPage.settlementErrors.paypalNoPayableAmount")
+              : message || t("contactsBalancesPage.settlementErrors.paypalInitFailed");
+  };
+
+  const createTotalPayPalOrder = async (toUserId: number): Promise<string> => {
+    setSettlementFeedback(null);
+    const response = await settlementsApi.initiateTotalPayPal({ to_user_id: toUserId });
+    return response.order_id;
+  };
+
+  const finalizeTotalPayPalOrder = async (orderId: string, toUserId: number) => {
+    await settlementsApi.finalizePayPal({ order_id: orderId });
+    await queryClient.invalidateQueries({ queryKey: ["balances"] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+
+    setSettlementFeedback({
+      tone: "success",
+      message: t("contactsBalancesPage.settlementSuccess"),
+    });
+    setTotalSettlementTarget(null);
+  };
+
+  const createGroupPayPalOrder = async (toUserId: number, groupId: number): Promise<string> => {
+    setSettlementFeedback(null);
+    const response = await settlementsApi.initiateGroupPayPal({
+      to_user_id: toUserId,
+      group_id: groupId,
+    });
+    return response.order_id;
+  };
+
+  const finalizeGroupPayPalOrder = async (orderId: string, toUserId: number, groupId: number) => {
+    await settlementsApi.finalizePayPal({ order_id: orderId });
+    await queryClient.invalidateQueries({ queryKey: ["balances"] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+
+    const groupName = groupById[groupId]
+      ? formatGroupName(groupById[groupId].name)
+      : t("contactsBalancesPage.unknownGroup", { groupId });
+
+    setSettlementFeedback({
+      tone: "success",
+      message: t("contactsBalancesPage.settlementGroupSuccess", { groupName }),
+    });
+    setGroupSettlementTarget(null);
   };
 
   const settleTotalCashMutation = useMutation({
@@ -451,7 +520,7 @@ export default function ContactsPage() {
                       {isExpanded && (
                         <div className="border-t border-border px-3 py-3">
                           {hasNegative ? (
-                            <div className="mb-3">
+                            <div className="mb-3 flex flex-wrap items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -471,6 +540,65 @@ export default function ContactsPage() {
                                   ? t("contactsBalancesPage.settlingTotalCash")
                                   : t("contactsBalancesPage.settleTotalCash")}
                               </Button>
+
+                              {isPayPalSdkEnabled ? (
+                                <div className="w-[180px]">
+                                  <PayPalCurrencyButtons
+                                    currency={Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN"}
+                                    fundingSource="paypal"
+                                    style={{ layout: "horizontal", tagline: false, height: 34 }}
+                                    forceReRender={[row.contact.contact_id]}
+                                    createOrder={async () => {
+                                      try {
+                                        return await createTotalPayPalOrder(row.contact.contact_id);
+                                      } catch (error) {
+                                        const message = error instanceof Error ? error.message : undefined;
+                                        setSettlementFeedback({
+                                          tone: "error",
+                                          message: mapPayPalSettlementError(message),
+                                        });
+                                        throw error;
+                                      }
+                                    }}
+                                    onApprove={async (data) => {
+                                      if (!data.orderID) {
+                                        setSettlementFeedback({
+                                          tone: "error",
+                                          message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
+                                        });
+                                        return;
+                                      }
+
+                                      try {
+                                        await finalizeTotalPayPalOrder(data.orderID, row.contact.contact_id);
+                                      } catch (error) {
+                                        const message = error instanceof Error ? error.message : undefined;
+                                        setSettlementFeedback({
+                                          tone: "error",
+                                          message: mapPayPalSettlementError(message),
+                                        });
+                                      }
+                                    }}
+                                    onCancel={() => {
+                                      setSettlementFeedback({
+                                        tone: "error",
+                                        message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
+                                      });
+                                    }}
+                                    onError={(error) => {
+                                      const message = error instanceof Error ? error.message : undefined;
+                                      setSettlementFeedback({
+                                        tone: "error",
+                                        message: mapPayPalSettlementError(message),
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                  {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+                                </p>
+                              )}
                             </div>
                           ) : null}
 
@@ -497,31 +625,99 @@ export default function ContactsPage() {
                                       {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
                                     </p>
                                     {groupRow.amount < 0 ? (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={
-                                          settleGroupCashMutation.isPending &&
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={
+                                            (settleGroupCashMutation.isPending &&
+                                              settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
+                                              settleGroupCashMutation.variables?.toUserId === row.contact.contact_id)
+                                          }
+                                          onClick={() => {
+                                            setGroupSettlementTarget({
+                                              contactUserId: row.contact.contact_id,
+                                              contactUsername: row.contact.username,
+                                              groupId: groupRow.groupId,
+                                              groupName: groupRow.groupName,
+                                              amount: groupRow.absoluteAmount,
+                                              currency: groupRow.groupCurrency,
+                                            });
+                                          }}
+                                        >
+                                          {settleGroupCashMutation.isPending &&
                                           settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
                                           settleGroupCashMutation.variables?.toUserId === row.contact.contact_id
-                                        }
-                                        onClick={() => {
-                                          setGroupSettlementTarget({
-                                            contactUserId: row.contact.contact_id,
-                                            contactUsername: row.contact.username,
-                                            groupId: groupRow.groupId,
-                                            groupName: groupRow.groupName,
-                                            amount: groupRow.absoluteAmount,
-                                            currency: groupRow.groupCurrency,
-                                          });
-                                        }}
-                                      >
-                                        {settleGroupCashMutation.isPending &&
-                                        settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
-                                        settleGroupCashMutation.variables?.toUserId === row.contact.contact_id
-                                          ? t("contactsBalancesPage.settlingGroupCash")
-                                          : t("contactsBalancesPage.settleGroupCash")}
-                                      </Button>
+                                            ? t("contactsBalancesPage.settlingGroupCash")
+                                            : t("contactsBalancesPage.settleGroupCash")}
+                                        </Button>
+
+                                        {isPayPalSdkEnabled ? (
+                                          <div className="w-[170px]">
+                                            <PayPalCurrencyButtons
+                                              currency={groupRow.groupCurrency}
+                                              fundingSource="paypal"
+                                              style={{ layout: "horizontal", tagline: false, height: 34 }}
+                                              forceReRender={[row.contact.contact_id, groupRow.groupId]}
+                                              createOrder={async () => {
+                                                try {
+                                                  return await createGroupPayPalOrder(
+                                                    row.contact.contact_id,
+                                                    groupRow.groupId
+                                                  );
+                                                } catch (error) {
+                                                  const message = error instanceof Error ? error.message : undefined;
+                                                  setSettlementFeedback({
+                                                    tone: "error",
+                                                    message: mapPayPalSettlementError(message),
+                                                  });
+                                                  throw error;
+                                                }
+                                              }}
+                                              onApprove={async (data) => {
+                                                if (!data.orderID) {
+                                                  setSettlementFeedback({
+                                                    tone: "error",
+                                                    message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
+                                                  });
+                                                  return;
+                                                }
+
+                                                try {
+                                                  await finalizeGroupPayPalOrder(
+                                                    data.orderID,
+                                                    row.contact.contact_id,
+                                                    groupRow.groupId
+                                                  );
+                                                } catch (error) {
+                                                  const message = error instanceof Error ? error.message : undefined;
+                                                  setSettlementFeedback({
+                                                    tone: "error",
+                                                    message: mapPayPalSettlementError(message),
+                                                  });
+                                                }
+                                              }}
+                                              onCancel={() => {
+                                                setSettlementFeedback({
+                                                  tone: "error",
+                                                  message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
+                                                });
+                                              }}
+                                              onError={(error) => {
+                                                const message = error instanceof Error ? error.message : undefined;
+                                                setSettlementFeedback({
+                                                  tone: "error",
+                                                  message: mapPayPalSettlementError(message),
+                                                });
+                                              }}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                            {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+                                          </p>
+                                        )}
+                                      </>
                                     ) : null}
                                   </div>
                                 </div>

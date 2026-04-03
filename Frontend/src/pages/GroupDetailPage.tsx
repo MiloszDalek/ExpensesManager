@@ -8,6 +8,7 @@ import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
 import AddGroupMemberDialog from "@/components/groups/AddGroupMemberDialog";
@@ -59,6 +60,7 @@ export default function GroupDetailPage() {
     tone: "success" | "error";
     message: string;
   } | null>(null);
+  const isPayPalSdkEnabled = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
@@ -247,6 +249,42 @@ export default function GroupDetailPage() {
                   : message === "Not authorized"
                     ? t("groupDetailPage.settlementErrors.notAuthorized")
                     : message || t("groupDetailPage.settlementErrors.settleFailed");
+  };
+
+  const mapPayPalSettlementError = (message: string | undefined) => {
+    return message === "PayPal integration not configured"
+      ? t("groupDetailPage.settlementErrors.paypalNotConfigured")
+      : message === "Could not create PayPal order"
+        ? t("groupDetailPage.settlementErrors.paypalCreateOrderFailed")
+        : message === "PayPal request failed"
+          ? t("groupDetailPage.settlementErrors.paypalCreateOrderFailed")
+          : message === "PayPal capture was not completed"
+            ? t("groupDetailPage.settlementErrors.paypalCaptureFailed")
+          : message || t("groupDetailPage.settlementErrors.paypalInitFailed");
+  };
+
+  const createGroupPayPalOrder = async (toUserId: number): Promise<string> => {
+    setGroupSettlementFeedback(null);
+    const response = await settlementsApi.initiateGroupPayPal({
+      to_user_id: toUserId,
+      group_id: groupId,
+    });
+    return response.order_id;
+  };
+
+  const finalizeGroupPayPalOrder = async (orderId: string, toUserId: number) => {
+    await settlementsApi.finalizePayPal({ order_id: orderId });
+
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contacts });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+
+    setGroupSettlementFeedback({
+      tone: "success",
+      message: t("groupDetailPage.settlementSuccess"),
+    });
   };
 
   const settleGroupCashMutation = useMutation({
@@ -454,6 +492,10 @@ export default function GroupDetailPage() {
       return t("groupDetailPage.settlementMethodOffset");
     }
 
+    if (paymentMethod === "paypal") {
+      return t("groupDetailPage.settlementMethodPaypal");
+    }
+
     return t("groupDetailPage.settlementMethodCash");
   };
 
@@ -624,20 +666,80 @@ export default function GroupDetailPage() {
                             </p>
 
                             {row.amount < 0 ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  settleGroupCashMutation.isPending &&
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={
+                                    settleGroupCashMutation.isPending &&
+                                    settleGroupCashMutation.variables === row.userId
+                                  }
+                                  onClick={() => settleGroupCashMutation.mutate(row.userId)}
+                                >
+                                  {settleGroupCashMutation.isPending &&
                                   settleGroupCashMutation.variables === row.userId
-                                }
-                                onClick={() => settleGroupCashMutation.mutate(row.userId)}
-                              >
-                                {settleGroupCashMutation.isPending &&
-                                settleGroupCashMutation.variables === row.userId
-                                  ? t("groupDetailPage.settlingCash")
-                                  : t("groupDetailPage.settleCash")}
-                              </Button>
+                                    ? t("groupDetailPage.settlingCash")
+                                    : t("groupDetailPage.settleCash")}
+                                </Button>
+                                {isPayPalSdkEnabled ? (
+                                  <div className="w-[165px]">
+                                    <PayPalCurrencyButtons
+                                      currency={group.currency}
+                                      fundingSource="paypal"
+                                      style={{ layout: "horizontal", tagline: false, height: 34 }}
+                                      forceReRender={[row.userId, groupId]}
+                                      createOrder={async () => {
+                                        try {
+                                          return await createGroupPayPalOrder(row.userId);
+                                        } catch (error) {
+                                          const message = error instanceof Error ? error.message : undefined;
+                                          setGroupSettlementFeedback({
+                                            tone: "error",
+                                            message: mapPayPalSettlementError(message),
+                                          });
+                                          throw error;
+                                        }
+                                      }}
+                                      onApprove={async (data) => {
+                                        if (!data.orderID) {
+                                          setGroupSettlementFeedback({
+                                            tone: "error",
+                                            message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
+                                          });
+                                          return;
+                                        }
+
+                                        try {
+                                          await finalizeGroupPayPalOrder(data.orderID, row.userId);
+                                        } catch (error) {
+                                          const message = error instanceof Error ? error.message : undefined;
+                                          setGroupSettlementFeedback({
+                                            tone: "error",
+                                            message: mapPayPalSettlementError(message),
+                                          });
+                                        }
+                                      }}
+                                      onCancel={() => {
+                                        setGroupSettlementFeedback({
+                                          tone: "error",
+                                          message: t("groupDetailPage.settlementErrors.paypalCancelled"),
+                                        });
+                                      }}
+                                      onError={(error) => {
+                                        const message = error instanceof Error ? error.message : undefined;
+                                        setGroupSettlementFeedback({
+                                          tone: "error",
+                                          message: mapPayPalSettlementError(message),
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                    {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
+                                  </p>
+                                )}
+                              </>
                             ) : null}
                           </div>
                         </div>

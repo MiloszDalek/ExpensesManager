@@ -35,6 +35,6 @@ export type InvitationType = "contact" | "group";
 
 export type NotificationType = "invitation";
 
-export type PaymentMethod = "cash" | "offset_applied" | "offset_forgiven";
-export type SettlementStatus = "pending" | "completed" | "failed";
+export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgiven";
+export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";
 

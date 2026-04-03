@@ -55,6 +55,23 @@ class SettlementRepository:
             .all()
         )
 
+    def get_by_id(self, settlement_id: int):
+        return self.db.query(Settlement).filter(Settlement.id == settlement_id).first()
+
+    def get_by_paypal_order_id(self, paypal_order_id: str):
+        return (
+            self.db.query(Settlement)
+            .filter(Settlement.paypal_order_id == paypal_order_id)
+            .first()
+        )
+
+    def get_all_by_paypal_order_id(self, paypal_order_id: str):
+        return (
+            self.db.query(Settlement)
+            .filter(Settlement.paypal_order_id == paypal_order_id)
+            .all()
+        )
+
     def get_by_user_id(self, limit: int, offset: int, user_id: int):
         return (
             self.db.query(Settlement)
@@ -71,3 +88,6 @@ class SettlementRepository:
 
     def save_all(self):
         self.db.commit()
+
+    def rollback(self):
+        self.db.rollback()

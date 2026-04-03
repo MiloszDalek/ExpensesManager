@@ -16,6 +16,8 @@ class Settlement(Base):
     payment_method = Column(SAEnum(PaymentMethod, name="payment_method"), default=PaymentMethod.CASH, nullable=False)
     status = Column(SAEnum(SettlementStatus, name="settlement_status"), default=SettlementStatus.COMPLETED, nullable=False)
     transaction_id = Column(String(255))
+    paypal_order_id = Column(String(255), nullable=True)
+    paypal_capture_id = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     group = relationship("Group", back_populates="settlements")
@@ -26,6 +28,7 @@ class Settlement(Base):
         Index("idx_settlements_group", "group_id"),
         Index("idx_settlements_from_user", "from_user_id"),
         Index("idx_settlements_to_user", "to_user_id"),
+        Index("idx_settlements_paypal_order_id", "paypal_order_id"),
 
         CheckConstraint("from_user_id != to_user_id", name="check_no_self_settlement")
     )
