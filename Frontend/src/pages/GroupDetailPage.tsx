@@ -53,6 +53,7 @@ export default function GroupDetailPage() {
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
+  const [inviteMemberError, setInviteMemberError] = useState<string | null>(null);
   const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
   const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
   const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
@@ -64,6 +65,10 @@ export default function GroupDetailPage() {
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
+  const groupPendingInvitationsQueryKey = queryKeys.invitations.groupPending(groupId, {
+    limit: 100,
+    offset: 0,
+  });
 
   const {
     data: group,
@@ -106,7 +111,7 @@ export default function GroupDetailPage() {
     isLoading: pendingInvitationsLoading,
     error: pendingInvitationsError,
   } = useQuery<ApiInvitationResponse[]>({
-    queryKey: queryKeys.invitations.groupPending(groupId, { limit: 100, offset: 0 }),
+    queryKey: groupPendingInvitationsQueryKey,
     queryFn: () => invitationsApi.listGroupPending(groupId, { limit: 100, offset: 0 }),
     enabled: !!user && isValidGroupId && isCurrentUserAdmin,
   });
@@ -166,9 +171,23 @@ export default function GroupDetailPage() {
 
   const inviteMemberMutation = useMutation<ApiInvitationResponse, Error, ApiGroupInvitationCreate>({
     mutationFn: (payload) => invitationsApi.sendToGroup(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["invitations", "group", groupId, "pending"] });
+    onMutate: () => {
+      setInviteMemberError(null);
+    },
+    onSuccess: async (createdInvitation) => {
+      queryClient.setQueryData<ApiInvitationResponse[]>(groupPendingInvitationsQueryKey, (previous = []) => {
+        if (previous.some((invitation) => invitation.id === createdInvitation.id)) {
+          return previous;
+        }
+
+        return [createdInvitation, ...previous];
+      });
+      await queryClient.invalidateQueries({ queryKey: groupPendingInvitationsQueryKey });
+      setInviteMemberError(null);
       setShowAddMemberDialog(false);
+    },
+    onError: (mutationError) => {
+      setInviteMemberError(mapGroupInvitationError(mutationError.message));
     },
   });
 
@@ -201,7 +220,7 @@ export default function GroupDetailPage() {
   const cancelInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
     mutationFn: (invitationId) => invitationsApi.cancel(invitationId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["invitations", "group", groupId, "pending"] });
+      await queryClient.invalidateQueries({ queryKey: groupPendingInvitationsQueryKey });
     },
   });
 
@@ -250,6 +269,22 @@ export default function GroupDetailPage() {
                     ? t("groupDetailPage.settlementErrors.notAuthorized")
                     : message || t("groupDetailPage.settlementErrors.settleFailed");
   };
+
+  function mapGroupInvitationError(message: string | undefined) {
+    return message === "Cannot invite yourself"
+      ? t("dashboardInbox.errors.cannotInviteYourself")
+      : message === "Invitation already accepted"
+        ? t("dashboardInbox.errors.invitationAlreadyAccepted")
+        : message === "Invitation is already pending. Wait for response or cancel the existing invitation."
+          ? t("dashboardInbox.errors.invitationAlreadyPending")
+          : message === "Group invitation is already pending. Wait for response or cancel the existing invitation."
+            ? t("dashboardInbox.errors.groupInvitationAlreadyPending")
+            : message === "User with this email does not exist"
+              ? t("dashboardInbox.errors.userWithEmailNotFound")
+              : message === "Not authorized"
+                ? t("dashboardInbox.errors.notAuthorized")
+                : message || t("common.somethingWentWrong");
+    }
 
   const mapPayPalSettlementError = (message: string | undefined) => {
     return message === "PayPal integration not configured"
@@ -391,6 +426,11 @@ export default function GroupDetailPage() {
     setDeleteExpenseError(null);
   };
 
+  const handleAddMemberDialogOpenChange = (nextOpen: boolean) => {
+    setShowAddMemberDialog(nextOpen);
+    setInviteMemberError(null);
+  };
+
   const handleEditExpenseDialogOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setEditingExpense(null);
@@ -405,6 +445,18 @@ export default function GroupDetailPage() {
       return accumulator;
     }, {});
   }, [members]);
+
+  const pendingInvitationUserIds = useMemo(() => {
+    const pendingUserIdSet = new Set<number>();
+
+    pendingInvitations.forEach((invitation) => {
+      if (invitation.status === "pending") {
+        pendingUserIdSet.add(invitation.to_user_id);
+      }
+    });
+
+    return Array.from(pendingUserIdSet);
+  }, [pendingInvitations]);
 
   const defaultCurrency = group?.currency ?? "PLN";
 
@@ -922,10 +974,12 @@ export default function GroupDetailPage() {
 
       <AddGroupMemberDialog
         open={showAddMemberDialog}
-        onOpenChange={setShowAddMemberDialog}
+        onOpenChange={handleAddMemberDialogOpenChange}
         contacts={contacts}
         members={members}
+        pendingInvitationUserIds={pendingInvitationUserIds}
         isSubmitting={inviteMemberMutation.isPending || contactsLoading}
+        errorMessage={inviteMemberError}
         onInviteByContact={handleInviteByContact}
         onInviteByEmail={handleInviteByEmail}
       />

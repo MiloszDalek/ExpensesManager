@@ -20,7 +20,9 @@ type AddGroupMemberDialogProps = {
   onOpenChange: (open: boolean) => void;
   contacts: ApiContactResponse[];
   members: ApiGroupMemberResponse[];
+  pendingInvitationUserIds: number[];
   isSubmitting: boolean;
+  errorMessage?: string | null;
   onInviteByContact: (userId: number) => Promise<void>;
   onInviteByEmail: (email: string) => Promise<void>;
 };
@@ -30,7 +32,9 @@ export default function AddGroupMemberDialog({
   onOpenChange,
   contacts,
   members,
+  pendingInvitationUserIds,
   isSubmitting,
+  errorMessage,
   onInviteByContact,
   onInviteByEmail,
 }: AddGroupMemberDialogProps) {
@@ -40,12 +44,16 @@ export default function AddGroupMemberDialog({
   const [email, setEmail] = useState("");
 
   const memberIds = useMemo(() => new Set(members.map((member) => member.user_id)), [members]);
+  const pendingInvitationIds = useMemo(
+    () => new Set(pendingInvitationUserIds),
+    [pendingInvitationUserIds]
+  );
 
   const filteredContacts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
     return contacts.filter((contact) => {
-      if (memberIds.has(contact.contact_id)) {
+      if (memberIds.has(contact.contact_id) || pendingInvitationIds.has(contact.contact_id)) {
         return false;
       }
 
@@ -58,7 +66,7 @@ export default function AddGroupMemberDialog({
         contact.email.toLowerCase().includes(normalizedSearch)
       );
     });
-  }, [contacts, memberIds, search]);
+  }, [contacts, memberIds, pendingInvitationIds, search]);
 
   const handleInviteByEmail = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -66,14 +74,22 @@ export default function AddGroupMemberDialog({
       return;
     }
 
-    await onInviteByEmail(normalizedEmail);
-    setEmail("");
-    onOpenChange(false);
+    try {
+      await onInviteByEmail(normalizedEmail);
+      setEmail("");
+      onOpenChange(false);
+    } catch {
+      // Error is rendered by parent component.
+    }
   };
 
   const handleInviteByContact = async (userId: number) => {
-    await onInviteByContact(userId);
-    onOpenChange(false);
+    try {
+      await onInviteByContact(userId);
+      onOpenChange(false);
+    } catch {
+      // Error is rendered by parent component.
+    }
   };
 
   return (
@@ -135,6 +151,10 @@ export default function AddGroupMemberDialog({
             <p className="text-xs text-muted-foreground">{t("addGroupMemberDialog.emailHint")}</p>
           </TabsContent>
         </Tabs>
+
+        {errorMessage ? (
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        ) : null}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
