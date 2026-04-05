@@ -26,6 +26,7 @@ import type {
   PersonalExpensesFiltersState,
 } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
+import type { CategorySection } from "@/types/enums";
 
 const toDateInput = (value: Date) => format(value, "yyyy-MM-dd");
 
@@ -190,10 +191,17 @@ export default function PersonalExpensesPage() {
     await queryClient.refetchQueries({ queryKey: queryKeys.categories.availablePersonal, exact: true });
   };
 
-  const createCategoryMutation = useMutation<ApiCategoryResponse, Error, string>({
-    mutationFn: async (categoryName) => {
-      const normalizedName = categoryName.trim().toLowerCase();
-      return categoriesApi.createPersonal({ name: normalizedName });
+  const createCategoryMutation = useMutation<
+    ApiCategoryResponse,
+    Error,
+    { name: string; section: CategorySection }
+  >({
+    mutationFn: async ({ name, section }) => {
+      const normalizedName = name.trim().toLowerCase();
+      return categoriesApi.createPersonal({
+        name: normalizedName,
+        section,
+      });
     },
     onError: (error) => {
       console.error("Failed to create personal category:", error);
@@ -207,8 +215,11 @@ export default function PersonalExpensesPage() {
     },
   });
 
-  const handleCreateCustomCategory = async (name: string): Promise<ApiCategoryResponse> => {
-    const created = await createCategoryMutation.mutateAsync(name);
+  const handleCreateCustomCategory = async (payload: {
+    name: string;
+    section: CategorySection;
+  }): Promise<ApiCategoryResponse> => {
+    const created = await createCategoryMutation.mutateAsync(payload);
     await refetchAvailableCategories();
     return created;
   };

@@ -10,6 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ApiCategoryResponse } from "@/types/category";
 import {
   getCategoryIcon,
@@ -17,14 +24,16 @@ import {
   resolveCategoryGroup,
   type CategoryVisualGroup,
 } from "@/utils/category";
+import { getRecentCategoryIds, rememberRecentCategoryId } from "@/utils/categoryRecent";
 import { Trash2 } from "lucide-react";
 
 type CategoryPickerProps = {
   value: string; // "all" lub id kategorii jako string
   onValueChange: (value: string) => void;
   categories: ApiCategoryResponse[];
-  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onCreateCustomCategory?: (payload: { name: string; section: CategoryVisualGroup }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
+  allowAllSelection?: boolean; // czy pokazywać i pozwalać wybrać "All categories"
   trigger?: "button" | "select"; // jaki typ triggera użyć
   showLabel?: boolean; // czy wyświetlać "Category: " label w triggerze
   mobileInset?: boolean; // czy dodać boczny odstęp na wąskich ekranach
@@ -49,7 +58,19 @@ const CATEGORY_GROUP_ORDER: CategoryGroupId[] = [
   "education",
   "family",
   "other",
-  "custom",
+];
+
+const CATEGORY_SECTION_OPTIONS: CategoryVisualGroup[] = [
+  "food",
+  "transport",
+  "home",
+  "bills",
+  "lifestyle",
+  "health",
+  "finance",
+  "education",
+  "family",
+  "other",
 ];
 
 export default function CategoryPicker({
@@ -58,6 +79,7 @@ export default function CategoryPicker({
   categories,
   onCreateCustomCategory,
   onDeleteCustomCategory,
+  allowAllSelection = false,
   trigger = "button",
   showLabel = true,
   mobileInset = false,
@@ -112,10 +134,12 @@ export default function CategoryPicker({
   const [selectedGroup, setSelectedGroup] = useState<CategoryGroupId>("all");
   const [search, setSearch] = useState("");
   const [customCategoryName, setCustomCategoryName] = useState("");
+  const [customCategorySection, setCustomCategorySection] = useState<CategoryVisualGroup | "">("");
   const [isCreatingCustomCategory, setIsCreatingCustomCategory] = useState(false);
   const [createCustomCategoryError, setCreateCustomCategoryError] = useState<string | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deleteCustomCategoryError, setDeleteCustomCategoryError] = useState<string | null>(null);
+  const [recentCategoryIds, setRecentCategoryIds] = useState<number[]>([]);
 
   const groupedCategories = useMemo(() => {
     const grouped: Record<CategoryBucketGroupId, ApiCategoryResponse[]> = {
@@ -129,7 +153,6 @@ export default function CategoryPicker({
       education: [],
       family: [],
       other: [],
-      custom: [],
     };
 
     const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
@@ -184,7 +207,26 @@ export default function CategoryPicker({
   const categoriesInSelectedGroup = useMemo(() => {
     let cats: ApiCategoryResponse[];
     if (selectedGroup === "all") {
-      cats = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+      const recentRankById = new Map(recentCategoryIds.map((id, index) => [id, index]));
+
+      cats = [...categories].sort((left, right) => {
+        const leftRank = recentRankById.get(left.id);
+        const rightRank = recentRankById.get(right.id);
+
+        if (leftRank !== undefined && rightRank !== undefined) {
+          return leftRank - rightRank;
+        }
+
+        if (leftRank !== undefined) {
+          return -1;
+        }
+
+        if (rightRank !== undefined) {
+          return 1;
+        }
+
+        return left.name.localeCompare(right.name);
+      });
     } else {
       cats = groupedCategories[selectedGroup];
     }
@@ -201,16 +243,20 @@ export default function CategoryPicker({
 
       return rawName.includes(normalizedSearch) || translatedLabel.includes(normalizedSearch);
     });
-  }, [categories, groupedCategories, selectedGroup, search, t]);
+  }, [categories, groupedCategories, recentCategoryIds, selectedGroup, search, t]);
 
   useEffect(() => {
     if (!isDialogOpen) {
       setSearch("");
       setCustomCategoryName("");
+      setCustomCategorySection("");
       setCreateCustomCategoryError(null);
       setDeleteCustomCategoryError(null);
       setIsCreateCategoryDialogOpen(false);
+      return;
     }
+
+    setRecentCategoryIds(getRecentCategoryIds());
   }, [isDialogOpen]);
 
   useEffect(() => {
@@ -232,13 +278,24 @@ export default function CategoryPicker({
   }, [categories, value, isDialogOpen]);
 
   const handleCategoryChange = (newValue: string) => {
+    if (newValue === "all" && !allowAllSelection) {
+      return;
+    }
+
+    if (newValue !== "all") {
+      const categoryId = Number(newValue);
+      if (Number.isInteger(categoryId) && categoryId > 0) {
+        setRecentCategoryIds(rememberRecentCategoryId(categoryId));
+      }
+    }
+
     onValueChange(newValue);
     setIsDialogOpen(false);
   };
 
   const handleCreateCustomCategory = async () => {
     const trimmedName = customCategoryName.trim();
-    if (!trimmedName || !onCreateCustomCategory || isCreatingCustomCategory) {
+    if (!trimmedName || !customCategorySection || !onCreateCustomCategory || isCreatingCustomCategory) {
       return;
     }
 
@@ -246,11 +303,16 @@ export default function CategoryPicker({
     setCreateCustomCategoryError(null);
 
     try {
-      const createdCategory = await onCreateCustomCategory(trimmedName);
+      const createdCategory = await onCreateCustomCategory({
+        name: trimmedName,
+        section: customCategorySection,
+      });
 
       setCustomCategoryName("");
+      setCustomCategorySection("");
       setIsCreateCategoryDialogOpen(false);
-      setSelectedGroup("custom");
+      setSelectedGroup(createdCategory.section ?? customCategorySection);
+      setRecentCategoryIds(rememberRecentCategoryId(createdCategory.id));
       onValueChange(createdCategory.id.toString());
       setIsDialogOpen(false);
     } catch (error) {
@@ -261,7 +323,9 @@ export default function CategoryPicker({
   };
 
   const handleDeleteCustomCategory = async (category: ApiCategoryResponse) => {
-    if (!onDeleteCustomCategory || category.user_id == null || deletingCategoryId != null) {
+    const isScopedCategory = category.user_id != null || category.group_id != null;
+
+    if (!onDeleteCustomCategory || !isScopedCategory || deletingCategoryId != null) {
       return;
     }
 
@@ -339,6 +403,7 @@ export default function CategoryPicker({
                   className="h-auto w-full justify-between py-2 text-sm"
                   onClick={() => {
                     setCreateCustomCategoryError(null);
+                    setCustomCategorySection(selectedGroup === "all" ? "" : selectedGroup);
                     setIsCreateCategoryDialogOpen(true);
                   }}
                 >
@@ -358,22 +423,24 @@ export default function CategoryPicker({
               />
 
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                <Button
-                  type="button"
-                  variant={value === "all" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => handleCategoryChange("all")}
-                >
-                  {t("expenseFilters.allCategories")}
-                </Button>
+                {allowAllSelection ? (
+                  <Button
+                    type="button"
+                    variant={value === "all" ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => handleCategoryChange("all")}
+                  >
+                    {t("expenseFilters.allCategories")}
+                  </Button>
+                ) : null}
 
                 {categoriesInSelectedGroup.map((category) => {
                   const Icon = getCategoryIcon(category);
                   const style = getCategoryVisualStyle(category);
-                  const isCustomCategory = category.user_id != null;
+                  const isScopedCategory = category.user_id != null || category.group_id != null;
                   const isDeleting = deletingCategoryId === category.id;
 
-                  if (isCustomCategory && onDeleteCustomCategory) {
+                  if (isScopedCategory && onDeleteCustomCategory) {
                     return (
                       <div key={category.id} className="group relative">
                         <Button
@@ -452,13 +519,29 @@ export default function CategoryPicker({
               value={customCategoryName}
               onChange={(event) => setCustomCategoryName(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === "Enter" && customCategorySection) {
                   event.preventDefault();
                   void handleCreateCustomCategory();
                 }
               }}
               autoFocus
             />
+
+            <Select
+              value={customCategorySection}
+              onValueChange={(value) => setCustomCategorySection(value as CategoryVisualGroup)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("expenseFilters.customCategorySectionPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_SECTION_OPTIONS.map((section) => (
+                  <SelectItem key={section} value={section}>
+                    {getCategoryGroupLabel(section)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {createCustomCategoryError ? (
               <p className="px-1 text-xs text-destructive">{createCustomCategoryError}</p>
@@ -476,7 +559,7 @@ export default function CategoryPicker({
             <Button
               type="button"
               onClick={() => void handleCreateCustomCategory()}
-              disabled={!customCategoryName.trim() || isCreatingCustomCategory}
+              disabled={!customCategoryName.trim() || !customCategorySection || isCreatingCustomCategory}
             >
               {isCreatingCustomCategory
                 ? t("expenseFilters.creatingCategory")

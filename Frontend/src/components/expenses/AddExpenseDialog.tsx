@@ -35,7 +35,9 @@ import {
   rememberRecentCurrency,
   removeRecentCurrency,
 } from "@/utils/currency";
+import { getDefaultCategoryId } from "@/utils/category";
 import CategoryPicker from "./CategoryPicker";
+import type { CategorySection } from "@/types/enums";
 
 // TODO: Po dodaniu icon_key w API, umożliwić wybór ikony przy tworzeniu kategorii
 
@@ -43,7 +45,7 @@ type AddExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (expenseData: ApiPersonalExpenseCreate) => void;
-  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onCreateCustomCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
   categories: ApiCategoryResponse[];
@@ -80,7 +82,7 @@ export default function AddExpenseDialog({
   categories
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
-  const defaultCategoryId = categories[0]?.id || 0;
+  const defaultCategoryId = getDefaultCategoryId(categories);
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
 
   useEffect(() => {
@@ -88,6 +90,25 @@ export default function AddExpenseDialog({
       setRecentCurrencies(getRecentCurrencies());
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || categories.length === 0) {
+      return;
+    }
+
+    setFormData((previous) => {
+      const hasCurrentCategory = categories.some((category) => category.id === previous.category_id);
+
+      if (hasCurrentCategory && previous.category_id !== 0) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        category_id: defaultCategoryId,
+      };
+    });
+  }, [open, categories, defaultCategoryId]);
 
   const orderedCurrencies = useMemo(
     () => getCurrenciesWithRecentFirst(recentCurrencies),

@@ -148,11 +148,9 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           aria-label={t("expensesList.delete")}
                           className="h-7 w-7 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                           onPointerDown={(event) => {
-                            event.preventDefault();
                             event.stopPropagation();
                           }}
                           onClick={(event) => {
-                            event.preventDefault();
                             event.stopPropagation();
                           }}
                         >

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { getDefaultCategoryId } from "@/utils/category";
 import { receiptsApi } from "@/api/receiptsApi";
 
 import type {
@@ -31,12 +32,14 @@ import type {
   ApiGroupMemberResponse,
   ApiReceiptLineItem,
 } from "@/types";
-import type { CurrencyEnum, SplitType } from "@/types/enums";
+import type { CategorySection, CurrencyEnum, SplitType } from "@/types/enums";
 
 type AddGroupExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (expenseData: ApiGroupExpenseCreate) => void;
+  onCreateGroupCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
+  onDeleteGroupCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
   categories: ApiCategoryResponse[];
   members: ApiGroupMemberResponse[];
@@ -219,6 +222,8 @@ export default function AddGroupExpenseDialog({
   open,
   onOpenChange,
   onSubmit,
+  onCreateGroupCategory,
+  onDeleteGroupCategory,
   isLoading,
   categories,
   members,
@@ -235,7 +240,7 @@ export default function AddGroupExpenseDialog({
     [members]
   );
 
-  const defaultCategoryId = categories[0]?.id ?? 0;
+  const defaultCategoryId = getDefaultCategoryId(categories);
 
   const buildInitialState = (): FormData => ({
     title: "",
@@ -710,6 +715,8 @@ export default function AddGroupExpenseDialog({
                 }));
               }}
               categories={categories}
+              onCreateCustomCategory={onCreateGroupCategory}
+              onDeleteCustomCategory={onDeleteGroupCategory}
               trigger="button"
               showLabel={false}
               mobileInset={false}

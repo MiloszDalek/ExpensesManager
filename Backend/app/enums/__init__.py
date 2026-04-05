@@ -1,4 +1,6 @@
 from .expense_category_enum import DefaultExpenseCategory
+from .category_section_enum import CategorySection
+from .default_expense_category_list import DEFAULT_EXPENSE_CATEGORIES, DefaultExpenseCategoryDefinition
 from .expense_currency_enum import CurrencyEnum
 from .system_role_enum import SystemUserRole
 from .group_status_enum import GroupStatus

@@ -38,3 +38,15 @@ export type NotificationType = "invitation";
 export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgiven";
 export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";
 
+export type CategorySection =
+	| "food"
+	| "transport"
+	| "home"
+	| "bills"
+	| "lifestyle"
+	| "health"
+	| "finance"
+	| "education"
+	| "family"
+	| "other";
+

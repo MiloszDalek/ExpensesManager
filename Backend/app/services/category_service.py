@@ -74,6 +74,7 @@ class CategoryService:
         try:
             category = Category(
                 name=normalized_name,
+                section=category_in.section,
                 user_id=user_id,
                 group_id=None
             )
@@ -122,6 +123,7 @@ class CategoryService:
 
         category = Category(
             name=normalized_name,
+            section=category_in.section,
             group_id=group_id,
             user_id=None
         )

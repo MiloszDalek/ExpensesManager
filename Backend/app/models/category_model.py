@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Index, CheckConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Index, CheckConstraint, Enum as SAEnum
 from sqlalchemy.sql import func, expression
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.enums import CategorySection
 
 
 class Category(Base):
@@ -9,6 +10,7 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+    section = Column(SAEnum(CategorySection, name="category_section"), nullable=False, default=CategorySection.OTHER)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

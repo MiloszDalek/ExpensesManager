@@ -12,23 +12,22 @@ export type CategoryVisualGroup =
   | "finance"
   | "education"
   | "family"
-  | "other"
-  | "custom";
+  | "other";
 
-const CATEGORY_GROUP_DEFAULT_CATEGORY_NAMES: Record<Exclude<CategoryVisualGroup, "custom">, string[]> = {
-  food: ["groceries", "restaurants", "coffee_snacks", "food_delivery"],
-  transport: ["public_transport", "fuel", "taxi_rideshare", "parking_tolls", "vehicle_maintenance"],
-  home: ["rent_mortgage", "household_supplies", "home_repairs"],
-  bills: ["utilities", "internet_phone", "subscriptions", "insurance"],
-  lifestyle: ["entertainment", "clothing", "travel", "gifts", "personal_care"],
-  health: ["medical", "pharmacy", "fitness"],
-  finance: ["bank_fees", "savings", "investments"],
-  education: ["courses", "books"],
-  family: ["kids_family", "pets"],
+const CATEGORY_GROUP_DEFAULT_CATEGORY_NAMES: Record<CategoryVisualGroup, string[]> = {
+  food: ["groceries", "restaurants", "coffee_snacks", "food_delivery", "food_other"],
+  transport: ["public_transport", "fuel", "taxi_rideshare", "parking_tolls", "vehicle_maintenance", "transport_other"],
+  home: ["rent_mortgage", "household_supplies", "home_repairs", "home_other"],
+  bills: ["utilities", "internet_phone", "subscriptions", "insurance", "bills_other"],
+  lifestyle: ["entertainment", "clothing", "travel", "gifts", "personal_care", "lifestyle_other"],
+  health: ["medical", "pharmacy", "fitness", "health_other"],
+  finance: ["bank_fees", "savings", "investments", "finance_other"],
+  education: ["courses", "books", "education_other"],
+  family: ["kids_family", "pets", "family_other"],
   other: ["other"],
 };
 
-const CATEGORY_GROUP_MATCHERS: Array<{ group: Exclude<CategoryVisualGroup, "custom">; keywords: string[] }> = [
+const CATEGORY_GROUP_MATCHERS: Array<{ group: CategoryVisualGroup; keywords: string[] }> = [
   { group: "food", keywords: ["food", "foods", "meal", "meals", "restaurant", "restaurants", "grocery", "groceries", "coffee", "snack", "snacks", "delivery"] },
   { group: "transport", keywords: ["transport", "transports", "fuel", "taxi", "bus", "train", "uber", "parking", "toll"] },
   { group: "home", keywords: ["home", "rent", "accommodation", "furniture", "house", "mieszkanie", "czynsz"] },
@@ -70,6 +69,21 @@ function isCategoryObject(category: CategoryLike): category is ApiCategoryRespon
   return !!category && typeof category === "object" && "name" in category;
 }
 
+function isCategoryVisualGroup(value: string): value is CategoryVisualGroup {
+  return (
+    value === "food" ||
+    value === "transport" ||
+    value === "home" ||
+    value === "bills" ||
+    value === "lifestyle" ||
+    value === "health" ||
+    value === "finance" ||
+    value === "education" ||
+    value === "family" ||
+    value === "other"
+  );
+}
+
 function getCategoryName(category: CategoryLike): string | null {
   if (typeof category === "string") {
     return category;
@@ -83,8 +97,8 @@ function getCategoryName(category: CategoryLike): string | null {
 }
 
 export function resolveCategoryGroup(category: CategoryLike): CategoryVisualGroup {
-  if (isCategoryObject(category) && category.user_id != null) {
-    return "custom";
+  if (isCategoryObject(category) && typeof category.section === "string" && isCategoryVisualGroup(category.section)) {
+    return category.section;
   }
 
   const categoryName = getCategoryName(category);
@@ -123,6 +137,11 @@ function toCategoryIconKey(category: CategoryLike): string {
 
 export function getCategoryIcon(category: CategoryLike) {
   const iconKey = toCategoryIconKey(category);
+
+  if (iconKey.endsWith("_other")) {
+    return categoryIcons.other || Smartphone;
+  }
+
   if (iconKey in categoryIcons) {
     return categoryIcons[iconKey as keyof typeof categoryIcons];
   }
@@ -176,13 +195,33 @@ const CATEGORY_GROUP_STYLES: Record<CategoryVisualGroup, { badgeClass: string; g
     badgeClass: "bg-slate-100 text-slate-700",
     gradientClass: "from-slate-500 to-gray-600",
   },
-  custom: {
-    badgeClass: "bg-orange-100 text-orange-700",
-    gradientClass: "from-orange-500 to-amber-600",
-  },
 };
 
 export function getCategoryVisualStyle(category: CategoryLike) {
   const group = resolveCategoryGroup(category);
   return CATEGORY_GROUP_STYLES[group];
+}
+
+const UNCATEGORIZED_CATEGORY_NAMES = new Set([
+  "other",
+  "uncategorized",
+  "inne",
+  "bez kategorii",
+]);
+
+export function getDefaultCategoryId(categories: ApiCategoryResponse[]): number {
+  if (categories.length === 0) {
+    return 0;
+  }
+
+  const uncategorizedBySection = categories.find((category) => category.section === "other");
+  if (uncategorizedBySection) {
+    return uncategorizedBySection.id;
+  }
+
+  const uncategorizedCategory = categories.find((category) =>
+    UNCATEGORIZED_CATEGORY_NAMES.has(normalizeCategoryName(category.name))
+  );
+
+  return uncategorizedCategory?.id ?? categories[0].id;
 }

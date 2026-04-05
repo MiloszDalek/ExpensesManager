@@ -27,6 +27,7 @@ import {
 } from "@/utils/currency";
 import CategoryPicker from "./CategoryPicker";
 import { X } from "lucide-react";
+import type { CategorySection } from "@/types";
 
 type ExpenseFiltersProps = {
   filters: PersonalExpensesFiltersState;
@@ -35,7 +36,7 @@ type ExpenseFiltersProps = {
   onApplyFilters: () => void;
   isApplyDisabled?: boolean;
   categories: ApiCategoryResponse[];
-  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onCreateCustomCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
 };
 
@@ -120,6 +121,7 @@ export default function ExpenseFilters({
             categories={categories}
             onCreateCustomCategory={onCreateCustomCategory}
             onDeleteCustomCategory={onDeleteCustomCategory}
+            allowAllSelection
             trigger="button"
             mobileInset={true}
             showLabel={false}

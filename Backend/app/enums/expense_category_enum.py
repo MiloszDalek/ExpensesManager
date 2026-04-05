@@ -1,46 +1,16 @@
 from enum import Enum
 
+from .default_expense_category_list import DEFAULT_EXPENSE_CATEGORIES
 
-# General grouping names are handled on frontend (CategoryPicker):
-# food, transport, home, bills, lifestyle, health, finance, education, family, other
-class DefaultExpenseCategory(str, Enum):
-    GROCERIES = "groceries"
-    RESTAURANTS = "restaurants"
-    COFFEE_SNACKS = "coffee_snacks"
-    FOOD_DELIVERY = "food_delivery"
 
-    PUBLIC_TRANSPORT = "public_transport"
-    FUEL = "fuel"
-    TAXI_RIDESHARE = "taxi_rideshare"
-    PARKING_TOLLS = "parking_tolls"
-    VEHICLE_MAINTENANCE = "vehicle_maintenance"
+def _to_enum_key(category_name: str) -> str:
+    return category_name.upper().replace("-", "_")
 
-    RENT_MORTGAGE = "rent_mortgage"
-    HOUSEHOLD_SUPPLIES = "household_supplies"
-    HOME_REPAIRS = "home_repairs"
 
-    UTILITIES = "utilities"
-    INTERNET_PHONE = "internet_phone"
-    SUBSCRIPTIONS = "subscriptions"
-    INSURANCE = "insurance"
+# Compatibility enum built from the central list in default_expense_category_list.py.
+DefaultExpenseCategory = Enum(
+    "DefaultExpenseCategory",
+    {_to_enum_key(item.name): item.name for item in DEFAULT_EXPENSE_CATEGORIES},
+    type=str,
+)
 
-    MEDICAL = "medical"
-    PHARMACY = "pharmacy"
-    FITNESS = "fitness"
-
-    ENTERTAINMENT = "entertainment"
-    CLOTHING = "clothing"
-    TRAVEL = "travel"
-    GIFTS = "gifts"
-    PERSONAL_CARE = "personal_care"
-
-    BANK_FEES = "bank_fees"
-    SAVINGS = "savings"
-    INVESTMENTS = "investments"
-
-    COURSES = "courses"
-    BOOKS = "books"
-
-    KIDS_FAMILY = "kids_family"
-    PETS = "pets"
-    OTHER = "other"

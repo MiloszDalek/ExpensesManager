@@ -36,14 +36,16 @@ import {
   rememberRecentCurrency,
   removeRecentCurrency,
 } from "@/utils/currency";
+import { getDefaultCategoryId } from "@/utils/category";
 import CategoryPicker from "./CategoryPicker";
+import type { CategorySection } from "@/types/enums";
 
 type EditExpenseDialogProps = {
   open: boolean;
   expense: ApiPersonalExpenseResponse | null;
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: ApiPersonalExpenseUpdate) => void;
-  onCreateCustomCategory?: (name: string) => Promise<ApiCategoryResponse>;
+  onCreateCustomCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
   categories: ApiCategoryResponse[];
@@ -69,7 +71,7 @@ export default function EditExpenseDialog({
   categories,
 }: EditExpenseDialogProps) {
   const { t } = useTranslation();
-  const defaultCategoryId = categories[0]?.id || 0;
+  const defaultCategoryId = getDefaultCategoryId(categories);
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
 
   useEffect(() => {

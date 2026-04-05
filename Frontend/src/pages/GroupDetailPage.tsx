@@ -38,7 +38,7 @@ import type {
   ApiCategoryResponse,
   ApiSettlementResponse,
 } from "@/types";
-import type { PaymentMethod } from "@/types/enums";
+import type { CategorySection, PaymentMethod } from "@/types/enums";
 
 const LIMIT = 20;
 const CONTACTS_LIMIT = 100;
@@ -404,6 +404,24 @@ export default function GroupDetailPage() {
     },
   });
 
+  const createGroupCategoryMutation = useMutation<
+    ApiCategoryResponse,
+    Error,
+    { name: string; section: CategorySection }
+  >({
+    mutationFn: (payload) => categoriesApi.createGroup(groupId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
+    },
+  });
+
+  const deleteGroupCategoryMutation = useMutation<void, Error, number>({
+    mutationFn: (categoryId) => categoriesApi.deleteGroup(categoryId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
+    },
+  });
+
   const handleInviteByContact = async (toUserId: number) => {
     await inviteMemberMutation.mutateAsync({
       group_id: groupId,
@@ -424,6 +442,17 @@ export default function GroupDetailPage() {
       setCreateExpenseError(null);
     }
     setDeleteExpenseError(null);
+  };
+
+  const handleCreateGroupCategory = async (payload: {
+    name: string;
+    section: CategorySection;
+  }): Promise<ApiCategoryResponse> => {
+    return createGroupCategoryMutation.mutateAsync(payload);
+  };
+
+  const handleDeleteGroupCategory = async (categoryId: number): Promise<void> => {
+    await deleteGroupCategoryMutation.mutateAsync(categoryId);
   };
 
   const handleAddMemberDialogOpenChange = (nextOpen: boolean) => {
@@ -575,13 +604,13 @@ export default function GroupDetailPage() {
     );
   }
 
-  if (groupError || membersError || categoriesError || expensesError || contactsError || pendingInvitationsError || !group) {
+  if (groupError || membersError || categoriesError || expensesError || !group) {
     return (
       <div className="flex items-center justify-center h-screen px-4">
         <div className="text-center text-destructive">
           <h2 className="mb-2 text-2xl font-bold">{t("common.errorLoadingData")}</h2>
           <p className="text-muted-foreground">
-            {groupError?.message || membersError?.message || categoriesError?.message || expensesError?.message || contactsError?.message || pendingInvitationsError?.message || t("common.somethingWentWrong")}
+            {groupError?.message || membersError?.message || categoriesError?.message || expensesError?.message || t("common.somethingWentWrong")}
           </p>
           <Link to={createPageUrl("Groups")} className="mt-4 inline-block">
             <Button variant="outline">{t("groupDetailPage.backToGroups")}</Button>
@@ -930,6 +959,10 @@ export default function GroupDetailPage() {
                         <div key={item} className="h-12 animate-pulse rounded bg-muted" />
                       ))}
                     </div>
+                  ) : pendingInvitationsError ? (
+                    <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+                      {pendingInvitationsError.message || t("common.somethingWentWrong")}
+                    </p>
                   ) : pendingInvitations.length === 0 ? (
                     <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
                       {t("groupDetailPage.noPendingInvitations")}
@@ -988,6 +1021,8 @@ export default function GroupDetailPage() {
         open={showAddExpenseDialog}
         onOpenChange={handleAddExpenseDialogOpenChange}
         onSubmit={(data) => createExpenseMutation.mutate(data)}
+        onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
+        onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
         isLoading={createExpenseMutation.isPending}
         categories={categories}
         members={members}
@@ -1010,6 +1045,8 @@ export default function GroupDetailPage() {
             payload: data,
           });
         }}
+        onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
+        onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
         isLoading={updateExpenseMutation.isPending}
         categories={categories}
         members={members}

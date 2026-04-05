@@ -23,6 +23,7 @@ import { expensesPersonalApi } from "@/api/expensesPersonalApi";
 import { groupsApi } from "@/api/groupsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { receiptsApi } from "@/api/receiptsApi";
+import { getDefaultCategoryId } from "@/utils/category";
 import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
 import type {
   ApiCategoryResponse,
@@ -247,7 +248,7 @@ export default function ReceiptScannerPage() {
 
     const hasCurrentCategory = categories.some((category) => category.id === categoryId);
     if (!hasCurrentCategory) {
-      setCategoryId(categories[0].id);
+      setCategoryId(getDefaultCategoryId(categories));
     }
   }, [categories, categoryId]);
 
