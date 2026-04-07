@@ -65,6 +65,20 @@ class CategoryRepository:
             ).all()
 
 
+    def get_all_default_and_by_group_ids(self, group_ids: list[int]) -> list[Category]:
+        query = self.db.query(Category).filter(Category.user_id.is_(None))
+
+        if not group_ids:
+            return query.filter(Category.group_id.is_(None)).all()
+
+        return query.filter(
+            or_(
+                Category.group_id.is_(None),
+                Category.group_id.in_(group_ids),
+            )
+        ).all()
+
+
     def get_all_default_and_personal(self, user_id: int) -> list[Category]:
         return self.db.query(Category).filter(
                 Category.group_id.is_(None),

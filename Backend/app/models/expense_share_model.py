@@ -18,4 +18,5 @@ class ExpenseShare(Base):
     __table_args__ = (
         UniqueConstraint("expense_id", "user_id", name="uq_expense_user"),
         Index("idx_expense_shares_user", "user_id"),
+        Index("idx_expense_shares_user_expense", "user_id", "expense_id"),
     )

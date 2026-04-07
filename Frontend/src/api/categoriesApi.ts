@@ -43,6 +43,11 @@ export const categoriesApi = {
     return data;
   },
 
+  getAvailableAllGroups: async (): Promise<ApiCategoryResponse[]> => {
+    const { data } = await client.get<ApiCategoryResponse[]>("/category/available/groups/all");
+    return data;
+  },
+
   deleteGroup: async (categoryId: number): Promise<void> => {
     await client.delete(`/category/group/${categoryId}`);
   },

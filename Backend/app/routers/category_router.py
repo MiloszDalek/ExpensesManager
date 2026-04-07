@@ -86,6 +86,14 @@ def get_default_and_group_categories(
     return service.get_default_and_group_categories(group_id, current_user.id)
 
 
+@category_router.get("/available/groups/all", response_model=list[CategoryResponse])
+def get_default_and_user_group_categories(
+    service: CategoryService = Depends(get_category_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    return service.get_default_and_user_group_categories(current_user.id)
+
+
 @category_router.delete("/group/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_group_category(
     category_id: int,

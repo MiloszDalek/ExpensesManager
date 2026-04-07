@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Literal
 
 from sqlalchemy.orm import Session, selectinload, joinedload
-from sqlalchemy import func, case
-from app.models import Category, Expense, ExpenseShare
+from sqlalchemy import func, case, literal
+from app.models import Category, Expense, ExpenseShare, Group
 from app.enums import CurrencyEnum
 
 
@@ -28,6 +28,39 @@ class ExpenseRepository:
         currency: CurrencyEnum | None = None,
     ):
         query = query.filter(Expense.user_id == user_id, Expense.group_id.is_(None))
+
+        if date_from:
+            query = query.filter(Expense.expense_date >= date_from)
+
+        if date_to:
+            query = query.filter(Expense.expense_date <= date_to)
+
+        if category_ids:
+            query = query.filter(Expense.category_id.in_(category_ids))
+
+        if currency is not None:
+            query = query.filter(Expense.currency == currency)
+
+        return query
+
+
+    def _apply_group_share_filters(
+        self,
+        query,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        query = query.join(ExpenseShare, ExpenseShare.expense_id == Expense.id).filter(
+            Expense.group_id.isnot(None),
+            ExpenseShare.user_id == user_id,
+        )
+
+        if group_id is not None:
+            query = query.filter(Expense.group_id == group_id)
 
         if date_from:
             query = query.filter(Expense.expense_date >= date_from)
@@ -151,6 +184,320 @@ class ExpenseRepository:
             "totals_by_currency": totals_by_currency,
             "top_categories": top_categories,
         }
+
+
+    def get_personal_total_count(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+    ) -> int:
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(func.count(Expense.id)),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+            ).scalar()
+            or 0
+        )
+
+
+    def get_group_share_total_count(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ) -> int:
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(func.count(Expense.id)).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            ).scalar()
+            or 0
+        )
+
+
+    def get_personal_totals_by_currency(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+    ):
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.currency.label("currency"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                ),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+            )
+            .group_by(Expense.currency)
+            .all()
+        )
+
+
+    def get_group_share_totals_by_currency(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    Expense.currency.label("currency"),
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            .group_by(Expense.currency)
+            .all()
+        )
+
+
+    def get_personal_top_categories(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+    ):
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                )
+                .select_from(Expense)
+                .join(Category, Category.id == Expense.category_id),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+            )
+            .group_by(Expense.category_id, Category.name)
+            .all()
+        )
+
+
+    def get_group_share_top_categories(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            .join(Category, Category.id == Expense.category_id)
+            .group_by(Expense.category_id, Category.name)
+            .all()
+        )
+
+
+    def get_group_share_top_groups(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    Group.id.label("group_id"),
+                    Group.name.label("group_name"),
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            .join(Group, Group.id == Expense.group_id)
+            .group_by(Group.id, Group.name)
+            .all()
+        )
+
+
+    def get_personal_daily_trends(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+    ):
+        day_label = func.date(Expense.expense_date).label("day")
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    day_label,
+                    Expense.currency.label("currency"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                ),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+            )
+            .group_by(day_label, Expense.currency)
+            .order_by(day_label.asc(), Expense.currency.asc())
+            .all()
+        )
+
+
+    def get_group_share_daily_trends(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        day_label = func.date(Expense.expense_date).label("day")
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    day_label,
+                    Expense.currency.label("currency"),
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            .group_by(day_label, Expense.currency)
+            .order_by(day_label.asc(), Expense.currency.asc())
+            .all()
+        )
+
+
+    def get_personal_summary_records(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+    ):
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.id.label("expense_id"),
+                    literal("personal").label("scope"),
+                    Expense.title.label("title"),
+                    Expense.expense_date.label("expense_date"),
+                    Expense.created_at.label("created_at"),
+                    Expense.currency.label("currency"),
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    Expense.group_id.label("group_id"),
+                    literal(None).label("group_name"),
+                    Expense.amount.label("total_amount"),
+                    Expense.amount.label("user_amount"),
+                )
+                .select_from(Expense)
+                .join(Category, Category.id == Expense.category_id),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+            )
+            .all()
+        )
+
+
+    def get_group_share_summary_records(
+        self,
+        user_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[int] | None = None,
+        currency: CurrencyEnum | None = None,
+        group_id: int | None = None,
+    ):
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    Expense.id.label("expense_id"),
+                    literal("group").label("scope"),
+                    Expense.title.label("title"),
+                    Expense.expense_date.label("expense_date"),
+                    Expense.created_at.label("created_at"),
+                    Expense.currency.label("currency"),
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    Group.id.label("group_id"),
+                    Group.name.label("group_name"),
+                    Expense.amount.label("total_amount"),
+                    ExpenseShare.share_amount.label("user_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            .join(Category, Category.id == Expense.category_id)
+            .join(Group, Group.id == Expense.group_id)
+            .all()
+        )
     
 
     def get_all_group_by_group_id(self, group_id: int, limit: int, offset: int):

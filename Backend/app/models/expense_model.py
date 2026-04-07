@@ -32,6 +32,8 @@ class Expense(Base):
         Index("idx_expenses_group_id", "group_id"),
         Index("idx_expenses_user_id", "user_id"),
         Index("idx_expenses_category", "category_id"),
+        Index("idx_expenses_expense_date", "expense_date"),
+        Index("idx_expenses_user_group_expense_date", "user_id", "group_id", "expense_date"),
 
         CheckConstraint(
             "(group_id IS NULL AND split_type IS NULL) OR (group_id IS NOT NULL AND split_type IS NOT NULL)",

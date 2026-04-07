@@ -8,6 +8,7 @@ from app.routers import (
         group_router, 
         expense_group_router, 
         expense_personal_router,
+        expense_summary_router,
         dashboard_router, 
         category_router, 
         invitation_router,
@@ -49,6 +50,7 @@ app.include_router(user_router, prefix='/api')
 app.include_router(group_router, prefix='/api')
 app.include_router(expense_group_router, prefix='/api')
 app.include_router(expense_personal_router, prefix='/api')
+app.include_router(expense_summary_router, prefix='/api')
 app.include_router(dashboard_router, prefix='/api')
 app.include_router(category_router, prefix='/api')
 app.include_router(invitation_router, prefix='/api')

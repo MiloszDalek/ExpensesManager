@@ -3,6 +3,7 @@ from .auth_service import AuthService
 from .group_service import GroupService
 from .expense_personal_service import ExpensePersonalService
 from .expense_group_service import ExpenseGroupService
+from .expense_summary_service import ExpenseSummaryService
 from .category_service import CategoryService
 from .invitation_service import InvitationService
 from .notification_service import NotificationService

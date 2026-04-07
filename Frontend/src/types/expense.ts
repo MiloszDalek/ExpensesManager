@@ -121,3 +121,130 @@ export interface ApiGroupExpenseResponse extends ApiGroupExpenseCreate {
   user_id: number;
   created_at: ISODateTimeString;
 }
+
+export type ExpenseSummaryScope = "all" | "personal" | "group";
+
+export interface ApiSummaryPeriod {
+  date_from: string;
+  date_to: string;
+}
+
+export interface ApiSummaryTotalByCurrency {
+  currency: CurrencyEnum;
+  total_amount: DecimalLike;
+}
+
+export interface ApiSummaryOwnVsGroupByCurrency {
+  currency: CurrencyEnum;
+  personal_amount: DecimalLike;
+  group_amount: DecimalLike;
+  total_amount: DecimalLike;
+}
+
+export interface ApiSummaryTopCategory {
+  category_id: number;
+  category_name: string;
+  total_amount: DecimalLike;
+}
+
+export interface ApiSummaryTopGroup {
+  group_id: number;
+  group_name: string;
+  total_amount: DecimalLike;
+}
+
+export interface ApiSummaryComparisonByCurrency {
+  currency: CurrencyEnum;
+  current_total: DecimalLike;
+  previous_total: DecimalLike;
+  delta_amount: DecimalLike;
+  delta_percent: number | null;
+}
+
+export interface ApiExpenseSummaryOverviewResponse {
+  total_count: number;
+  totals_by_currency: ApiSummaryTotalByCurrency[];
+  own_vs_group: ApiSummaryOwnVsGroupByCurrency[];
+  top_categories: ApiSummaryTopCategory[];
+  top_groups: ApiSummaryTopGroup[];
+  comparison_by_currency: ApiSummaryComparisonByCurrency[];
+  current_period: ApiSummaryPeriod;
+  previous_period: ApiSummaryPeriod | null;
+}
+
+export interface ApiExpenseSummaryDailyTrendPoint {
+  date: string;
+  personal_amount: DecimalLike;
+  group_amount: DecimalLike;
+  total_amount: DecimalLike;
+}
+
+export interface ApiExpenseSummaryCurrencyTrend {
+  currency: CurrencyEnum;
+  current: ApiExpenseSummaryDailyTrendPoint[];
+  previous: ApiExpenseSummaryDailyTrendPoint[];
+}
+
+export interface ApiExpenseSummaryTrendsResponse {
+  current_period: ApiSummaryPeriod;
+  previous_period: ApiSummaryPeriod | null;
+  currencies: ApiExpenseSummaryCurrencyTrend[];
+}
+
+export interface ApiExpenseSummaryDrilldownItem {
+  expense_id: number;
+  scope: "personal" | "group";
+  title: string;
+  expense_date: ISODateTimeString;
+  created_at: ISODateTimeString;
+  currency: CurrencyEnum;
+  category_id: number;
+  category_name: string;
+  group_id: number | null;
+  group_name: string | null;
+  total_amount: DecimalLike;
+  user_amount: DecimalLike;
+}
+
+export interface ApiExpenseSummaryDrilldownResponse {
+  total_count: number;
+  items: ApiExpenseSummaryDrilldownItem[];
+}
+
+export interface ApiExpenseSummaryOverviewParams {
+  date_from?: string;
+  date_to?: string;
+  scope?: ExpenseSummaryScope;
+  category_id?: number;
+  category_ids?: number[];
+  currency?: CurrencyEnum;
+  group_id?: number;
+  top_categories_limit?: number;
+  top_groups_limit?: number;
+  compare_previous?: boolean;
+}
+
+export interface ApiExpenseSummaryTrendsParams {
+  date_from?: string;
+  date_to?: string;
+  scope?: ExpenseSummaryScope;
+  category_id?: number;
+  category_ids?: number[];
+  currency?: CurrencyEnum;
+  group_id?: number;
+  compare_previous?: boolean;
+}
+
+export interface ApiExpenseSummaryDrilldownParams {
+  limit?: number;
+  offset?: number;
+  date_from?: string;
+  date_to?: string;
+  scope?: ExpenseSummaryScope;
+  category_id?: number;
+  category_ids?: number[];
+  currency?: CurrencyEnum;
+  group_id?: number;
+  sort_by?: "expense_date" | "amount" | "created_at";
+  sort_order?: "asc" | "desc";
+}

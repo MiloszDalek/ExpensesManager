@@ -27,7 +27,7 @@ import {
 } from "@/utils/currency";
 import CategoryPicker from "./CategoryPicker";
 import { X } from "lucide-react";
-import type { CategorySection } from "@/types";
+import type { CategorySection } from "@/types/enums";
 
 type ExpenseFiltersProps = {
   filters: PersonalExpensesFiltersState;

@@ -99,7 +99,6 @@ export default function GroupDetailPage() {
   const {
     data: contacts = [],
     isLoading: contactsLoading,
-    error: contactsError,
   } = useQuery<ApiContactResponse[]>({
     queryKey: queryKeys.contacts.list({ limit: CONTACTS_LIMIT, offset: 0 }),
     queryFn: () => contactsApi.list({ limit: CONTACTS_LIMIT, offset: 0 }),

@@ -11,6 +11,18 @@ from .expense_schemas import (
     GroupExpenseResponse,
     ExpenseShareSchema,
     GroupExpenseUpdate,
+    SummaryPeriod,
+    SummaryTotalByCurrency,
+    OwnVsGroupByCurrency,
+    SummaryTopCategory,
+    SummaryTopGroup,
+    SummaryComparisonByCurrency,
+    ExpenseSummaryOverviewResponse,
+    ExpenseDailyTrendPoint,
+    ExpenseDailyTrendCurrencySeries,
+    ExpenseSummaryTrendsResponse,
+    ExpenseSummaryDrilldownItem,
+    ExpenseSummaryDrilldownResponse,
 )
 from .settlement_schemas import (
     SettlementCreate,

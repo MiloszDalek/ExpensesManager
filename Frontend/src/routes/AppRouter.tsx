@@ -4,6 +4,7 @@ import GroupsPage from "@/pages/GroupsPage";
 import GroupDetailPage from "@/pages/GroupDetailPage";
 import ContactsPage from "@/pages/ContactsPage";
 import PersonalExpensesPage from "@/pages/PersonalExpensesPage";
+import DetailedSummaryPage from "@/pages/DetailedSummaryPage";
 import ReceiptScannerPage from "@/pages/ReceiptScannerPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -35,6 +36,7 @@ const AppRouter = () => {
           <Route path="/groups/:id" element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
           <Route path="/contacts" element={<PrivateRoute><ContactsPage /></PrivateRoute>} />
           <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
+          <Route path="/summaries" element={<PrivateRoute><DetailedSummaryPage /></PrivateRoute>} />
           <Route path="/receipt-scan" element={<PrivateRoute><ReceiptScannerPage /></PrivateRoute>} />
 
           {/* default redirect */}

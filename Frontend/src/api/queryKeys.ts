@@ -1,4 +1,9 @@
-import type { ApiPersonalExpenseListParams } from "@/types";
+import type {
+  ApiExpenseSummaryDrilldownParams,
+  ApiExpenseSummaryOverviewParams,
+  ApiExpenseSummaryTrendsParams,
+  ApiPersonalExpenseListParams,
+} from "@/types";
 
 export const queryKeys = {
   groups: {
@@ -20,12 +25,22 @@ export const queryKeys = {
       ["expenses", "personal", "summary", params ?? {}] as const,
   },
 
+  summaries: {
+    overview: (params?: ApiExpenseSummaryOverviewParams) =>
+      ["expenses", "summary", "overview", params ?? {}] as const,
+    trends: (params?: ApiExpenseSummaryTrendsParams) =>
+      ["expenses", "summary", "trends", params ?? {}] as const,
+    drilldown: (params?: ApiExpenseSummaryDrilldownParams) =>
+      ["expenses", "summary", "drilldown", params ?? {}] as const,
+  },
+
   categories: {
     default: ["categories", "default"] as const,
     personal: ["categories", "personal"] as const,
     availablePersonal: ["categories", "available", "personal"] as const,
     group: (groupId: number) => ["categories", "group", groupId] as const,
     availableGroup: (groupId: number) => ["categories", "available", "group", groupId] as const,
+    availableGroupsAll: ["categories", "available", "groups", "all"] as const,
   },
 
   contacts: {

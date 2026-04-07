@@ -161,6 +161,13 @@ class CategoryService:
             raise HTTPException(status_code=403, detail="Not authorized")
         
         return self.category_repo.get_all_default_and_by_group_id(group_id)
+
+
+    def get_default_and_user_group_categories(self, user_id: int) -> list[Category]:
+        groups = self.group_repo.get_all_by_user_id(user_id)
+        group_ids = [group.id for group in groups]
+
+        return self.category_repo.get_all_default_and_by_group_ids(group_ids)
     
 
     def delete_group_category(self, category_id: int, user_id: int):

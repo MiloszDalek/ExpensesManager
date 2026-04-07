@@ -5,6 +5,7 @@ export * from "./categoriesApi";
 export * from "./contactsApi";
 export * from "./expensesGroupApi";
 export * from "./expensesPersonalApi";
+export * from "./expensesSummaryApi";
 export * from "./invitationsApi";
 export * from "./notificationsApi";
 export * from "./settlementsApi";
