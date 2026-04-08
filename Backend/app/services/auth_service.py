@@ -8,6 +8,7 @@ from app.utils.auth_utils import verify_password, get_password_hash
 from app.repositories import UserRepository
 from app.models import User
 from app.database import get_db
+from app.enums import SystemUserRole
 
 settings = get_settings()
 
@@ -50,16 +51,39 @@ class AuthService:
 
 
     def create_admin(self):
-        if not self.db.query(User).filter(User.role == "admin").first():
+        admins = (
+            self.db.query(User)
+            .filter(User.role == SystemUserRole.ADMIN)
+            .order_by(User.created_at.asc(), User.id.asc())
+            .all()
+        )
+
+        if not admins:
             admin = User(
                 email="admin@gmail.com",
                 username="Admin",            
                 hashed_password=get_password_hash("password"),
-                role="admin"
+                role=SystemUserRole.ADMIN,
+                is_active=True,
             )
             self.db.add(admin)
             self.db.commit()
             self.db.refresh(admin)
+            return
+
+        primary_admin = admins[0]
+        changed = False
+
+        if not primary_admin.is_active:
+            primary_admin.is_active = True
+            changed = True
+
+        for extra_admin in admins[1:]:
+            extra_admin.role = SystemUserRole.USER
+            changed = True
+
+        if changed:
+            self.db.commit()
 
 
 def get_auth_service(db: Session = Depends(get_db)):

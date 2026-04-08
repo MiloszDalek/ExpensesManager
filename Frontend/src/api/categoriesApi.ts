@@ -1,10 +1,27 @@
 import client from "./client";
-import type { ApiCategoryCreate, ApiCategoryResponse } from "@/types";
+import type { ApiCategoryCreate, ApiCategoryResponse, ApiCategoryUpdate } from "@/types";
 
 export const categoriesApi = {
   getDefault: async (): Promise<ApiCategoryResponse[]> => {
     const { data } = await client.get<ApiCategoryResponse[]>("/category/default");
     return data;
+  },
+
+  createDefault: async (payload: ApiCategoryCreate): Promise<ApiCategoryResponse> => {
+    const { data } = await client.post<ApiCategoryResponse>("/category/default", payload);
+    return data;
+  },
+
+  updateDefault: async (
+    categoryId: number,
+    payload: ApiCategoryUpdate
+  ): Promise<ApiCategoryResponse> => {
+    const { data } = await client.patch<ApiCategoryResponse>(`/category/default/${categoryId}`, payload);
+    return data;
+  },
+
+  deleteDefault: async (categoryId: number): Promise<void> => {
+    await client.delete(`/category/default/${categoryId}`);
   },
 
   getPersonal: async (): Promise<ApiCategoryResponse[]> => {

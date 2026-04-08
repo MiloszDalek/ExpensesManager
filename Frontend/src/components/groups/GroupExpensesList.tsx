@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
-import { getCategoryIcon, getCategoryVisualStyle } from "@/utils/category";
+import { formatCategoryNameForDisplay, getCategoryIcon, getCategoryVisualStyle } from "@/utils/category";
 import type { ApiCategoryResponse, ApiGroupExpenseResponse } from "@/types";
 
 type GroupExpensesListProps = {
@@ -52,7 +52,7 @@ export default function GroupExpensesList({
     }
 
     if (category.user_id == null) {
-      return t(`category.${category.name}`, { defaultValue: category.name });
+      return t(`category.${category.name}`, { defaultValue: formatCategoryNameForDisplay(category.name) });
     }
 
     return category.name;

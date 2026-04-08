@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from app.repositories import CategoryRepository, GroupRepository
 from app.models import Category
-from app.schemas import CategoryCreate
+from app.schemas import CategoryCreate, CategoryUpdate
 from app.enums import GroupMemberRole
 
 
@@ -19,6 +19,17 @@ class CategoryService:
             raise HTTPException(status_code=400, detail="Category name cannot be empty")
 
         return stripped_name[0].upper() + stripped_name[1:].lower()
+
+
+    @staticmethod
+    def _normalize_default_category_name(name: str) -> str:
+        stripped_name = name.strip().lower().replace("-", "_").replace(" ", "_")
+        normalized = "_".join(segment for segment in stripped_name.split("_") if segment)
+
+        if not normalized:
+            raise HTTPException(status_code=400, detail="Category name cannot be empty")
+
+        return normalized
         
 
     def get_by_id(self, category_id: int) -> Category:
@@ -50,6 +61,73 @@ class CategoryService:
 
     def get_default_categories(self) -> list[Category]:
         return self.category_repo.get_all_default()
+
+
+    def create_default_category(self, category_in: CategoryCreate) -> Category:
+        normalized_name = self._normalize_default_category_name(category_in.name)
+
+        existing = self.category_repo.get_default_by_name(normalized_name)
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Category '{normalized_name}' already exists")
+
+        category = Category(
+            name=normalized_name,
+            section=category_in.section,
+            user_id=None,
+            group_id=None,
+        )
+
+        try:
+            category = self.category_repo.create(category)
+            self.category_repo.save_all()
+            return category
+        except IntegrityError:
+            self.category_repo.db.rollback()
+            raise HTTPException(status_code=400, detail="Category already exists")
+
+
+    def update_default_category(self, category_id: int, category_in: CategoryUpdate) -> Category:
+        category = self.get_by_id(category_id)
+
+        if category.user_id is not None or category.group_id is not None:
+            raise HTTPException(status_code=400, detail="Not a default category")
+
+        update_data = category_in.model_dump(exclude_unset=True)
+
+        if "name" in update_data:
+            normalized_name = self._normalize_default_category_name(update_data["name"])
+            if normalized_name != category.name:
+                existing = self.category_repo.get_default_by_name(normalized_name)
+                if existing and existing.id != category.id:
+                    raise HTTPException(status_code=400, detail=f"Category '{normalized_name}' already exists")
+            category.name = normalized_name
+
+        if "section" in update_data:
+            category.section = update_data["section"]
+
+        try:
+            self.category_repo.save_all()
+            return category
+        except IntegrityError:
+            self.category_repo.db.rollback()
+            raise HTTPException(status_code=400, detail="Category already exists")
+
+
+    def delete_default_category(self, category_id: int):
+        category = self.get_by_id(category_id)
+
+        if category.user_id is not None or category.group_id is not None:
+            raise HTTPException(status_code=400, detail="Not a default category")
+
+        if self.category_repo.has_expenses(category.id):
+            raise HTTPException(status_code=400, detail="Cannot delete category assigned to expenses")
+
+        try:
+            self.category_repo.delete(category)
+            self.category_repo.save_all()
+        except Exception:
+            self.category_repo.db.rollback()
+            raise
 
 
     def get_personal_categories(self, user_id: int) -> list[Category]:

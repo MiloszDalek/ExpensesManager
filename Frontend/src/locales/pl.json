@@ -97,6 +97,112 @@
   "languageSwitcher": {
     "selectLanguage": "Wybierz język"
   },
+  "adminPage": {
+    "title": "Konsola Administratora",
+    "subtitle": "Zarządzaj użytkownikami systemu i monitoruj aktywność na poziomie platformy.",
+    "usersSectionTitle": "Użytkownicy systemowi",
+    "usersSectionSubtitle": "Przeglądaj aktywność i zarządzaj rolami, dostępem oraz statusem konta.",
+    "categoriesSectionTitle": "Kategorie domyślne",
+    "categoriesSectionSubtitle": "Twórz i utrzymuj kategorie współdzielone przez całą platformę.",
+    "defaultCategoryNameLabel": "Klucz kategorii",
+    "defaultCategoryNamePlaceholder": "Przykład: pets_supplies",
+    "defaultCategorySectionLabel": "Sekcja",
+    "filters": {
+      "title": "Filtry",
+      "searchLabel": "Szukaj użytkownika",
+      "searchPlaceholder": "Nazwa użytkownika lub email...",
+      "roleLabel": "Rola systemowa",
+      "roleAll": "Wszystkie role",
+      "roleAdmin": "Admin",
+      "roleUser": "Użytkownik",
+      "activityLabel": "Status konta",
+      "activityAll": "Wszyscy użytkownicy",
+      "activityActive": "Aktywni",
+      "activityInactive": "Nieaktywni"
+    },
+    "actions": {
+      "applyFilters": "Zastosuj filtry",
+      "resetFilters": "Wyczyść filtry",
+      "promoteToAdmin": "Nadaj admina",
+      "demoteToUser": "Odbierz admina",
+      "activateUser": "Aktywuj",
+      "deactivateUser": "Dezaktywuj",
+      "deleteUser": "Usuń",
+      "addDefaultCategory": "Dodaj kategorię domyślną",
+      "editCategory": "Edytuj",
+      "saveCategory": "Zapisz",
+      "cancelEdit": "Anuluj",
+      "deleteCategory": "Usuń",
+      "processing": "Przetwarzanie..."
+    },
+    "stats": {
+      "totalUsers": "Wszyscy użytkownicy",
+      "activeUsers": "Aktywni",
+      "admins": "Administratorzy",
+      "inactiveUsers": "Nieaktywni"
+    },
+    "table": {
+      "user": "Użytkownik",
+      "role": "Rola",
+      "status": "Status",
+      "joinedAt": "Utworzono",
+      "createdAt": "Utworzono",
+      "categoryName": "Kategoria",
+      "section": "Sekcja",
+      "lastActivity": "Ostatnia aktywność",
+      "activity": "Aktywność",
+      "actions": "Akcje",
+      "groups": "Grupy",
+      "expenses": "Wydatki",
+      "invitations": "Zaproszenia",
+      "settlements": "Rozliczenia"
+    },
+    "badges": {
+      "you": "Ty",
+      "active": "Aktywny",
+      "inactive": "Nieaktywny",
+      "currentAdmin": "Administrator systemu",
+      "adminLocked": "Zablokowane konto admina"
+    },
+    "feedback": {
+      "roleUpdatedToAdmin": "Rola użytkownika została zmieniona na admin.",
+      "roleUpdatedToUser": "Rola użytkownika została zmieniona na użytkownik.",
+      "userActivated": "Konto użytkownika zostało aktywowane.",
+      "userDeactivated": "Konto użytkownika zostało dezaktywowane.",
+      "userDeleted": "Konto użytkownika zostało usunięte.",
+      "defaultCategoryCreated": "Kategoria domyślna została utworzona.",
+      "defaultCategoryUpdated": "Kategoria domyślna została zaktualizowana.",
+      "defaultCategoryDeleted": "Kategoria domyślna została usunięta."
+    },
+    "errors": {
+      "notEnoughPermissions": "Nie masz wystarczających uprawnień.",
+      "roleChangeDisabled": "Zmiana roli administratora systemu jest wyłączona.",
+      "userDeletionDisabled": "Usuwanie użytkowników jest wyłączone polityką systemu.",
+      "systemAdminCannotDeactivate": "Konto administratora systemu nie może zostać dezaktywowane.",
+      "cannotDeleteOwnAccount": "Nie możesz usunąć własnego konta administratora.",
+      "cannotChangeOwnRole": "Nie możesz zmienić własnej roli administratora.",
+      "cannotDeactivateOwnAccount": "Nie możesz dezaktywować własnego konta.",
+      "emailAlreadyInUse": "Ten email jest już zajęty.",
+      "categoryNameEmpty": "Nazwa kategorii nie może być pusta.",
+      "categoryAlreadyExists": "Kategoria już istnieje.",
+      "categoryAlreadyExistsWithName": "Kategoria '{{name}}' już istnieje.",
+      "categoryNotFound": "Nie znaleziono kategorii.",
+      "notDefaultCategory": "To nie jest kategoria domyślna.",
+      "categoryInUse": "Nie można usunąć kategorii przypisanej do wydatków.",
+      "categoryCreateFailed": "Nie udało się utworzyć kategorii domyślnej.",
+      "categoryUpdateFailed": "Nie udało się zaktualizować kategorii domyślnej.",
+      "categoryDeleteFailed": "Nie udało się usunąć kategorii domyślnej.",
+      "categoryLoadFailed": "Nie udało się pobrać kategorii domyślnych.",
+      "updateFailed": "Nie udało się zaktualizować użytkownika.",
+      "deleteFailed": "Nie udało się usunąć użytkownika.",
+      "loadFailed": "Nie udało się pobrać listy użytkowników."
+    },
+    "confirmDelete": "Usunąć użytkownika {{username}}?",
+    "confirmDeleteCategory": "Usunąć domyślną kategorię {{category}}?",
+    "empty": "Brak użytkowników dla wybranych filtrów.",
+    "emptyCategories": "Brak kategorii domyślnych.",
+    "notAvailable": "Brak"
+  },
   "authPages": {
     "login": {
       "title": "Logowanie",
@@ -109,7 +215,9 @@
       "noAccount": "Nie masz konta?",
       "signUp": "Zarejestruj się",
       "errors": {
-        "loginFailed": "Logowanie nie powiodło się"
+        "loginFailed": "Logowanie nie powiodło się",
+        "inactiveUser": "Twoje konto jest nieaktywne. Skontaktuj się z administratorem.",
+        "invalidCredentials": "Nieprawidłowy email lub hasło."
       }
     },
     "register": {

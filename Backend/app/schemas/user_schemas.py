@@ -17,6 +17,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None
     password: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class UserResponse(UserBase):
@@ -26,3 +27,17 @@ class UserResponse(UserBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserAdminActivityResponse(UserResponse):
+    groups_count: int
+    expenses_count: int
+    sent_invitations_count: int
+    settlements_count: int
+    last_activity_at: Optional[datetime] = None
+
+
+class UserAdminActivityStatsResponse(BaseModel):
+    total_users: int
+    active_users: int
+    inactive_users: int

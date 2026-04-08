@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import type { ApiCategoryResponse } from "@/types/category";
 import {
+  formatCategoryNameForDisplay,
   getCategoryIcon,
   getCategoryVisualStyle,
   resolveCategoryGroup,
@@ -87,9 +88,31 @@ export default function CategoryPicker({
 }: CategoryPickerProps) {
   const { t } = useTranslation();
 
+  function mapKnownCategoryErrorMessage(message: string): string {
+    const normalizedMessage = message.trim();
+
+    if (
+      normalizedMessage === "Cannot delete category assigned to expenses" ||
+      normalizedMessage === "Cannot delete category assigned to expense"
+    ) {
+      return t("expenseFilters.deleteCategoryAssignedToExpense");
+    }
+
+    if (normalizedMessage === "Category name cannot be empty") {
+      return t("expenseFilters.categoryNameEmpty");
+    }
+
+    const existsMatch = normalizedMessage.match(/^Category '(.+)' already exists$/);
+    if (existsMatch) {
+      return t("expenseFilters.categoryAlreadyExists", { name: existsMatch[1] });
+    }
+
+    return normalizedMessage;
+  }
+
   function getCategoryLabel(category: ApiCategoryResponse): string {
     if (category.user_id == null) {
-      return t(`category.${category.name}`, { defaultValue: category.name });
+      return t(`category.${category.name}`, { defaultValue: formatCategoryNameForDisplay(category.name) });
     }
     return category.name;
   }
@@ -103,27 +126,12 @@ export default function CategoryPicker({
       const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
 
       if (typeof detail === "string" && detail.trim()) {
-        const normalizedDetail = detail.trim();
-
-        if (normalizedDetail === "Cannot delete category assigned to expenses") {
-          return t("expenseFilters.deleteCategoryAssignedToExpense");
-        }
-
-        if (normalizedDetail === "Category name cannot be empty") {
-          return t("expenseFilters.categoryNameEmpty");
-        }
-
-        const existsMatch = normalizedDetail.match(/^Category '(.+)' already exists$/);
-        if (existsMatch) {
-          return t("expenseFilters.categoryAlreadyExists", { name: existsMatch[1] });
-        }
-
-        return normalizedDetail;
+        return mapKnownCategoryErrorMessage(detail);
       }
     }
 
     if (error instanceof Error && error.message.trim()) {
-      return error.message;
+      return mapKnownCategoryErrorMessage(error.message);
     }
 
     return fallbackMessage;

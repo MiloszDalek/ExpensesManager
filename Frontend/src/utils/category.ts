@@ -41,6 +41,16 @@ const CATEGORY_GROUP_MATCHERS: Array<{ group: CategoryVisualGroup; keywords: str
 
 type CategoryLike = ApiCategoryResponse | string | null | undefined;
 
+export function formatCategoryNameForDisplay(categoryName: string): string {
+  const normalized = categoryName.replace(/_/g, " ").trim();
+
+  if (!normalized) {
+    return categoryName;
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 function normalizeCategoryName(name: string): string {
   return name
     .toLowerCase()

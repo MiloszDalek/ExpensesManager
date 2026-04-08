@@ -10,4 +10,5 @@ export * from "./invitationsApi";
 export * from "./notificationsApi";
 export * from "./settlementsApi";
 export * from "./receiptsApi";
+export * from "./usersApi";
 export * from "./queryKeys";

@@ -15,6 +15,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const localizeLoginError = (message: string | null | undefined) => {
+    if (!message) {
+      return t("authPages.login.errors.loginFailed");
+    }
+
+    const normalizedMessage = message.trim();
+
+    if (normalizedMessage === "Inactive user" || normalizedMessage === "User not found or inactive") {
+      return t("authPages.login.errors.inactiveUser");
+    }
+
+    if (normalizedMessage === "Incorect email or password" || normalizedMessage === "Incorrect email or password") {
+      return t("authPages.login.errors.invalidCredentials");
+    }
+
+    return normalizedMessage;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,7 +42,12 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.detail || t("authPages.login.errors.loginFailed"));
+      const apiDetail = err?.response?.data?.detail;
+      const message = typeof apiDetail === "string" && apiDetail.trim()
+        ? apiDetail
+        : (err instanceof Error ? err.message : null);
+
+      setError(localizeLoginError(message));
     } finally {
       setLoading(false);
     }

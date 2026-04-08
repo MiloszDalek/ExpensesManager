@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from app.services import CategoryService
 from app.database import get_db
 from app.models import User
-from app.schemas import CategoryCreate, CategoryResponse
-from app.utils.auth_dependencies import get_current_active_user
+from app.schemas import CategoryCreate, CategoryResponse, CategoryUpdate
+from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
 category_router = APIRouter(
     prefix="/category",
@@ -22,6 +22,34 @@ def get_default_categories(
     current_user: User = Depends(get_current_active_user)
 ):
     return service.get_default_categories()
+
+
+@category_router.post("/default", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+def create_default_category(
+    category_in: CategoryCreate,
+    service: CategoryService = Depends(get_category_service),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return service.create_default_category(category_in)
+
+
+@category_router.patch("/default/{category_id}", response_model=CategoryResponse)
+def update_default_category(
+    category_id: int,
+    category_in: CategoryUpdate,
+    service: CategoryService = Depends(get_category_service),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return service.update_default_category(category_id, category_in)
+
+
+@category_router.delete("/default/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_default_category(
+    category_id: int,
+    service: CategoryService = Depends(get_category_service),
+    current_user: User = Depends(get_current_admin_user),
+):
+    service.delete_default_category(category_id)
 
 
 @category_router.get("/personal", response_model=list[CategoryResponse])

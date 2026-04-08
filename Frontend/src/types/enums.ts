@@ -27,6 +27,7 @@ export type CurrencyEnum = (typeof SUPPORTED_CURRENCIES)[number];
 export type SplitType = "equal" | "percent" | "exact";
 
 export type GroupStatus = "active" | "archived";
+export type SystemUserRole = "user" | "admin";
 export type GroupMemberRole = "admin" | "member";
 export type GroupMemberStatus = "active" | "left";
 

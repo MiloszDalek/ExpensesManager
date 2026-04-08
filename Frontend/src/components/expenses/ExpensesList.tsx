@@ -19,7 +19,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ApiPersonalExpenseResponse } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
-import { getCategoryIcon, getCategoryVisualStyle, resolveCategoryGroup } from "@/utils/category";
+import {
+  formatCategoryNameForDisplay,
+  getCategoryIcon,
+  getCategoryVisualStyle,
+  resolveCategoryGroup,
+} from "@/utils/category";
 
 type ExpensesListProps = {
   expenses: ApiPersonalExpenseResponse[];
@@ -48,7 +53,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
     }
 
     if (category.user_id == null) {
-      return t(`category.${category.name}`, { defaultValue: category.name });
+      return t(`category.${category.name}`, { defaultValue: formatCategoryNameForDisplay(category.name) });
     }
 
     return category.name;

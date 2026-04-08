@@ -79,4 +79,19 @@ export const queryKeys = {
     user: (params?: { limit?: number; offset?: number }) =>
       ["settlements", "user", params ?? {}] as const,
   },
+
+  admin: {
+    usersAll: ["admin", "users", "all"] as const,
+    usersActivity: (params?: {
+      search?: string;
+      role?: "all" | "user" | "admin";
+      is_active?: "all" | "active" | "inactive";
+    }) => ["admin", "users", "activity", params ?? {}] as const,
+    usersActivityStats: (params?: {
+      search?: string;
+      role?: "all" | "user" | "admin";
+      is_active?: "all" | "active" | "inactive";
+    }) => ["admin", "users", "activity", "stats", params ?? {}] as const,
+    defaultCategories: ["admin", "categories", "default"] as const,
+  },
 };

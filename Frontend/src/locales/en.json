@@ -107,6 +107,112 @@
   "languageSwitcher": {
     "selectLanguage": "Select Language"
   },
+  "adminPage": {
+    "title": "Admin Console",
+    "subtitle": "Manage system users and monitor platform-level activity.",
+    "usersSectionTitle": "System users",
+    "usersSectionSubtitle": "Review activity and manage roles, access, and account status.",
+    "categoriesSectionTitle": "Default categories",
+    "categoriesSectionSubtitle": "Create and maintain categories shared across the whole platform.",
+    "defaultCategoryNameLabel": "Category key",
+    "defaultCategoryNamePlaceholder": "Example: pets_supplies",
+    "defaultCategorySectionLabel": "Section",
+    "filters": {
+      "title": "Filters",
+      "searchLabel": "Search user",
+      "searchPlaceholder": "Username or email...",
+      "roleLabel": "System role",
+      "roleAll": "All roles",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
+      "activityLabel": "Account status",
+      "activityAll": "All users",
+      "activityActive": "Active",
+      "activityInactive": "Inactive"
+    },
+    "actions": {
+      "applyFilters": "Apply filters",
+      "resetFilters": "Reset filters",
+      "promoteToAdmin": "Promote",
+      "demoteToUser": "Demote",
+      "activateUser": "Activate",
+      "deactivateUser": "Deactivate",
+      "deleteUser": "Delete",
+      "addDefaultCategory": "Add default category",
+      "editCategory": "Edit",
+      "saveCategory": "Save",
+      "cancelEdit": "Cancel",
+      "deleteCategory": "Delete",
+      "processing": "Processing..."
+    },
+    "stats": {
+      "totalUsers": "Total users",
+      "activeUsers": "Active",
+      "admins": "Admins",
+      "inactiveUsers": "Inactive"
+    },
+    "table": {
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "joinedAt": "Joined",
+      "createdAt": "Created",
+      "categoryName": "Category",
+      "section": "Section",
+      "lastActivity": "Last activity",
+      "activity": "Activity",
+      "actions": "Actions",
+      "groups": "Groups",
+      "expenses": "Expenses",
+      "invitations": "Invitations",
+      "settlements": "Settlements"
+    },
+    "badges": {
+      "you": "You",
+      "active": "Active",
+      "inactive": "Inactive",
+      "currentAdmin": "System admin",
+      "adminLocked": "Locked admin account"
+    },
+    "feedback": {
+      "roleUpdatedToAdmin": "User role changed to admin.",
+      "roleUpdatedToUser": "User role changed to user.",
+      "userActivated": "User account activated.",
+      "userDeactivated": "User account deactivated.",
+      "userDeleted": "User account deleted.",
+      "defaultCategoryCreated": "Default category created.",
+      "defaultCategoryUpdated": "Default category updated.",
+      "defaultCategoryDeleted": "Default category deleted."
+    },
+    "errors": {
+      "notEnoughPermissions": "You do not have enough permissions.",
+      "roleChangeDisabled": "System admin role changes are disabled.",
+      "userDeletionDisabled": "User deletion is disabled by system policy.",
+      "systemAdminCannotDeactivate": "System admin account cannot be deactivated.",
+      "cannotDeleteOwnAccount": "You cannot delete your own admin account.",
+      "cannotChangeOwnRole": "You cannot change your own admin role.",
+      "cannotDeactivateOwnAccount": "You cannot deactivate your own account.",
+      "emailAlreadyInUse": "Email is already in use.",
+      "categoryNameEmpty": "Category name cannot be empty.",
+      "categoryAlreadyExists": "Category already exists.",
+      "categoryAlreadyExistsWithName": "Category '{{name}}' already exists.",
+      "categoryNotFound": "Category not found.",
+      "notDefaultCategory": "This is not a default category.",
+      "categoryInUse": "Cannot delete category assigned to expenses.",
+      "categoryCreateFailed": "Could not create default category.",
+      "categoryUpdateFailed": "Could not update default category.",
+      "categoryDeleteFailed": "Could not delete default category.",
+      "categoryLoadFailed": "Could not load default categories.",
+      "updateFailed": "Could not update user.",
+      "deleteFailed": "Could not delete user.",
+      "loadFailed": "Could not load users."
+    },
+    "confirmDelete": "Delete user {{username}}?",
+    "confirmDeleteCategory": "Delete default category {{category}}?",
+    "empty": "No users match the current filters.",
+    "emptyCategories": "No default categories found.",
+    "notAvailable": "N/A"
+  },
   "authPages": {
     "login": {
       "title": "Login",
@@ -119,7 +225,9 @@
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
       "errors": {
-        "loginFailed": "Login failed"
+        "loginFailed": "Login failed",
+        "inactiveUser": "Your account is inactive. Contact the administrator.",
+        "invalidCredentials": "Incorrect email or password."
       }
     },
     "register": {

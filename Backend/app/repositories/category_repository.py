@@ -23,6 +23,18 @@ class CategoryRepository:
             )
             .first()
         )
+
+
+    def get_default_by_name(self, name: str) -> Optional[Category]:
+        return (
+            self.db.query(Category)
+            .filter(
+                Category.name == name,
+                Category.user_id.is_(None),
+                Category.group_id.is_(None),
+            )
+            .first()
+        )
     
 
     def has_expenses(self, category_id: int) -> bool:

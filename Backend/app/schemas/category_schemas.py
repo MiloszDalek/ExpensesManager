@@ -12,6 +12,11 @@ class CategoryCreate(CategoryBase):
     section: CategorySection
 
 
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    section: Optional[CategorySection] = None
+
+
 class CategoryResponse(CategoryBase):
     id: int
     section: CategorySection

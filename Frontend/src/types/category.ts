@@ -6,6 +6,11 @@ export interface ApiCategoryCreate {
   section: CategorySection;
 }
 
+export interface ApiCategoryUpdate {
+  name?: string;
+  section?: CategorySection;
+}
+
 export interface ApiCategoryResponse {
   id: number;
   name: string;
