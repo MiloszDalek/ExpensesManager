@@ -7,3 +7,4 @@ from .category_repository import CategoryRepository
 from .invitation_repository import InvitationRepository
 from .notification_repository import NotificationRepository
 from .contact_repository import ContactRepository
+from .recurring_expense_repository import RecurringExpenseRepository

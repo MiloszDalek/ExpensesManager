@@ -38,6 +38,8 @@ export type NotificationType = "invitation";
 
 export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgiven";
 export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+export type RecurringExpenseStatus = "active" | "paused" | "ended" | "archived";
 
 export type CategorySection =
 	| "food"

@@ -3,7 +3,9 @@ import type {
   ApiExpenseSummaryOverviewParams,
   ApiExpenseSummaryTrendsParams,
   ApiPersonalExpenseListParams,
+  RecurringScope,
 } from "@/types";
+import type { RecurringExpenseStatus } from "@/types/enums";
 
 export const queryKeys = {
   groups: {
@@ -23,6 +25,23 @@ export const queryKeys = {
       ["expenses", "personal", "list", params ?? {}] as const,
     summary: (params?: Omit<ApiPersonalExpenseListParams, "limit" | "offset">) =>
       ["expenses", "personal", "summary", params ?? {}] as const,
+  },
+
+  recurringExpenses: {
+    all: ["expenses", "recurring"] as const,
+    list: (params?: {
+      limit?: number;
+      offset?: number;
+      scope?: RecurringScope;
+      group_id?: number;
+      status?: RecurringExpenseStatus;
+    }) => ["expenses", "recurring", "list", params ?? {}] as const,
+    forecast: (params?: {
+      date_from?: string;
+      date_to?: string;
+      scope?: RecurringScope;
+      group_id?: number;
+    }) => ["expenses", "recurring", "forecast", params ?? {}] as const,
   },
 
   summaries: {

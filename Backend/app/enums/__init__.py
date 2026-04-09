@@ -13,3 +13,5 @@ from .notification_type_enum import NotificationType
 from .split_type_enum import SplitType
 from .payment_method_enum import PaymentMethod
 from .settlement_status_enum import SettlementStatus
+from .recurrence_frequency_enum import RecurrenceFrequency
+from .recurring_expense_status_enum import RecurringExpenseStatus

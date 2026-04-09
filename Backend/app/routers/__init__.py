@@ -12,3 +12,4 @@ from .contact_router import contact_router
 from .balance_router import balance_router
 from .settlement_router import settlement_router
 from .receipt_router import receipt_router
+from .recurring_expense_router import recurring_expense_router

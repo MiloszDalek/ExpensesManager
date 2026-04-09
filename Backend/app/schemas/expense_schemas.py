@@ -34,6 +34,8 @@ class PersonalExpenseUpdate(BaseModel):
 class PersonalExpenseResponse(ExpenseBase):
     id: int
     created_at: datetime
+    recurring_expense_id: int | None = None
+    recurring_occurrence_date: date | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -90,6 +92,8 @@ class GroupExpenseResponse(GroupExpenseBase):
     id: int
     user_id: int
     created_at: datetime
+    recurring_expense_id: int | None = None
+    recurring_occurrence_date: date | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -174,6 +178,8 @@ class ExpenseSummaryDrilldownItem(BaseModel):
     group_name: str | None = None
     total_amount: Decimal
     user_amount: Decimal
+    recurring_expense_id: int | None = None
+    recurring_occurrence_date: date | None = None
 
 
 class ExpenseSummaryDrilldownResponse(BaseModel):

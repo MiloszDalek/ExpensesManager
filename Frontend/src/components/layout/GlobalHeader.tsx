@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, Globe, LayoutDashboard, LogOut, Menu, ReceiptText, Shield, Users, Wallet, X } from "lucide-react";
+import { BarChart3, Globe, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCcw, Shield, Users, Wallet, X } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ export default function GlobalHeader() {
     { to: "/summaries", label: t("globalHeader.navSummaries"), icon: BarChart3 },
     { to: "/groups", label: t("globalHeader.navGroups"), icon: Users },
     { to: "/personal", label: t("globalHeader.navPersonal"), icon: ReceiptText },
+    { to: "/recurring", label: t("globalHeader.navRecurring", { defaultValue: "Recurring" }), icon: RefreshCcw },
   ];
 
   if (user?.role === "admin") {

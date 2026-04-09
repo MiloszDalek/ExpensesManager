@@ -19,5 +19,7 @@ def reset_database():
         conn.execute(text("DROP TYPE IF EXISTS payment_method CASCADE")) 
         conn.execute(text("DROP TYPE IF EXISTS settlement_status CASCADE")) 
         conn.execute(text("DROP TYPE IF EXISTS category_section CASCADE")) 
+        conn.execute(text("DROP TYPE IF EXISTS recurring_expense_status CASCADE")) 
+        conn.execute(text("DROP TYPE IF EXISTS recurrence_frequency CASCADE")) 
 
         Base.metadata.create_all(bind=engine)

@@ -30,6 +30,8 @@ class ExpenseSummaryService:
         "group_name",
         "total_amount",
         "user_amount",
+        "recurring_expense_id",
+        "recurring_occurrence_date",
     ]
 
     EXPORT_LOCALIZATION = {
@@ -740,6 +742,8 @@ class ExpenseSummaryService:
                     "group_name": row.group_name,
                     "total_amount": self._to_decimal(row.total_amount),
                     "user_amount": self._to_decimal(row.user_amount),
+                    "recurring_expense_id": row.recurring_expense_id,
+                    "recurring_occurrence_date": row.recurring_occurrence_date,
                 }
             )
 
@@ -1118,6 +1122,8 @@ class ExpenseSummaryService:
                     str(item["group_name"]) if item["group_name"] is not None else "",
                     f"{Decimal(item['total_amount']):.2f}",
                     f"{Decimal(item['user_amount']):.2f}",
+                    str(item["recurring_expense_id"]) if item["recurring_expense_id"] is not None else "",
+                    item["recurring_occurrence_date"].isoformat() if item["recurring_occurrence_date"] is not None else "",
                 ]
             )
 

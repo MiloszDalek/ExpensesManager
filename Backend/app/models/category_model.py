@@ -16,6 +16,7 @@ class Category(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     expenses = relationship("Expense", back_populates="category")
+    recurring_expenses = relationship("RecurringExpense", back_populates="category")
 
     user = relationship("User", back_populates="personal_categories")
     group = relationship("Group", back_populates="group_categories")

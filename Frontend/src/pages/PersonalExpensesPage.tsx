@@ -13,6 +13,7 @@ import ExpensesList from "../components/expenses/ExpensesList";
 import ExpenseFilters from "../components/expenses/ExpenseFilters";
 import { useAuth } from "@/contexts/AuthContext";
 import { expensesPersonalApi } from "@/api/expensesPersonalApi";
+import { recurringExpensesApi } from "@/api/recurringExpensesApi";
 import { categoriesApi } from "@/api/categoriesApi";
 import { queryKeys } from "@/api/queryKeys";
 
@@ -22,6 +23,7 @@ import type {
   ApiPersonalExpenseListParams,
   ApiPersonalExpenseSummaryResponse,
   ApiPersonalExpenseUpdate,
+  ApiRecurringPersonalExpenseCreate,
   PersonalExpensePeriodPreset,
   PersonalExpensesFiltersState,
 } from "@/types/expense";
@@ -246,6 +248,38 @@ export default function PersonalExpensesPage() {
     }
   });
 
+  const createRecurringExpenseMutation = useMutation<
+    void,
+    Error,
+    ApiPersonalExpenseCreate
+  >({
+    mutationFn: async (expenseData) => {
+      const startsOn = expenseData.expense_date.slice(0, 10);
+      const recurringPayload: ApiRecurringPersonalExpenseCreate = {
+        title: expenseData.title,
+        amount: expenseData.amount,
+        currency: expenseData.currency,
+        category_id: expenseData.category_id,
+        frequency: expenseData.recurrence_frequency ?? "monthly",
+        interval_count: expenseData.recurrence_interval ?? 1,
+        starts_on: startsOn,
+        ends_on: expenseData.recurrence_ends_on ?? undefined,
+        notes: expenseData.notes ?? undefined,
+      };
+
+      const recurringExpense = await recurringExpensesApi.createPersonal(recurringPayload);
+      await recurringExpensesApi.generateNow(recurringExpense.id, { up_to_date: startsOn });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
+      setShowAddDialog(false);
+    },
+    onError: (error) => {
+      console.error("Failed to create recurring expense:", error);
+    },
+  });
+
   // Delete expense mutation
   const deleteExpenseMutation = useMutation<void, Error, number>({
     mutationFn: (expenseId) => expensesPersonalApi.delete(expenseId),
@@ -379,9 +413,15 @@ export default function PersonalExpensesPage() {
             ...data,
             amount: data.amount.toString(),
           };
+
+          if (expenseData.is_recurring) {
+            createRecurringExpenseMutation.mutate(expenseData);
+            return;
+          }
+
           createExpenseMutation.mutate(expenseData);
         }}
-        isLoading={createExpenseMutation.isPending}
+        isLoading={createExpenseMutation.isPending || createRecurringExpenseMutation.isPending}
         categories={categories}
         onCreateCustomCategory={handleCreateCustomCategory}
         onDeleteCustomCategory={handleDeleteCustomCategory}

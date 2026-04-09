@@ -449,6 +449,8 @@ class ExpenseRepository:
                     literal(None).label("group_name"),
                     Expense.amount.label("total_amount"),
                     Expense.amount.label("user_amount"),
+                    Expense.recurring_expense_id.label("recurring_expense_id"),
+                    Expense.recurring_occurrence_date.label("recurring_occurrence_date"),
                 )
                 .select_from(Expense)
                 .join(Category, Category.id == Expense.category_id),
@@ -486,6 +488,8 @@ class ExpenseRepository:
                     Group.name.label("group_name"),
                     Expense.amount.label("total_amount"),
                     ExpenseShare.share_amount.label("user_amount"),
+                    Expense.recurring_expense_id.label("recurring_expense_id"),
+                    Expense.recurring_occurrence_date.label("recurring_occurrence_date"),
                 ).select_from(Expense),
                 user_id=user_id,
                 date_from=date_from,

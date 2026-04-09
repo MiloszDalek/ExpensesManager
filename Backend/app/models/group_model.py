@@ -19,6 +19,7 @@ class Group(Base):
     created_by_user = relationship("User", back_populates="groups_created")
     members = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan", passive_deletes=True)
     expenses = relationship("Expense", back_populates="group")
+    recurring_expenses = relationship("RecurringExpense", back_populates="group")
 
     group_categories = relationship("Category", back_populates="group")
 

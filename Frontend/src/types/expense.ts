@@ -21,7 +21,12 @@
 // }
 
 import type { DecimalLike, ISODateTimeString } from "./common";
-import type { CurrencyEnum, SplitType } from "./enums";
+import type {
+  CurrencyEnum,
+  RecurrenceFrequency,
+  RecurringExpenseStatus,
+  SplitType,
+} from "./enums";
 
 export type PersonalExpenseSortBy = "expense_date" | "amount" | "created_at";
 export type PersonalExpenseSortOrder = "asc" | "desc";
@@ -54,7 +59,16 @@ export interface ApiExpenseShare {
   share_amount: DecimalLike;
 }
 
-export interface ApiPersonalExpenseCreate {
+export interface ApiExpenseRecurrenceOptions {
+  is_recurring?: boolean;
+  recurrence_frequency?: RecurrenceFrequency | null;
+  recurrence_interval?: number | null;
+  recurrence_day_of_month?: number | null;
+  recurrence_day_of_week?: number | null;
+  recurrence_ends_on?: string | null;
+}
+
+export interface ApiPersonalExpenseCreate extends ApiExpenseRecurrenceOptions {
   title: string;
   amount: DecimalLike;
   currency?: CurrencyEnum;
@@ -79,6 +93,8 @@ export interface ApiPersonalExpenseUpdate {
 export interface ApiPersonalExpenseResponse extends ApiPersonalExpenseCreate {
   id: number;
   created_at: ISODateTimeString;
+  recurring_expense_id?: number | null;
+  recurring_occurrence_date?: string | null;
 }
 
 export interface ApiPersonalExpenseSummaryCurrency {
@@ -120,6 +136,8 @@ export interface ApiGroupExpenseResponse extends ApiGroupExpenseCreate {
   id: number;
   user_id: number;
   created_at: ISODateTimeString;
+  recurring_expense_id?: number | null;
+  recurring_occurrence_date?: string | null;
 }
 
 export type ExpenseSummaryScope = "all" | "personal" | "group";
@@ -204,6 +222,8 @@ export interface ApiExpenseSummaryDrilldownItem {
   group_name: string | null;
   total_amount: DecimalLike;
   user_amount: DecimalLike;
+  recurring_expense_id?: number | null;
+  recurring_occurrence_date?: string | null;
 }
 
 export interface ApiExpenseSummaryDrilldownResponse {
@@ -247,4 +267,104 @@ export interface ApiExpenseSummaryDrilldownParams {
   group_id?: number;
   sort_by?: "expense_date" | "amount" | "created_at";
   sort_order?: "asc" | "desc";
+}
+
+export type RecurringScope = "all" | "personal" | "group";
+
+export interface ApiRecurringExpenseParticipantInput {
+  user_id: number;
+  share_amount?: DecimalLike | null;
+  share_percentage?: DecimalLike | null;
+}
+
+export interface ApiRecurringExpenseParticipantResponse extends ApiRecurringExpenseParticipantInput {
+  id: number;
+  recurring_expense_id: number;
+  created_at: ISODateTimeString;
+}
+
+export interface ApiRecurringPersonalExpenseCreate {
+  title: string;
+  amount: DecimalLike;
+  currency?: CurrencyEnum;
+  category_id: number;
+  frequency: RecurrenceFrequency;
+  interval_count?: number;
+  day_of_month?: number | null;
+  day_of_week?: number | null;
+  starts_on: string;
+  ends_on?: string | null;
+  notes?: string | null;
+}
+
+export interface ApiRecurringGroupExpenseCreate extends ApiRecurringPersonalExpenseCreate {
+  split_type: SplitType;
+  participants: ApiRecurringExpenseParticipantInput[];
+}
+
+export interface ApiRecurringExpenseUpdate {
+  title?: string | null;
+  amount?: DecimalLike | null;
+  currency?: CurrencyEnum | null;
+  category_id?: number | null;
+  split_type?: SplitType | null;
+  frequency?: RecurrenceFrequency | null;
+  interval_count?: number | null;
+  day_of_month?: number | null;
+  day_of_week?: number | null;
+  starts_on?: string | null;
+  ends_on?: string | null;
+  next_due_on?: string | null;
+  status?: RecurringExpenseStatus | null;
+  notes?: string | null;
+  participants?: ApiRecurringExpenseParticipantInput[] | null;
+}
+
+export interface ApiRecurringExpenseResponse {
+  id: number;
+  user_id: number;
+  group_id: number | null;
+  title: string;
+  amount: DecimalLike;
+  currency: CurrencyEnum;
+  category_id: number;
+  split_type: SplitType | null;
+  frequency: RecurrenceFrequency;
+  interval_count: number;
+  day_of_month: number | null;
+  day_of_week: number | null;
+  starts_on: string;
+  ends_on: string | null;
+  next_due_on: string;
+  status: RecurringExpenseStatus;
+  notes: string | null;
+  last_generated_at: ISODateTimeString | null;
+  last_error: string | null;
+  created_at: ISODateTimeString;
+  updated_at: ISODateTimeString;
+  participants: ApiRecurringExpenseParticipantResponse[];
+}
+
+export interface ApiRecurringGenerationSummaryResponse {
+  processed_series_count: number;
+  generated_count: number;
+  skipped_existing_count: number;
+  failed_series_count: number;
+}
+
+export interface ApiRecurringForecastItem {
+  recurring_expense_id: number;
+  title: string;
+  scope: "personal" | "group";
+  occurrence_date: string;
+  currency: CurrencyEnum;
+  category_id: number;
+  group_id: number | null;
+  total_amount: DecimalLike;
+  user_amount: DecimalLike;
+}
+
+export interface ApiRecurringForecastResponse {
+  total_count: number;
+  items: ApiRecurringForecastItem[];
 }

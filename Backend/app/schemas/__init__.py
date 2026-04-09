@@ -46,3 +46,14 @@ from .notification_schemas import NotificationResponse, UnreadNotificationCountR
 from .invitation_schemas import ContactInvitationCreate, ContactInvitationResponse, GroupInvitationCreate, GroupInvitationResponse, InvitationResponse
 from .balance_schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
 from .receipt_schemas import ReceiptUploadResponse
+from .recurring_expense_schemas import (
+    GroupRecurringExpenseCreate,
+    PersonalRecurringExpenseCreate,
+    RecurringExpenseParticipantInput,
+    RecurringExpenseParticipantResponse,
+    RecurringExpenseResponse,
+    RecurringExpenseUpdate,
+    RecurringForecastItem,
+    RecurringForecastResponse,
+    RecurringGenerationSummaryResponse,
+)

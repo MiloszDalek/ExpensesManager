@@ -27,7 +27,11 @@ import { format } from "date-fns";
 import type { ApiPersonalExpenseCreate } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
 import { receiptsApi } from "@/api/receiptsApi";
-import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
+import {
+  SUPPORTED_CURRENCIES,
+  type CurrencyEnum,
+  type RecurrenceFrequency,
+} from "@/types/enums";
 import type { ApiReceiptLineItem } from "@/types";
 import {
   getCurrenciesWithRecentFirst,
@@ -58,6 +62,10 @@ type FormData = {
   category_id: number;
   expense_date: string;
   notes: string;
+  is_recurring: boolean;
+  recurrence_frequency: RecurrenceFrequency;
+  recurrence_interval: string;
+  recurrence_ends_on: string;
 };
 
 const extractErrorMessage = (error: unknown): string => {
@@ -124,6 +132,10 @@ export default function AddExpenseDialog({
     category_id: defaultCategoryId,
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
+    is_recurring: false,
+    recurrence_frequency: "monthly",
+    recurrence_interval: "1",
+    recurrence_ends_on: "",
   });
   const [receiptText, setReceiptText] = useState<string | null>(null);
   const [receiptItems, setReceiptItems] = useState<ApiReceiptLineItem[]>([]);
@@ -157,6 +169,14 @@ export default function AddExpenseDialog({
         notes: formData.notes || null,
         receipt_image_url: null,
         receipt_text: receiptText,
+        is_recurring: formData.is_recurring,
+        recurrence_frequency: formData.is_recurring ? formData.recurrence_frequency : null,
+        recurrence_interval: formData.is_recurring
+          ? Math.max(1, Number.parseInt(formData.recurrence_interval || "1", 10) || 1)
+          : null,
+        recurrence_ends_on: formData.is_recurring && formData.recurrence_ends_on
+          ? formData.recurrence_ends_on
+          : null,
       });
       
       setFormData({
@@ -166,6 +186,10 @@ export default function AddExpenseDialog({
         category_id: defaultCategoryId,
         expense_date: format(new Date(), 'yyyy-MM-dd'),
         notes: '',
+        is_recurring: false,
+        recurrence_frequency: "monthly",
+        recurrence_interval: "1",
+        recurrence_ends_on: "",
       });
       setReceiptText(null);
       setReceiptItems([]);
@@ -388,6 +412,90 @@ export default function AddExpenseDialog({
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={2}
             />
+          </div>
+
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <label htmlFor="personal-is-recurring" className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                id="personal-is-recurring"
+                type="checkbox"
+                checked={formData.is_recurring}
+                onChange={(event) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    is_recurring: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4"
+              />
+              {t("addExpenseDialog.recurringToggle", { defaultValue: "Make this expense recurring" })}
+            </label>
+
+            {formData.is_recurring ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="personal-recurring-frequency">
+                    {t("addExpenseDialog.recurringFrequency", { defaultValue: "Frequency" })}
+                  </Label>
+                  <Select
+                    value={formData.recurrence_frequency}
+                    onValueChange={(value) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_frequency: value as RecurrenceFrequency,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="personal-recurring-frequency" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">{t("addExpenseDialog.recurringDaily", { defaultValue: "Daily" })}</SelectItem>
+                      <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly", { defaultValue: "Weekly" })}</SelectItem>
+                      <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly", { defaultValue: "Monthly" })}</SelectItem>
+                      <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" })}</SelectItem>
+                      <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly", { defaultValue: "Yearly" })}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="personal-recurring-interval">
+                    {t("addExpenseDialog.recurringInterval", { defaultValue: "Every N periods" })}
+                  </Label>
+                  <Input
+                    id="personal-recurring-interval"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.recurrence_interval}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_interval: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="personal-recurring-end-date">
+                    {t("addExpenseDialog.recurringEndsOn", { defaultValue: "End date (optional)" })}
+                  </Label>
+                  <Input
+                    id="personal-recurring-end-date"
+                    type="date"
+                    value={formData.recurrence_ends_on}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_ends_on: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-2 rounded-md border border-border p-3">

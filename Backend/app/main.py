@@ -17,8 +17,9 @@ from app.routers import (
         balance_router,
         settlement_router,
         receipt_router,
+        recurring_expense_router,
     )
-from app.services import AuthService
+from app.services import AuthService, RecurringExpensesScheduler
 from app.utils import seed_default_categories, reset_database
 from app import models
 import logging
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 # reset_database()
 
 settings = get_settings()
+recurring_scheduler = RecurringExpensesScheduler(interval_seconds=300)
 
 app = FastAPI(title="Expenses Manager API")
 
@@ -59,10 +61,11 @@ app.include_router(contact_router, prefix='/api')
 app.include_router(balance_router, prefix='/api')
 app.include_router(settlement_router, prefix='/api')
 app.include_router(receipt_router, prefix='/api')
+app.include_router(recurring_expense_router, prefix='/api')
 
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     db = SessionLocal()
     try:
         auth_service = AuthService(db)
@@ -70,6 +73,13 @@ def startup_event():
         seed_default_categories(db)
     finally:
         db.close()
+
+    await recurring_scheduler.start()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await recurring_scheduler.stop()
 
 @app.get("/")
 def root():

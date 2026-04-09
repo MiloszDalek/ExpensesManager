@@ -18,6 +18,7 @@ class User(Base):
     groups_created = relationship("Group", back_populates="created_by_user", passive_deletes=True)
     memberships = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     expenses = relationship("Expense", back_populates="user")
+    recurring_expenses = relationship("RecurringExpense", back_populates="user")
     expense_shares = relationship("ExpenseShare", back_populates="user")
 
     sent_settlements = relationship("Settlement", foreign_keys="Settlement.from_user_id", back_populates="from_user")

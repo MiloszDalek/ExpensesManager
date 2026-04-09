@@ -32,7 +32,7 @@ import type {
   ApiGroupMemberResponse,
   ApiReceiptLineItem,
 } from "@/types";
-import type { CategorySection, CurrencyEnum, SplitType } from "@/types/enums";
+import type { CategorySection, CurrencyEnum, RecurrenceFrequency, SplitType } from "@/types/enums";
 
 type AddGroupExpenseDialogProps = {
   open: boolean;
@@ -57,6 +57,10 @@ type FormData = {
   expense_date: string;
   notes: string;
   selectedMemberIds: number[];
+  is_recurring: boolean;
+  recurrence_frequency: RecurrenceFrequency;
+  recurrence_interval: string;
+  recurrence_ends_on: string;
 };
 
 const parseDecimal = (value: string): number => Number(value.replace(",", "."));
@@ -250,6 +254,10 @@ export default function AddGroupExpenseDialog({
     expense_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     selectedMemberIds: activeMembers.map((member) => member.user_id),
+    is_recurring: false,
+    recurrence_frequency: "monthly",
+    recurrence_interval: "1",
+    recurrence_ends_on: "",
   });
 
   const [formData, setFormData] = useState<FormData>(buildInitialState);
@@ -290,6 +298,10 @@ export default function AddGroupExpenseDialog({
         expense_date: format(new Date(expense.expense_date), "yyyy-MM-dd"),
         notes: expense.notes ?? "",
         selectedMemberIds: participantIds,
+        is_recurring: false,
+        recurrence_frequency: "monthly",
+        recurrence_interval: "1",
+        recurrence_ends_on: "",
       });
       setExactShareInputs(exactInputs);
       setPercentShareInputs(buildPercentInputsFromShares(expense.shares, expenseTotalCents, participantIds));
@@ -639,6 +651,14 @@ export default function AddGroupExpenseDialog({
       notes: formData.notes.trim() ? formData.notes.trim() : null,
       receipt_image_url: receiptImageUrl,
       receipt_text: receiptText,
+      is_recurring: formData.is_recurring,
+      recurrence_frequency: formData.is_recurring ? formData.recurrence_frequency : null,
+      recurrence_interval: formData.is_recurring
+        ? Math.max(1, Number.parseInt(formData.recurrence_interval || "1", 10) || 1)
+        : null,
+      recurrence_ends_on: formData.is_recurring && formData.recurrence_ends_on
+        ? formData.recurrence_ends_on
+        : null,
     });
   };
 
@@ -749,6 +769,90 @@ export default function AddGroupExpenseDialog({
               }}
               rows={2}
             />
+          </div>
+
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <label htmlFor="group-is-recurring" className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                id="group-is-recurring"
+                type="checkbox"
+                checked={formData.is_recurring}
+                onChange={(event) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    is_recurring: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4"
+              />
+              {t("addGroupExpenseDialog.recurringToggle", { defaultValue: "Make this expense recurring" })}
+            </label>
+
+            {formData.is_recurring ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="group-recurring-frequency">
+                    {t("addGroupExpenseDialog.recurringFrequency", { defaultValue: "Frequency" })}
+                  </Label>
+                  <Select
+                    value={formData.recurrence_frequency}
+                    onValueChange={(value) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_frequency: value as RecurrenceFrequency,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="group-recurring-frequency" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">{t("addGroupExpenseDialog.recurringDaily", { defaultValue: "Daily" })}</SelectItem>
+                      <SelectItem value="weekly">{t("addGroupExpenseDialog.recurringWeekly", { defaultValue: "Weekly" })}</SelectItem>
+                      <SelectItem value="monthly">{t("addGroupExpenseDialog.recurringMonthly", { defaultValue: "Monthly" })}</SelectItem>
+                      <SelectItem value="quarterly">{t("addGroupExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" })}</SelectItem>
+                      <SelectItem value="yearly">{t("addGroupExpenseDialog.recurringYearly", { defaultValue: "Yearly" })}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="group-recurring-interval">
+                    {t("addGroupExpenseDialog.recurringInterval", { defaultValue: "Every N periods" })}
+                  </Label>
+                  <Input
+                    id="group-recurring-interval"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.recurrence_interval}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_interval: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="group-recurring-end-date">
+                    {t("addGroupExpenseDialog.recurringEndsOn", { defaultValue: "End date (optional)" })}
+                  </Label>
+                  <Input
+                    id="group-recurring-end-date"
+                    type="date"
+                    value={formData.recurrence_ends_on}
+                    onChange={(event) =>
+                      setFormData((previous) => ({
+                        ...previous,
+                        recurrence_ends_on: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-2 rounded-md border border-border p-3">

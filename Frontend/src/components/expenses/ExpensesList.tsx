@@ -132,6 +132,14 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         <span>{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
                         <span className="text-muted-foreground/50">•</span>
                         <span className="truncate">{categoryGroupLabel}</span>
+                        {expense.recurring_expense_id ? (
+                          <>
+                            <span className="text-muted-foreground/50">•</span>
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              {t("expensesList.recurring", { defaultValue: "Recurring" })}
+                            </span>
+                          </>
+                        ) : null}
                         <>
                           <span className="hidden text-muted-foreground/50 sm:inline">/</span>
                           <span className="hidden truncate sm:inline">{categoryName}</span>

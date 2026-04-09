@@ -16,6 +16,7 @@ import AddGroupExpenseDialog from "@/components/groups/AddGroupExpenseDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { groupsApi } from "@/api/groupsApi";
 import { expensesGroupApi } from "@/api/expensesGroupApi";
+import { recurringExpensesApi } from "@/api/recurringExpensesApi";
 import { categoriesApi } from "@/api/categoriesApi";
 import { contactsApi } from "@/api/contactsApi";
 import { invitationsApi } from "@/api/invitationsApi";
@@ -33,6 +34,7 @@ import type {
   ApiGroupExpenseResponse,
   ApiGroupInvitationCreate,
   ApiGroupMemberResponse,
+  ApiRecurringGroupExpenseCreate,
   ApiGroupResponse,
   ApiInvitationResponse,
   ApiCategoryResponse,
@@ -359,6 +361,45 @@ export default function GroupDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      setCreateExpenseError(null);
+      setShowAddExpenseDialog(false);
+    },
+    onError: (mutationError) => {
+      setCreateExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.createFailed"));
+    },
+  });
+
+  const createRecurringExpenseMutation = useMutation<void, Error, ApiGroupExpenseCreate>({
+    mutationFn: async (expenseData) => {
+      const startsOn = expenseData.expense_date.slice(0, 10);
+      const recurringPayload: ApiRecurringGroupExpenseCreate = {
+        title: expenseData.title,
+        amount: expenseData.amount,
+        currency: expenseData.currency,
+        category_id: expenseData.category_id,
+        split_type: expenseData.split_type,
+        participants: expenseData.shares.map((share) => ({
+          user_id: share.user_id,
+          share_amount: share.share_amount,
+        })),
+        frequency: expenseData.recurrence_frequency ?? "monthly",
+        interval_count: expenseData.recurrence_interval ?? 1,
+        starts_on: startsOn,
+        ends_on: expenseData.recurrence_ends_on ?? undefined,
+        notes: expenseData.notes ?? undefined,
+      };
+
+      const recurringExpense = await recurringExpensesApi.createGroup(groupId, recurringPayload);
+      await recurringExpensesApi.generateNow(recurringExpense.id, { up_to_date: startsOn });
+    },
+    onMutate: () => {
+      setCreateExpenseError(null);
+      setDeleteExpenseError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
       setCreateExpenseError(null);
       setShowAddExpenseDialog(false);
     },
@@ -1019,10 +1060,17 @@ export default function GroupDetailPage() {
       <AddGroupExpenseDialog
         open={showAddExpenseDialog}
         onOpenChange={handleAddExpenseDialogOpenChange}
-        onSubmit={(data) => createExpenseMutation.mutate(data)}
+        onSubmit={(data) => {
+          if (data.is_recurring) {
+            createRecurringExpenseMutation.mutate(data);
+            return;
+          }
+
+          createExpenseMutation.mutate(data);
+        }}
         onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
         onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
-        isLoading={createExpenseMutation.isPending}
+        isLoading={createExpenseMutation.isPending || createRecurringExpenseMutation.isPending}
         categories={categories}
         members={members}
         groupCurrency={group.currency}

@@ -6,6 +6,7 @@ export * from "./contactsApi";
 export * from "./expensesGroupApi";
 export * from "./expensesPersonalApi";
 export * from "./expensesSummaryApi";
+export * from "./recurringExpensesApi";
 export * from "./invitationsApi";
 export * from "./notificationsApi";
 export * from "./settlementsApi";
