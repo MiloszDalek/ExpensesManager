@@ -27,7 +27,5 @@ class User(Base):
     contacts = relationship("Contact", foreign_keys="Contact.user_id", back_populates="user")
     contact_of = relationship("Contact", foreign_keys="Contact.contact_id", back_populates="contact")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
-    
-    bank_tokens = relationship("BankToken", back_populates="user")
 
     personal_categories = relationship("Category", back_populates="user")
