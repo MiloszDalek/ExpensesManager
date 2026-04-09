@@ -1,25 +1,38 @@
 from app.database import engine, Base
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 
 def reset_database():
     with engine.begin() as conn:
-        Base.metadata.drop_all(bind=engine)
+        inspector = inspect(conn)
+        schema_name = inspector.default_schema_name or "public"
+        quote = conn.dialect.identifier_preparer.quote
 
-        conn.execute(text("DROP TYPE IF EXISTS invitation_type CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS invitation_status CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS system_user_roles CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS currency_enum CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS group_member_role CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS group_member_status CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS group_status CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS notification_type CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS notification_severity CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS split_type CASCADE"))
-        conn.execute(text("DROP TYPE IF EXISTS payment_method CASCADE")) 
-        conn.execute(text("DROP TYPE IF EXISTS settlement_status CASCADE")) 
-        conn.execute(text("DROP TYPE IF EXISTS category_section CASCADE")) 
-        conn.execute(text("DROP TYPE IF EXISTS recurring_expense_status CASCADE")) 
-        conn.execute(text("DROP TYPE IF EXISTS recurrence_frequency CASCADE")) 
+        # Drop every table in the target schema, including stale tables that are no longer in ORM metadata.
+        for table_name in inspector.get_table_names(schema=schema_name):
+            conn.execute(
+                text(
+                    f"DROP TABLE IF EXISTS {quote(schema_name)}.{quote(table_name)} CASCADE"
+                )
+            )
 
-        Base.metadata.create_all(bind=engine)
+        enum_rows = conn.execute(
+            text(
+                """
+                SELECT t.typname
+                FROM pg_type t
+                JOIN pg_namespace n ON n.oid = t.typnamespace
+                WHERE t.typtype = 'e' AND n.nspname = :schema_name
+                """
+            ),
+            {"schema_name": schema_name},
+        ).all()
+
+        for enum_row in enum_rows:
+            conn.execute(
+                text(
+                    f"DROP TYPE IF EXISTS {quote(schema_name)}.{quote(enum_row.typname)} CASCADE"
+                )
+            )
+
+        Base.metadata.create_all(bind=conn)
