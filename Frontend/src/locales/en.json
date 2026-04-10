@@ -84,8 +84,6 @@
     "somethingWentWrong": "Something went wrong"
   },
   "globalHeader": {
-    "appName": "Expenses Manager",
-    "appTagline": "Personal and group spending",
     "navDashboard": "Dashboard",
     "navSummaries": "Summaries",
     "navGroups": "Groups",

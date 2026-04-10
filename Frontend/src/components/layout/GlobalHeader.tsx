@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, Globe, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCcw, Shield, Users, Wallet, X } from "lucide-react";
+import { BarChart3, Globe, LayoutDashboard, LogOut, Menu, ReceiptText, RefreshCcw, Shield, Users, X } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import logoText from "@/assets/logo_text.webp";
 
 type NavItem = {
   to: string;
@@ -63,14 +64,12 @@ export default function GlobalHeader() {
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 md:px-8">
-          <Link to={homePath} className="flex min-w-0 items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-sm">
-              <Wallet className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{t("globalHeader.appName")}</p>
-              <p className="truncate text-xs text-muted-foreground">{t("globalHeader.appTagline")}</p>
-            </div>
+          <Link to={homePath} className="flex items-center">
+            <img
+              src={logoText}
+              alt={t("globalHeader.appName")}
+              className="h-9 w-auto shrink-0 object-contain"
+            />
           </Link>
 
           {user ? (

@@ -7,8 +7,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import logoPicture from "@/assets/logo_picture.webp";
 
 const queryClient = new QueryClient();
+
+const faviconLink = document.querySelector("link[rel='icon']") ?? document.createElement("link");
+faviconLink.setAttribute("rel", "icon");
+faviconLink.setAttribute("type", "image/webp");
+faviconLink.setAttribute("href", logoPicture);
+if (!faviconLink.parentElement) {
+  document.head.appendChild(faviconLink);
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
