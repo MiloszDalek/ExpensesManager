@@ -20,7 +20,7 @@ export default function ThemeToggle() {
     <Select value={theme} onValueChange={(value) => setTheme(value as Theme)}>
       <SelectTrigger
         size="sm"
-        className="min-w-[9rem] text-muted-foreground hover:text-foreground"
+        className="px-2 text-muted-foreground hover:text-foreground"
         aria-label={t("globalHeader.theme")}
         title={t("globalHeader.theme")}
       >

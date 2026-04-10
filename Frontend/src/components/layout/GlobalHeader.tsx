@@ -1,13 +1,15 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, Globe, LayoutDashboard, LogOut, Menu, PiggyBank, ReceiptText, RefreshCcw, Shield, Users, X } from "lucide-react";
-import { useEffect, useState, type ComponentType } from "react";
+import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, PiggyBank, ReceiptText, RefreshCcw, Shield, Users, X } from "lucide-react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
-import logoText from "@/assets/logo_text.webp";
+import logoTextDark from "@/assets/logo_text_dark.webp";
+import logoTextLight from "@/assets/logo_text_light.webp";
 
 type NavItem = {
   to: string;
@@ -18,11 +20,15 @@ type NavItem = {
 export default function GlobalHeader() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const { resolvedTheme } = useTheme();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -46,13 +52,40 @@ export default function GlobalHeader() {
     };
   }, [isMobileMenuOpen]);
 
+  useEffect(() => {
+    if (!isUserMenuOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
+
+
   const navItems: NavItem[] = [
     { to: "/dashboard", label: t("globalHeader.navDashboard"), icon: LayoutDashboard },
-    { to: "/summaries", label: t("globalHeader.navSummaries"), icon: BarChart3 },
     { to: "/budgets", label: t("globalHeader.navBudgets", { defaultValue: "Budgets" }), icon: PiggyBank },
     { to: "/groups", label: t("globalHeader.navGroups"), icon: Users },
     { to: "/personal", label: t("globalHeader.navPersonal"), icon: ReceiptText },
     { to: "/recurring", label: t("globalHeader.navRecurring", { defaultValue: "Recurring" }), icon: RefreshCcw },
+    { to: "/summaries", label: t("globalHeader.navSummaries"), icon: BarChart3 },
   ];
 
   if (user?.role === "admin") {
@@ -60,89 +93,129 @@ export default function GlobalHeader() {
   }
 
   const homePath = user ? "/dashboard" : "/home";
+  const logoText = resolvedTheme === "dark" ? logoTextDark : logoTextLight;
 
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 md:px-8">
-          <Link to={homePath} className="flex items-center">
-            <img
-              src={logoText}
-              alt={t("globalHeader.appName")}
-              className="h-9 w-auto shrink-0 object-contain"
-            />
-          </Link>
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+          <div className="flex h-11 items-center justify-between gap-2 border-b border-border/70 sm:h-15">
+            <Link to={homePath} className="flex items-center">
+              <img
+                src={logoText}
+                alt="TallyUp"
+                className="h-9 w-auto shrink-0 object-contain sm:h-10 md:h-14.5"
+              />
+            </Link>
+
+            <div className="flex items-center gap-2">
+              {user ? (
+                <div className="hidden lg:flex">
+                  <ThemeToggle />
+                </div>
+              ) : null}
+
+              <LanguageSwitcher
+                compact
+                showLabel={false}
+                size="sm"
+                className={user ? "hidden lg:flex" : "flex"}
+              />
+
+              {user ? (
+                <>
+                  <div className="relative hidden lg:block" ref={userMenuRef}>
+                    <button
+                      type="button"
+                      className="flex max-w-44 items-center gap-1 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                      onClick={() => setIsUserMenuOpen((previous) => !previous)}
+                      aria-haspopup="menu"
+                      aria-expanded={isUserMenuOpen}
+                      aria-label={t("globalHeader.loggedAs", { username: user.username })}
+                    >
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate">{user.username}</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", isUserMenuOpen ? "rotate-180" : "rotate-0")} />
+                    </button>
+
+                    {isUserMenuOpen ? (
+                      <div
+                        className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-56 rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full cursor-not-allowed items-center rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground/70"
+                          disabled
+                        >
+                          {t("globalHeader.userMenuSettings", { defaultValue: "Settings (soon)" })}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full cursor-not-allowed items-center rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground/70"
+                          disabled
+                        >
+                          {t("globalHeader.userMenuProfile", { defaultValue: "User info (soon)" })}
+                        </button>
+                        <div className="my-1 h-px bg-border" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            logout();
+                          }}
+                          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-destructive transition hover:bg-destructive/10"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>{t("globalHeader.logout")}</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    onClick={() => setIsMobileMenuOpen((previous) => !previous)}
+                    aria-label={
+                      isMobileMenuOpen
+                        ? t("globalHeader.closeMenu")
+                        : t("globalHeader.openMenu")
+                    }
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls="mobile-header-menu"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
 
           {user ? (
-            <nav className="hidden items-center gap-1 lg:flex">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    cn(
-                      "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
-                      isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )
-                  }
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
+            <div className="hidden h-10 items-center justify-center lg:flex">
+              <nav className="flex items-center gap-1">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
+                        isActive
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      )
+                    }
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
           ) : null}
-
-          <div className="flex items-center gap-2">
-            {user ? (
-              <div className="hidden lg:flex">
-                <ThemeToggle />
-              </div>
-            ) : null}
-
-            <LanguageSwitcher
-              compact
-              showLabel={false}
-              className={user ? "hidden lg:flex" : "flex"}
-            />
-
-            {user ? (
-              <>
-                <div className="hidden max-w-40 items-center gap-1 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground lg:flex">
-                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="truncate">{user.username}</span>
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={logout}
-                  className="hidden border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive lg:inline-flex"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>{t("globalHeader.logout")}</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="lg:hidden"
-                  onClick={() => setIsMobileMenuOpen((previous) => !previous)}
-                  aria-label={
-                    isMobileMenuOpen
-                      ? t("globalHeader.closeMenu")
-                      : t("globalHeader.openMenu")
-                  }
-                  aria-expanded={isMobileMenuOpen}
-                  aria-controls="mobile-header-menu"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </>
-            ) : null}
-          </div>
         </div>
       </header>
 
@@ -177,7 +250,7 @@ export default function GlobalHeader() {
             aria-hidden={!isMobileMenuOpen}
           >
             <div className="h-full overflow-y-auto px-4 pb-4 pt-0">
-              <div className="sticky top-0 z-10 -mx-4 mb-3 flex justify-end border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+              <div className="sticky top-0 z-10 -mx-4 mb-3 flex h-13 items-center justify-end border-b border-border bg-background/95 px-4 backdrop-blur sm:h-16">
                 <Button
                   variant="ghost"
                   size="icon"
