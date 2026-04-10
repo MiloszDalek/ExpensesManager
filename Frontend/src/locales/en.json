@@ -86,6 +86,7 @@
   "globalHeader": {
     "navDashboard": "Dashboard",
     "navSummaries": "Summaries",
+    "navBudgets": "Budgets",
     "navGroups": "Groups",
     "navPersonal": "Personal",
     "navRecurring": "Recurring",
@@ -334,6 +335,100 @@
     "resume": "Resume",
     "archive": "Archive",
     "delete": "Delete"
+  },
+  "budgets": {
+    "title": "Budget Manager",
+    "subtitle": "Track income, monitor spending, and protect your monthly or weekly pools.",
+    "loading": "Loading...",
+    "empty": "No budgets yet. Create your first period above.",
+    "tabs": {
+      "periods": "Periods",
+      "income": "Income",
+      "pools": "Pools"
+    },
+    "form": {
+      "name": "Budget name",
+      "namePlaceholder": "April 2026",
+      "periodType": "Period",
+      "start": "Start",
+      "end": "End",
+      "currency": "Currency",
+      "incomeTarget": "Income target (optional)"
+    },
+    "period": {
+      "monthly": "Monthly",
+      "weekly": "Weekly"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "poolStatus": {
+      "onTrack": "On track",
+      "warning": "Warning",
+      "exceeded": "Exceeded"
+    },
+    "actions": {
+      "creating": "Creating...",
+      "createWithTemplate": "Create budget (50/30/20 template)",
+      "selected": "Selected",
+      "select": "Select",
+      "saving": "Saving...",
+      "addIncome": "Add income",
+      "addPool": "Add pool",
+      "delete": "Delete"
+    },
+    "income": {
+      "title": "Title",
+      "titlePlaceholder": "Salary",
+      "amount": "Amount",
+      "date": "Date",
+      "selectBudget": "Select budget to view period income.",
+      "empty": "No income entries yet."
+    },
+    "pools": {
+      "name": "Pool name",
+      "namePlaceholder": "Entertainment",
+      "category": "Category",
+      "selectCategory": "Select",
+      "type": "Type",
+      "fixed": "Fixed amount",
+      "percent": "% of income",
+      "target": "Target",
+      "alert": "Alert %"
+    },
+    "summary": {
+      "selectBudget": "Select budget to view summary.",
+      "empty": "No summary data.",
+      "income": "Income",
+      "spent": "Spent",
+      "saved": "Saved"
+    },
+    "errors": {
+      "generic": "Something went wrong.",
+      "noBudgetSelected": "Select budget first.",
+      "periodRangeInvalid": "Start date cannot be later than end date.",
+      "weeklyPeriodMustBeSevenDays": "Weekly budget must have exactly 7 days.",
+      "monthlyStartInvalid": "Monthly budget must start on the first day of month.",
+      "monthlyEndInvalid": "Monthly budget must end on the last day of month.",
+      "incomeTargetInvalid": "Income target must be greater than 0.",
+      "periodOverlap": "This period overlaps with an existing active budget.",
+      "poolRequired": "Budget must include at least one pool.",
+      "poolTargetInvalid": "Pool target value must be greater than 0.",
+      "poolAlertRangeInvalid": "Alert threshold must be between 0 and 100.",
+      "poolPercentRangeInvalid": "Percent pool value cannot exceed 100%.",
+      "poolPercentTotalInvalid": "Total of percent-based pools cannot exceed 100%.",
+      "poolFixedTotalTooHigh": "Total of fixed pools cannot exceed income target.",
+      "noCategoriesForTemplate": "No personal categories available to create 50/30/20 template.",
+      "budgetNotFound": "Budget not found.",
+      "poolNotFound": "Budget pool not found.",
+      "amountInvalid": "Amount must be greater than 0.",
+      "dateRangeInvalid": "Invalid date range.",
+      "incomeNotFound": "Income entry not found.",
+      "categoryNotFound": "Category not found.",
+      "categoryNotPersonal": "Selected category is not personal.",
+      "notAuthorized": "You are not authorized to perform this action."
+    }
   },
   "summaryPage": {
     "title": "Detailed Summaries",

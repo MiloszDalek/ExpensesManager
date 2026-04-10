@@ -56,3 +56,17 @@ from .recurring_expense_schemas import (
     RecurringForecastResponse,
     RecurringGenerationSummaryResponse,
 )
+from .budget_schemas import (
+    IncomeEntryCreate,
+    IncomeEntryResponse,
+    IncomeSummaryCurrency,
+    IncomeSummaryResponse,
+    BudgetPoolCreate,
+    BudgetPoolUpdate,
+    BudgetPoolResponse,
+    BudgetPlanCreate,
+    BudgetPlanUpdate,
+    BudgetPlanResponse,
+    BudgetPoolSummaryResponse,
+    BudgetSummaryResponse,
+)

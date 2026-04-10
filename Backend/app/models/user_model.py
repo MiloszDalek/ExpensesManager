@@ -29,3 +29,5 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
     personal_categories = relationship("Category", back_populates="user")
+    income_entries = relationship("IncomeEntry", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    budget_plans = relationship("BudgetPlan", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)

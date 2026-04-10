@@ -17,6 +17,7 @@ class Category(Base):
 
     expenses = relationship("Expense", back_populates="category")
     recurring_expenses = relationship("RecurringExpense", back_populates="category")
+    budget_pools = relationship("BudgetPool", back_populates="category")
 
     user = relationship("User", back_populates="personal_categories")
     group = relationship("Group", back_populates="group_categories")

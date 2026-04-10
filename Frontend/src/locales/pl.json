@@ -76,6 +76,7 @@
   "globalHeader": {
     "navDashboard": "Pulpit",
     "navSummaries": "Podsumowania",
+    "navBudgets": "Budżety",
     "navGroups": "Grupy",
     "navPersonal": "Osobiste",
     "navRecurring": "Cykliczne",
@@ -324,6 +325,100 @@
     "resume": "Wznów",
     "archive": "Archiwizuj",
     "delete": "Usuń"
+  },
+  "budgets": {
+    "title": "Menedżer budżetu",
+    "subtitle": "Śledź przychody, kontroluj wydatki i pilnuj pul tygodniowych oraz miesięcznych.",
+    "loading": "Ładowanie...",
+    "empty": "Brak budżetów. Utwórz pierwszy okres powyżej.",
+    "tabs": {
+      "periods": "Okresy",
+      "income": "Przychody",
+      "pools": "Pule"
+    },
+    "form": {
+      "name": "Nazwa budżetu",
+      "namePlaceholder": "Kwiecień 2026",
+      "periodType": "Okres",
+      "start": "Początek",
+      "end": "Koniec",
+      "currency": "Waluta",
+      "incomeTarget": "Cel przychodu (opcjonalnie)"
+    },
+    "period": {
+      "monthly": "Miesięczny",
+      "weekly": "Tygodniowy"
+    },
+    "status": {
+      "active": "Aktywny",
+      "archived": "Zarchiwizowany"
+    },
+    "poolStatus": {
+      "onTrack": "W normie",
+      "warning": "Ostrzeżenie",
+      "exceeded": "Przekroczono"
+    },
+    "actions": {
+      "creating": "Tworzenie...",
+      "createWithTemplate": "Utwórz budżet (szablon 50/30/20)",
+      "selected": "Wybrany",
+      "select": "Wybierz",
+      "saving": "Zapisywanie...",
+      "addIncome": "Dodaj przychód",
+      "addPool": "Dodaj pulę",
+      "delete": "Usuń"
+    },
+    "income": {
+      "title": "Tytuł",
+      "titlePlaceholder": "Wynagrodzenie",
+      "amount": "Kwota",
+      "date": "Data",
+      "selectBudget": "Wybierz budżet, aby zobaczyć przychody w okresie.",
+      "empty": "Brak wpisów przychodów."
+    },
+    "pools": {
+      "name": "Nazwa puli",
+      "namePlaceholder": "Rozrywka",
+      "category": "Kategoria",
+      "selectCategory": "Wybierz",
+      "type": "Typ",
+      "fixed": "Kwota stała",
+      "percent": "% przychodu",
+      "target": "Cel",
+      "alert": "Alert %"
+    },
+    "summary": {
+      "selectBudget": "Wybierz budżet, aby zobaczyć podsumowanie.",
+      "empty": "Brak danych podsumowania.",
+      "income": "Przychód",
+      "spent": "Wydane",
+      "saved": "Zaoszczędzone"
+    },
+    "errors": {
+      "generic": "Coś poszło nie tak.",
+      "noBudgetSelected": "Najpierw wybierz budżet.",
+      "periodRangeInvalid": "Data początku nie może być późniejsza niż data końca.",
+      "weeklyPeriodMustBeSevenDays": "Budżet tygodniowy musi obejmować dokładnie 7 dni.",
+      "monthlyStartInvalid": "Budżet miesięczny musi zaczynać się pierwszego dnia miesiąca.",
+      "monthlyEndInvalid": "Budżet miesięczny musi kończyć się ostatniego dnia miesiąca.",
+      "incomeTargetInvalid": "Cel przychodu musi być większy od 0.",
+      "periodOverlap": "Ten okres nachodzi na już aktywny budżet.",
+      "poolRequired": "Budżet musi zawierać co najmniej jedną pulę.",
+      "poolTargetInvalid": "Wartość docelowa puli musi być większa od 0.",
+      "poolAlertRangeInvalid": "Próg alertu musi mieścić się w zakresie od 0 do 100.",
+      "poolPercentRangeInvalid": "Wartość procentowa puli nie może przekraczać 100%.",
+      "poolPercentTotalInvalid": "Suma pul procentowych nie może przekraczać 100%.",
+      "poolFixedTotalTooHigh": "Suma pul kwotowych nie może przekraczać celu przychodu.",
+      "noCategoriesForTemplate": "Brak kategorii osobistych do utworzenia szablonu 50/30/20.",
+      "budgetNotFound": "Nie znaleziono budżetu.",
+      "poolNotFound": "Nie znaleziono puli budżetowej.",
+      "amountInvalid": "Kwota musi być większa od 0.",
+      "dateRangeInvalid": "Nieprawidłowy zakres dat.",
+      "incomeNotFound": "Nie znaleziono wpisu przychodu.",
+      "categoryNotFound": "Nie znaleziono kategorii.",
+      "categoryNotPersonal": "Wybrana kategoria nie jest kategorią osobistą.",
+      "notAuthorized": "Nie masz uprawnień do tej operacji."
+    }
   },
   "summaryPage": {
     "title": "Szczegółowe Podsumowania",

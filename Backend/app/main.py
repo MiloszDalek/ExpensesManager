@@ -18,6 +18,8 @@ from app.routers import (
         settlement_router,
         receipt_router,
         recurring_expense_router,
+        income_router,
+        budget_router,
     )
 from app.services import AuthService, RecurringExpensesScheduler
 from app.utils import seed_default_categories, reset_database
@@ -62,6 +64,8 @@ app.include_router(balance_router, prefix='/api')
 app.include_router(settlement_router, prefix='/api')
 app.include_router(receipt_router, prefix='/api')
 app.include_router(recurring_expense_router, prefix='/api')
+app.include_router(income_router, prefix='/api')
+app.include_router(budget_router, prefix='/api')
 
 
 @app.on_event("startup")

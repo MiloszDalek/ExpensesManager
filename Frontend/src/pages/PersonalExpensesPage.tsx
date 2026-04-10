@@ -240,6 +240,7 @@ export default function PersonalExpensesPage() {
     mutationFn: (expenseData) => expensesPersonalApi.create(expenseData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all });
       setShowAddDialog(false);
     },
     onError: (error) => {
@@ -272,6 +273,7 @@ export default function PersonalExpensesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
       setShowAddDialog(false);
     },
@@ -285,6 +287,7 @@ export default function PersonalExpensesPage() {
     mutationFn: (expenseId) => expensesPersonalApi.delete(expenseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all });
     },
     onError: (error) => {
       console.error('Failed to delete expense:', error);
@@ -301,6 +304,7 @@ export default function PersonalExpensesPage() {
     mutationFn: ({ expenseId, payload }) => expensesPersonalApi.update(expenseId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.personalExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all });
       setEditingExpense(null);
     },
     onError: (error) => {

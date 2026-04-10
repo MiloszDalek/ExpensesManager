@@ -1,4 +1,5 @@
 import type {
+  ApiIncomeListParams,
   ApiExpenseSummaryDrilldownParams,
   ApiExpenseSummaryOverviewParams,
   ApiExpenseSummaryTrendsParams,
@@ -6,6 +7,7 @@ import type {
   RecurringScope,
 } from "@/types";
 import type { RecurringExpenseStatus } from "@/types/enums";
+import type { BudgetStatus } from "@/types/enums";
 
 export const queryKeys = {
   groups: {
@@ -42,6 +44,20 @@ export const queryKeys = {
       scope?: RecurringScope;
       group_id?: number;
     }) => ["expenses", "recurring", "forecast", params ?? {}] as const,
+  },
+
+  budgets: {
+    all: ["budgets"] as const,
+    list: (status?: BudgetStatus) => ["budgets", "list", status ?? "all"] as const,
+    byId: (budgetId: number) => ["budgets", "byId", budgetId] as const,
+    summary: (budgetId: number) => ["budgets", "summary", budgetId] as const,
+  },
+
+  budgetIncome: {
+    all: ["income"] as const,
+    list: (params?: ApiIncomeListParams) => ["income", "list", params ?? {}] as const,
+    summary: (params?: { date_from?: string; date_to?: string }) =>
+      ["income", "summary", params ?? {}] as const,
   },
 
   summaries: {

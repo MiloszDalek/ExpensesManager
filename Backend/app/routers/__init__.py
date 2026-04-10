@@ -13,3 +13,5 @@ from .balance_router import balance_router
 from .settlement_router import settlement_router
 from .receipt_router import receipt_router
 from .recurring_expense_router import recurring_expense_router
+from .income_router import income_router
+from .budget_router import budget_router

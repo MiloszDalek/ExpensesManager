@@ -10,3 +10,6 @@ from .contact_model import Contact
 from .notification_model import Notification
 from .category_model import Category
 from .invitation_model import Invitation
+from .income_entry_model import IncomeEntry
+from .budget_plan_model import BudgetPlan
+from .budget_pool_model import BudgetPool

@@ -40,6 +40,9 @@ export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgi
 export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";
 export type RecurrenceFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 export type RecurringExpenseStatus = "active" | "paused" | "ended" | "archived";
+export type BudgetPeriodType = "weekly" | "monthly";
+export type BudgetPoolType = "fixed_amount" | "percent_income";
+export type BudgetStatus = "active" | "archived";
 
 export type CategorySection =
 	| "food"
