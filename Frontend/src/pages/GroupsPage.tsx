@@ -95,22 +95,22 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-screen p-4 pb-24 md:p-8 md:pb-8">
+      <div className="mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+          className="mb-8 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:items-center md:text-left"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("groupsPage.title")}</h1>
+            <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("groupsPage.title")}</h1>
             <p className="text-muted-foreground mt-2">
               {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>
             </p>
           </div>
           <Button
             onClick={() => setShowCreateDialog(true)}
-            className="shadow-lg"
+            className="hidden shadow-lg md:inline-flex"
           >
             <Plus className="w-4 h-4 mr-2" />
             {t("groupsPage.createGroup")}
@@ -159,6 +159,7 @@ export default function GroupsPage() {
             <h2 className="text-2xl font-bold text-foreground mb-3">{t("groupsPage.emptyTitle")}</h2>
             <p className="text-muted-foreground mb-6">{t("groupsPage.emptyDescription")}</p>
             <Button
+              className="hidden md:inline-flex"
               onClick={() => setShowCreateDialog(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -191,6 +192,15 @@ export default function GroupsPage() {
           </div>
         )}
       </div>
+
+      <Button
+        onClick={() => setShowCreateDialog(true)}
+        size="icon"
+        aria-label={t("groupsPage.createGroup")}
+        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-xl md:hidden"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
 
       <CreateGroupDialog
         open={showCreateDialog}

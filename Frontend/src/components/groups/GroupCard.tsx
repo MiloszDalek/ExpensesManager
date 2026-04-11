@@ -29,8 +29,8 @@ export default function GroupCard({ group, index }: GroupCardProps) {
       transition={{ delay: index * 0.05 }}
     >
       <Card className="group h-full w-full min-w-0 overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-        <CardContent className="flex min-h-[270px] min-w-0 flex-col overflow-hidden p-6">
-          <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+        <CardContent className="flex min-h-[230px] md:min-h-[270px] min-w-0 flex-col overflow-hidden md:p-5">
+          <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h3 className="overflow-hidden break-all text-lg font-semibold leading-tight text-foreground">
                 {formatGroupName(group.name)}
@@ -45,33 +45,33 @@ export default function GroupCard({ group, index }: GroupCardProps) {
             </Badge>
           </div>
 
-          <p className="mb-4 h-10 w-full min-w-0 max-w-full overflow-hidden whitespace-normal break-words text-sm text-muted-foreground [overflow-wrap:anywhere] [word-break:break-word]">
+          <p className="md:mb-3 mb-0 h-10 w-full min-w-0 max-w-full overflow-hidden whitespace-normal text-sm text-muted-foreground [overflow-wrap:anywhere] [word-break:break-word]">
             {group.description || t("groupsPage.noDescription")}
           </p>
 
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            <div className="rounded-md border border-border/70 bg-muted/35 px-3 py-2">
+          <div className="mb-3 grid grid-cols-2 gap-1.5">
+            <div className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 {t("groupsPage.members")}
               </p>
-              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-foreground">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 {group.members_count ?? 0}
               </p>
             </div>
 
-            <div className="rounded-md border border-border/70 bg-muted/35 px-3 py-2">
+            <div className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 {t("groupsPage.expenses")}
               </p>
-              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-foreground">
                 <ReceiptText className="h-4 w-4 text-muted-foreground" />
                 {group.expenses_count ?? 0}
               </p>
             </div>
           </div>
 
-          <p className="mb-4 text-xs text-muted-foreground">
+          <p className="mb-3 text-xs text-muted-foreground">
             {t("groupsPage.createdAt")}: {format(new Date(group.created_at), "MMM d, yyyy")}
           </p>
 

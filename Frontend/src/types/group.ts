@@ -24,7 +24,7 @@ export const groupColors = {
 //   color?: GroupColorKey;
 // }
 
-import type { ISODateTimeString } from "./common";
+import type { DecimalLike, ISODateTimeString } from "./common";
 import type { GroupStatus, GroupMemberRole, GroupMemberStatus, CurrencyEnum } from "./enums";
 
 export interface ApiGroupCreate {
@@ -50,6 +50,7 @@ export interface ApiGroupResponse {
   created_at: ISODateTimeString;
   members_count?: number;
   expenses_count?: number;
+  total_amount?: DecimalLike;
 }
 
 export interface ApiGroupMemberResponse {

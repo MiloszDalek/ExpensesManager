@@ -640,6 +640,7 @@
     "invalidGroupDescription": "Podany adres grupy jest nieprawidłowy.",
     "noDescription": "Brak opisu",
     "currencyLabel": "Waluta",
+    "editGroup": "Edytuj grupę",
     "summaryMembers": "Członkowie",
     "summaryExpenses": "Wydatki",
     "summaryTotal": "Suma",
@@ -698,6 +699,25 @@
     "cancelling": "Anulowanie...",
     "loadMore": "Załaduj więcej",
     "loadingMore": "Ładowanie..."
+  },
+  "groupEditDialog": {
+    "title": "Edytuj grupę",
+    "name": "Nazwa grupy",
+    "description": "Opis (opcjonalnie)",
+    "currency": "Waluta",
+    "save": "Zapisz zmiany",
+    "archive": "Zarchiwizuj grupę",
+    "archiving": "Archiwizowanie...",
+    "archiveConfirm": "Zarchiwizuj teraz",
+    "archiveCancel": "Zostaw grupę",
+    "archiveWarningTitle": "Zarchiwizować tę grupę?",
+    "archiveWarningDescription": "Zarchiwizowane grupy pozostają w systemie, ale nie są traktowane jako aktywne. Upewnij się, że chcesz zarchiwizować tę grupę.",
+    "currencyLockedNotice": "Waluty nie można zmienić po dodaniu pierwszego wydatku do tej grupy.",
+    "errors": {
+      "updateFailed": "Nie udało się zaktualizować grupy.",
+      "currencyLocked": "Nie można zmienić waluty, ponieważ ta grupa ma już wydatki.",
+      "notAuthorized": "Nie masz uprawnień do edycji tej grupy."
+    }
   },
   "groupMembersPanel": {
     "title": "Członkowie",

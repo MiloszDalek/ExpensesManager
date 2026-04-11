@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
@@ -28,6 +29,7 @@ class GroupResponse(GroupBase):
     created_at: datetime
     members_count: int = 0
     expenses_count: int = 0
+    total_amount: Decimal = Decimal("0")
     
     model_config = ConfigDict(from_attributes=True)
 

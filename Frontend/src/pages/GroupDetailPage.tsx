@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -13,6 +13,7 @@ import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
 import AddGroupMemberDialog from "@/components/groups/AddGroupMemberDialog";
 import AddGroupExpenseDialog from "@/components/groups/AddGroupExpenseDialog";
+import EditGroupDialog from "@/components/groups/EditGroupDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { groupsApi } from "@/api/groupsApi";
 import { expensesGroupApi } from "@/api/expensesGroupApi";
@@ -36,6 +37,7 @@ import type {
   ApiGroupMemberResponse,
   ApiRecurringGroupExpenseCreate,
   ApiGroupResponse,
+  ApiGroupUpdate,
   ApiInvitationResponse,
   ApiCategoryResponse,
   ApiSettlementResponse,
@@ -54,10 +56,12 @@ export default function GroupDetailPage() {
   const { id } = useParams();
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [showEditGroupDialog, setShowEditGroupDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
   const [inviteMemberError, setInviteMemberError] = useState<string | null>(null);
   const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
   const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
+  const [editGroupError, setEditGroupError] = useState<string | null>(null);
   const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
   const [groupSettlementFeedback, setGroupSettlementFeedback] = useState<{
     tone: "success" | "error";
@@ -225,6 +229,22 @@ export default function GroupDetailPage() {
     },
   });
 
+  const updateGroupMutation = useMutation<ApiGroupResponse, Error, ApiGroupUpdate>({
+    mutationFn: (payload) => groupsApi.update(groupId, payload),
+    onMutate: () => {
+      setEditGroupError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
+      setEditGroupError(null);
+      setShowEditGroupDialog(false);
+    },
+    onError: (mutationError) => {
+      setEditGroupError(mapGroupUpdateError(mutationError.message));
+    },
+  });
+
   const mapGroupExpenseError = (message: string | undefined, fallbackKey: string) => {
     return message === "Participant not found in group"
       ? t("addGroupExpenseDialog.errors.participantNotFoundInGroup")
@@ -286,6 +306,22 @@ export default function GroupDetailPage() {
                 ? t("dashboardInbox.errors.notAuthorized")
                 : message || t("common.somethingWentWrong");
     }
+
+  function mapGroupUpdateError(message: string | undefined) {
+    return message === "You already have an active group with this name"
+      ? t("createGroupDialog.errors.activeGroupNameTaken")
+      : message === "Group name cannot be empty"
+        ? t("createGroupDialog.errors.emptyName")
+        : message === "Group name is too long"
+          ? t("createGroupDialog.errors.nameTooLong")
+          : message === "Group description is too long"
+            ? t("createGroupDialog.errors.descriptionTooLong")
+            : message === "Cannot change group currency when group has expenses"
+              ? t("groupEditDialog.errors.currencyLocked")
+              : message === "Not authorized"
+                ? t("groupEditDialog.errors.notAuthorized")
+                : message || t("groupEditDialog.errors.updateFailed");
+  }
 
   const mapPayPalSettlementError = (message: string | undefined) => {
     return message === "PayPal integration not configured"
@@ -361,6 +397,7 @@ export default function GroupDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
       setCreateExpenseError(null);
       setShowAddExpenseDialog(false);
     },
@@ -399,6 +436,7 @@ export default function GroupDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
       await queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
       setCreateExpenseError(null);
       setShowAddExpenseDialog(false);
@@ -421,6 +459,7 @@ export default function GroupDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
       setEditExpenseError(null);
       setEditingExpense(null);
     },
@@ -437,6 +476,7 @@ export default function GroupDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
       setDeleteExpenseError(null);
     },
     onError: (mutationError) => {
@@ -526,20 +566,6 @@ export default function GroupDetailPage() {
 
     return Array.from(pendingUserIdSet);
   }, [pendingInvitations]);
-
-  const defaultCurrency = group?.currency ?? "PLN";
-
-  const totalByCurrencyLabel = useMemo(() => {
-    const totalsByCurrency = expenses.reduce<Record<string, number>>((accumulator, expense) => {
-      const currency = expense.currency ?? defaultCurrency;
-      accumulator[currency] = (accumulator[currency] ?? 0) + Number(expense.amount);
-      return accumulator;
-    }, {});
-
-    return Object.entries(totalsByCurrency)
-      .map(([currency, amount]) => `${amount.toFixed(2)} ${currency}`)
-      .join(" · ");
-  }, [expenses, defaultCurrency]);
 
   const userBalanceSummary = useMemo(() => {
     const balances = groupBalances?.balances ?? [];
@@ -662,23 +688,34 @@ export default function GroupDetailPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
         >
-          <Link to={createPageUrl("Groups")}> 
-            <Button variant="ghost" className="mb-3 -ml-2">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("groupDetailPage.backToGroups")}
-            </Button>
-          </Link>
+          <div className="min-w-0">
+            <Link to={createPageUrl("Groups")}>
+              <Button variant="ghost" className="-ml-2 mb-3">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.backToGroups")}
+              </Button>
+            </Link>
 
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{formatGroupName(group.name)}</h1>
-          <p className="mt-2 text-muted-foreground">
-            {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}
-          </p>
+            <h1 className="max-w-full break-all text-3xl font-bold text-foreground md:text-4xl">
+              {formatGroupName(group.name)}
+            </h1>
+            <p className="mt-2 max-w-3xl text-muted-foreground [overflow-wrap:anywhere]">
+              {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}
+            </p>
+          </div>
+
+          {isCurrentUserAdmin && (
+            <Button variant="outline" className="shrink-0" onClick={() => setShowEditGroupDialog(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              {t("groupDetailPage.editGroup")}
+            </Button>
+          )}
         </motion.div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -687,7 +724,7 @@ export default function GroupDetailPage() {
               <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryMembers")}</p>
               <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-foreground">
                 <Users className="h-5 w-5 text-primary" />
-                {members.length}
+                {group.members_count ?? members.length}
               </p>
             </CardContent>
           </Card>
@@ -697,7 +734,7 @@ export default function GroupDetailPage() {
               <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryExpenses")}</p>
               <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-foreground">
                 <Wallet className="h-5 w-5 text-primary" />
-                {expenses.length}
+                {group.expenses_count ?? expenses.length}
               </p>
             </CardContent>
           </Card>
@@ -707,7 +744,7 @@ export default function GroupDetailPage() {
               <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryTotal")}</p>
               <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground md:text-base">
                 <Coins className="h-5 w-5 text-primary" />
-                {totalByCurrencyLabel || "0.00"}
+                {Number(group.total_amount ?? 0).toFixed(2)} {group.currency}
               </p>
             </CardContent>
           </Card>
@@ -1044,6 +1081,22 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </div>
+
+      <EditGroupDialog
+        open={showEditGroupDialog}
+        group={group}
+        onOpenChange={(nextOpen) => {
+          setShowEditGroupDialog(nextOpen);
+          if (!nextOpen) {
+            setEditGroupError(null);
+          }
+        }}
+        onSubmit={(payload) => updateGroupMutation.mutate(payload)}
+        onArchive={() => updateGroupMutation.mutate({ status: "archived" })}
+        isLoading={updateGroupMutation.isPending}
+        isArchiving={updateGroupMutation.isPending}
+        errorMessage={editGroupError}
+      />
 
       <AddGroupMemberDialog
         open={showAddMemberDialog}

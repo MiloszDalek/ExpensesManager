@@ -650,6 +650,7 @@
     "invalidGroupDescription": "The provided group path is not valid.",
     "noDescription": "No description",
     "currencyLabel": "Currency",
+    "editGroup": "Edit group",
     "summaryMembers": "Members",
     "summaryExpenses": "Expenses",
     "summaryTotal": "Total",
@@ -708,6 +709,25 @@
     "cancelling": "Cancelling...",
     "loadMore": "Load More",
     "loadingMore": "Loading..."
+  },
+  "groupEditDialog": {
+    "title": "Edit group",
+    "name": "Group name",
+    "description": "Description (optional)",
+    "currency": "Currency",
+    "save": "Save changes",
+    "archive": "Archive group",
+    "archiving": "Archiving...",
+    "archiveConfirm": "Archive now",
+    "archiveCancel": "Keep group",
+    "archiveWarningTitle": "Archive this group?",
+    "archiveWarningDescription": "Archived groups stay in the system, but they are treated as no longer active. Make sure you want to archive this group.",
+    "currencyLockedNotice": "Currency cannot be changed after the first expense is added to this group.",
+    "errors": {
+      "updateFailed": "Could not update the group.",
+      "currencyLocked": "Currency cannot be changed because this group already has expenses.",
+      "notAuthorized": "You are not allowed to edit this group."
+    }
   },
   "groupMembersPanel": {
     "title": "Members",

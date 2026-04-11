@@ -22,9 +22,10 @@ class GroupService:
         if not self.group_repo.get_membership(group_id, user_id):
             raise HTTPException(status_code=403, detail="Not authorized")
 
-        members_count, expenses_count = self.group_repo.get_counts_for_group(group_id)
+        members_count, expenses_count, total_amount = self.group_repo.get_counts_for_group(group_id)
         group.members_count = members_count
         group.expenses_count = expenses_count
+        group.total_amount = total_amount
 
         return group
 
@@ -198,6 +199,8 @@ class GroupService:
             self.group_repo.save_all()
             self.group_repo.refresh(group)
             return group
-        except IntegrityError:
+        except IntegrityError as error:
             self.group_repo.db.rollback()
+            if "Cannot change group currency when group has expenses" in str(error.orig):
+                raise HTTPException(status_code=400, detail="Cannot change group currency when group has expenses")
             raise HTTPException(status_code=400, detail="You already have an active group with this name")

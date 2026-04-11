@@ -1,4 +1,6 @@
-from sqlalchemy import func, distinct
+from decimal import Decimal
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload, aliased
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
@@ -9,6 +11,36 @@ from app.enums import GroupMemberRole, GroupMemberStatus, GroupStatus
 class GroupRepository:
     def __init__(self, db: Session):
         self.db = db
+
+
+    def _group_members_count_subquery(self):
+        return (
+            select(func.count(GroupMember.id))
+            .where(
+                GroupMember.group_id == Group.id,
+                GroupMember.status == GroupMemberStatus.ACTIVE,
+            )
+            .correlate(Group)
+            .scalar_subquery()
+        )
+
+
+    def _group_expenses_count_subquery(self):
+        return (
+            select(func.count(Expense.id))
+            .where(Expense.group_id == Group.id)
+            .correlate(Group)
+            .scalar_subquery()
+        )
+
+
+    def _group_total_amount_subquery(self):
+        return (
+            select(func.coalesce(func.sum(Expense.amount), 0))
+            .where(Expense.group_id == Group.id)
+            .correlate(Group)
+            .scalar_subquery()
+        )
 
 
     def create_group_with_creator(self, group: Group, member: GroupMember):
@@ -27,33 +59,30 @@ class GroupRepository:
     
     def get_all_by_user_id(self, user_id: int) -> list[Group]:
         membership_filter = aliased(GroupMember)
-        members_for_count = aliased(GroupMember)
+        members_count = self._group_members_count_subquery()
+        expenses_count = self._group_expenses_count_subquery()
+        total_amount = self._group_total_amount_subquery()
 
         rows = (
             self.db.query(
                 Group,
-                func.count(distinct(members_for_count.user_id)).label("members_count"),
-                func.count(distinct(Expense.id)).label("expenses_count"),
+                members_count.label("members_count"),
+                expenses_count.label("expenses_count"),
+                total_amount.label("total_amount"),
             )
             .join(
                 membership_filter,
                 Group.id == membership_filter.group_id,
             )
-            .outerjoin(
-                members_for_count,
-                (Group.id == members_for_count.group_id)
-                & (members_for_count.status == GroupMemberStatus.ACTIVE),
-            )
-            .outerjoin(Expense, Expense.group_id == Group.id)
             .filter(membership_filter.user_id == user_id)
-            .group_by(Group.id)
             .all()
         )
 
         groups: list[Group] = []
-        for group, members_count, expenses_count in rows:
-            group.members_count = int(members_count or 0)
-            group.expenses_count = int(expenses_count or 0)
+        for group, members_count_value, expenses_count_value, total_amount_value in rows:
+            group.members_count = int(members_count_value or 0)
+            group.expenses_count = int(expenses_count_value or 0)
+            group.total_amount = total_amount_value if total_amount_value is not None else Decimal("0")
             groups.append(group)
 
         return groups
@@ -153,23 +182,30 @@ class GroupRepository:
         )
 
 
-    def get_counts_for_group(self, group_id: int) -> tuple[int, int]:
-        members_count, expenses_count = (
-            self.db.query(
-                func.count(distinct(GroupMember.user_id)).label("members_count"),
-                func.count(distinct(Expense.id)).label("expenses_count"),
-            )
-            .outerjoin(
-                Expense,
-                Expense.group_id == GroupMember.group_id,
-            )
+    def get_counts_for_group(self, group_id: int) -> tuple[int, int, Decimal]:
+        members_count = (
+            self.db.query(func.count(GroupMember.id))
             .filter(
                 GroupMember.group_id == group_id,
                 GroupMember.status == GroupMemberStatus.ACTIVE,
             )
-            .first()
-            or (0, 0)
+            .scalar()
+            or 0
         )
 
-        return int(members_count or 0), int(expenses_count or 0)
+        expenses_count = (
+            self.db.query(func.count(Expense.id))
+            .filter(Expense.group_id == group_id)
+            .scalar()
+            or 0
+        )
+
+        total_amount = (
+            self.db.query(func.coalesce(func.sum(Expense.amount), 0))
+            .filter(Expense.group_id == group_id)
+            .scalar()
+            or Decimal("0")
+        )
+
+        return int(members_count), int(expenses_count), Decimal(str(total_amount))
     
