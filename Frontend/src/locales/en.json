@@ -90,6 +90,7 @@
     "navGroups": "Groups",
     "navPersonal": "Personal",
     "navRecurring": "Recurring",
+    "navContacts": "Contacts",
     "navAdmin": "Admin",
     "theme": "Select Theme",
     "themeLight": "Light",
@@ -605,12 +606,19 @@
     "title": "Your Groups",
     "subtitle": "Manage shared expenses with your people",
     "total": "Total groups",
+    "searchPlaceholder": "Search groups by name or description...",
+    "searchAriaLabel": "Search groups",
     "createGroup": "Create Group",
     "createFirstGroup": "Create Your First Group",
     "emptyTitle": "No groups yet",
     "emptyDescription": "Create a group to start sharing expenses",
+    "noSearchResultsTitle": "No matching groups",
+    "noSearchResultsDescription": "Try a different phrase or clear the search.",
     "viewGroup": "View Group",
     "currencyLabel": "Currency",
+    "members": "Members",
+    "expenses": "Expenses",
+    "noDescription": "No description",
     "statusActive": "Active",
     "statusArchived": "Archived",
     "createdAt": "Created"
@@ -631,6 +639,8 @@
     "errors": {
       "activeGroupNameTaken": "You already have an active group with this name.",
       "emptyName": "Group name cannot be empty.",
+      "nameTooLong": "Group name is too long (max 120 characters).",
+      "descriptionTooLong": "Group description is too long (max 500 characters).",
       "createFailed": "Could not create group."
     }
   },

@@ -14,24 +14,24 @@ PROFILE_DEFAULTS: dict[str, SeederConfig] = {
         groups_count=15,
         personal_expenses_count=2000,
         group_expenses_count=1200,
-        personal_recurring_expenses_count=140,
-        group_recurring_expenses_count=90,
+        personal_recurring_expenses_count=30,
+        group_recurring_expenses_count=30,
     ),
     "medium": SeederConfig(
         users_count=80,
         groups_count=60,
         personal_expenses_count=12000,
         group_expenses_count=8000,
-        personal_recurring_expenses_count=800,
-        group_recurring_expenses_count=500,
+        personal_recurring_expenses_count=160,
+        group_recurring_expenses_count=180,
     ),
     "large": SeederConfig(
         users_count=200,
         groups_count=160,
         personal_expenses_count=50000,
         group_expenses_count=30000,
-        personal_recurring_expenses_count=3500,
-        group_recurring_expenses_count=2200,
+        personal_recurring_expenses_count=400,
+        group_recurring_expenses_count=480,
     ),
 }
 
@@ -72,6 +72,18 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Override number of group recurring expenses.",
+    )
+    parser.add_argument(
+        "--max-personal-recurring-per-user",
+        type=int,
+        default=3,
+        help="Upper bound of recurring series per seeded user.",
+    )
+    parser.add_argument(
+        "--max-group-recurring-per-group",
+        type=int,
+        default=3,
+        help="Upper bound of recurring series per seeded group.",
     )
     parser.add_argument(
         "--password",
@@ -133,6 +145,8 @@ def _resolve_config(args: argparse.Namespace) -> SeederConfig:
             if args.group_recurring_expenses is not None
             else profile.group_recurring_expenses_count
         ),
+        max_personal_recurring_per_user=max(1, args.max_personal_recurring_per_user),
+        max_group_recurring_per_group=max(1, args.max_group_recurring_per_group),
         password=args.password,
         edge_case_ratio=max(0.0, min(args.edge_case_ratio, 0.5)),
         max_days_back=max(1, args.max_days_back),

@@ -48,6 +48,8 @@ export interface ApiGroupResponse {
   status: GroupStatus;
   created_by: number;
   created_at: ISODateTimeString;
+  members_count?: number;
+  expenses_count?: number;
 }
 
 export interface ApiGroupMemberResponse {

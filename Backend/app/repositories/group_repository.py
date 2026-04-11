@@ -1,4 +1,5 @@
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, distinct
+from sqlalchemy.orm import Session, selectinload, aliased
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
 from app.models import Expense
@@ -25,12 +26,37 @@ class GroupRepository:
     
     
     def get_all_by_user_id(self, user_id: int) -> list[Group]:
-        return (
-            self.db.query(Group)
-            .join(GroupMember, Group.id == GroupMember.group_id)
-            .filter(GroupMember.user_id == user_id)
+        membership_filter = aliased(GroupMember)
+        members_for_count = aliased(GroupMember)
+
+        rows = (
+            self.db.query(
+                Group,
+                func.count(distinct(members_for_count.user_id)).label("members_count"),
+                func.count(distinct(Expense.id)).label("expenses_count"),
+            )
+            .join(
+                membership_filter,
+                Group.id == membership_filter.group_id,
+            )
+            .outerjoin(
+                members_for_count,
+                (Group.id == members_for_count.group_id)
+                & (members_for_count.status == GroupMemberStatus.ACTIVE),
+            )
+            .outerjoin(Expense, Expense.group_id == Group.id)
+            .filter(membership_filter.user_id == user_id)
+            .group_by(Group.id)
             .all()
         )
+
+        groups: list[Group] = []
+        for group, members_count, expenses_count in rows:
+            group.members_count = int(members_count or 0)
+            group.expenses_count = int(expenses_count or 0)
+            groups.append(group)
+
+        return groups
 
 
     def exists_active_name_for_user(self, user_id: int, name: str, exclude_group_id: int | None = None) -> bool:
@@ -125,4 +151,25 @@ class GroupRepository:
             .first()
             is not None
         )
+
+
+    def get_counts_for_group(self, group_id: int) -> tuple[int, int]:
+        members_count, expenses_count = (
+            self.db.query(
+                func.count(distinct(GroupMember.user_id)).label("members_count"),
+                func.count(distinct(Expense.id)).label("expenses_count"),
+            )
+            .outerjoin(
+                Expense,
+                Expense.group_id == GroupMember.group_id,
+            )
+            .filter(
+                GroupMember.group_id == group_id,
+                GroupMember.status == GroupMemberStatus.ACTIVE,
+            )
+            .first()
+            or (0, 0)
+        )
+
+        return int(members_count or 0), int(expenses_count or 0)
     

@@ -6,6 +6,9 @@ from app.models import Group, GroupMember
 from app.schemas import GroupCreate, GroupUpdate
 from app.enums import GroupStatus, GroupMemberRole, GroupMemberStatus
 
+GROUP_NAME_MAX_LENGTH = 120
+GROUP_DESCRIPTION_MAX_LENGTH = 500
+
 
 class GroupService:
     def __init__(self, db: Session):
@@ -19,6 +22,10 @@ class GroupService:
         if not self.group_repo.get_membership(group_id, user_id):
             raise HTTPException(status_code=403, detail="Not authorized")
 
+        members_count, expenses_count = self.group_repo.get_counts_for_group(group_id)
+        group.members_count = members_count
+        group.expenses_count = expenses_count
+
         return group
 
 
@@ -28,9 +35,16 @@ class GroupService:
 
     def create_group(self, group_in: GroupCreate, user_id: int) -> Group:
         normalized_name = group_in.name.strip()
+        normalized_description = group_in.description.strip() if group_in.description else None
 
         if not normalized_name:
             raise HTTPException(status_code=400, detail="Group name cannot be empty")
+
+        if len(normalized_name) > GROUP_NAME_MAX_LENGTH:
+            raise HTTPException(status_code=400, detail="Group name is too long")
+
+        if normalized_description is not None and len(normalized_description) > GROUP_DESCRIPTION_MAX_LENGTH:
+            raise HTTPException(status_code=400, detail="Group description is too long")
 
         if self.group_repo.exists_active_name_for_user(user_id, normalized_name):
             raise HTTPException(status_code=400, detail="You already have an active group with this name")
@@ -38,7 +52,7 @@ class GroupService:
         try:       
             new_group = Group(
                 name=normalized_name,
-                description=group_in.description,
+                description=normalized_description,
                 status=GroupStatus.ACTIVE,
                 currency=group_in.currency,
                 created_by=user_id
@@ -156,6 +170,13 @@ class GroupService:
             update_data["name"] = update_data["name"].strip()
             if not update_data["name"]:
                 raise HTTPException(status_code=400, detail="Group name cannot be empty")
+            if len(update_data["name"]) > GROUP_NAME_MAX_LENGTH:
+                raise HTTPException(status_code=400, detail="Group name is too long")
+
+        if "description" in update_data and update_data["description"] is not None:
+            update_data["description"] = update_data["description"].strip()
+            if len(update_data["description"]) > GROUP_DESCRIPTION_MAX_LENGTH:
+                raise HTTPException(status_code=400, detail="Group description is too long")
 
         candidate_name = update_data.get("name", group.name)
         candidate_status = update_data.get("status", group.status)

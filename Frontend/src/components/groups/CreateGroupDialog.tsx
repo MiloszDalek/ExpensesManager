@@ -36,6 +36,9 @@ type CreateGroupFormData = {
   currency: CurrencyEnum;
 };
 
+const GROUP_NAME_MAX_LENGTH = 120;
+const GROUP_DESCRIPTION_MAX_LENGTH = 500;
+
 type CreateGroupDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -100,7 +103,11 @@ export default function CreateGroupDialog({
   };
 
   const handleSubmit = () => {
-    if (formData.name.trim()) {
+    if (
+      formData.name.trim() &&
+      formData.name.length <= GROUP_NAME_MAX_LENGTH &&
+      formData.description.length <= GROUP_DESCRIPTION_MAX_LENGTH
+    ) {
       setRecentCurrencies(rememberRecentCurrency(formData.currency));
       onSubmit(formData);
       resetForm();
@@ -109,14 +116,14 @@ export default function CreateGroupDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-full min-w-0 max-w-[calc(100%-2rem)] overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("createGroupDialog.title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           {errorMessage && (
-            <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="max-w-full overflow-hidden rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive [overflow-wrap:anywhere]">
               {errorMessage}
             </p>
           )}
@@ -127,8 +134,18 @@ export default function CreateGroupDialog({
               id="name"
               placeholder={t("createGroupDialog.namePlaceholder")}
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full min-w-0 max-w-full"
+              maxLength={GROUP_NAME_MAX_LENGTH}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  name: e.target.value.slice(0, GROUP_NAME_MAX_LENGTH),
+                }))
+              }
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {formData.name.length}/{GROUP_NAME_MAX_LENGTH}
+            </p>
           </div>
 
           <div className="space-y-1">
@@ -137,9 +154,19 @@ export default function CreateGroupDialog({
               id="description"
               placeholder={t("createGroupDialog.descriptionPlaceholder")}
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full min-w-0 max-w-full overflow-x-hidden whitespace-pre-wrap [field-sizing:fixed] [overflow-wrap:anywhere]"
+              maxLength={GROUP_DESCRIPTION_MAX_LENGTH}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value.slice(0, GROUP_DESCRIPTION_MAX_LENGTH),
+                }))
+              }
               rows={2}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {formData.description.length}/{GROUP_DESCRIPTION_MAX_LENGTH}
+            </p>
           </div>
 
           <div>
@@ -197,7 +224,7 @@ export default function CreateGroupDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="min-w-0">
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             {t("createGroupDialog.cancel")}
           </Button>

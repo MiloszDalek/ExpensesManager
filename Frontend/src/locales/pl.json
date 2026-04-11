@@ -80,6 +80,7 @@
     "navGroups": "Grupy",
     "navPersonal": "Osobiste",
     "navRecurring": "Cykliczne",
+    "navContacts": "Kontakty",
     "navAdmin": "Admin",
     "theme": "Wybierz motyw",
     "themeLight": "Jasny",
@@ -595,12 +596,19 @@
     "title": "Twoje Grupy",
     "subtitle": "Zarządzaj wspólnymi wydatkami",
     "total": "Liczba grup",
+    "searchPlaceholder": "Szukaj grup po nazwie lub opisie...",
+    "searchAriaLabel": "Wyszukaj grupy",
     "createGroup": "Utwórz grupę",
     "createFirstGroup": "Utwórz pierwszą grupę",
     "emptyTitle": "Brak grup",
     "emptyDescription": "Utwórz grupę, aby zacząć dzielić wydatki",
+    "noSearchResultsTitle": "Brak pasujących grup",
+    "noSearchResultsDescription": "Spróbuj innej frazy lub wyczyść wyszukiwanie.",
     "viewGroup": "Przejdź do grupy",
     "currencyLabel": "Waluta",
+    "members": "Członkowie",
+    "expenses": "Wydatki",
+    "noDescription": "Brak opisu",
     "statusActive": "Aktywna",
     "statusArchived": "Zarchiwizowana",
     "createdAt": "Utworzono"
@@ -621,6 +629,8 @@
     "errors": {
       "activeGroupNameTaken": "Masz już aktywną grupę o tej nazwie.",
       "emptyName": "Nazwa grupy nie może być pusta.",
+      "nameTooLong": "Nazwa grupy jest za długa (maks. 120 znaków).",
+      "descriptionTooLong": "Opis grupy jest za długi (maks. 500 znaków).",
       "createFailed": "Nie udało się utworzyć grupy."
     }
   },

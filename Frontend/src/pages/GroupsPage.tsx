@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
@@ -16,6 +17,7 @@ import type { ApiGroupCreate, ApiGroupResponse } from "@/types";
 export default function GroupsPage() {
   const { t } = useTranslation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [createGroupError, setCreateGroupError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -40,6 +42,10 @@ export default function GroupsPage() {
           ? t("createGroupDialog.errors.activeGroupNameTaken")
           : mutationError.message === "Group name cannot be empty"
             ? t("createGroupDialog.errors.emptyName")
+            : mutationError.message === "Group name is too long"
+              ? t("createGroupDialog.errors.nameTooLong")
+              : mutationError.message === "Group description is too long"
+                ? t("createGroupDialog.errors.descriptionTooLong")
             : mutationError.message || t("createGroupDialog.errors.createFailed");
 
       setCreateGroupError(translated);
@@ -53,10 +59,24 @@ export default function GroupsPage() {
     }
   };
 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredGroups = useMemo(() => {
+    if (!normalizedSearch) {
+      return groups;
+    }
+
+    return groups.filter((group) => {
+      const name = group.name.toLowerCase();
+      const description = group.description?.toLowerCase() ?? "";
+      return name.includes(normalizedSearch) || description.includes(normalizedSearch);
+    });
+  }, [groups, normalizedSearch]);
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-500"></div>
       </div>
     );
   }
@@ -76,7 +96,7 @@ export default function GroupsPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,8 +117,28 @@ export default function GroupsPage() {
           </Button>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <div className="mx-auto w-full max-w-md">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder={t("groupsPage.searchPlaceholder")}
+                aria-label={t("groupsPage.searchAriaLabel")}
+                className="h-10 pl-9"
+              />
+            </div>
+          </div>
+        </motion.div>
+
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 justify-center justify-items-center gap-4 sm:grid-cols-[repeat(auto-fit,minmax(360px,440px))]">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardContent className="p-6">
@@ -125,10 +165,22 @@ export default function GroupsPage() {
               {t("groupsPage.createFirstGroup")}
             </Button>
           </motion.div>
+        ) : filteredGroups.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16"
+          >
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-9 h-9 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t("groupsPage.noSearchResultsTitle")}</h2>
+            <p className="text-muted-foreground">{t("groupsPage.noSearchResultsDescription")}</p>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 justify-center justify-items-center gap-4 sm:grid-cols-[repeat(auto-fit,minmax(360px,440px))]">
             <AnimatePresence>
-              {groups.map((group, index) => (
+              {filteredGroups.map((group, index) => (
                 <GroupCard
                   key={group.id}
                   group={group}

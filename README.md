@@ -17,6 +17,7 @@ Useful options:
 python seed_data.py --profile medium
 python seed_data.py --users 120 --groups 90 --personal-expenses 18000 --group-expenses 12000
 python seed_data.py --personal-recurring-expenses 1200 --group-recurring-expenses 700
+python seed_data.py --max-personal-recurring-per-user 3 --max-group-recurring-per-group 3
 python seed_data.py --seed 42
 python seed_data.py --max-days-back 1095 --edge-case-ratio 0.15
 ```
@@ -29,7 +30,7 @@ Defaults:
 Example full run with recurring data:
 
 ```powershell
-python seed_data.py --users 120 --groups 90 --personal-expenses 18000 --group-expenses 12000 --personal-recurring-expenses 1200 --group-recurring-expenses 700 --seed 42
+python seed_data.py --users 120 --groups 90 --personal-expenses 18000 --group-expenses 12000 --personal-recurring-expenses 200 --group-recurring-expenses 220 --max-personal-recurring-per-user 3 --max-group-recurring-per-group 3 --seed 42
 ```
 
 

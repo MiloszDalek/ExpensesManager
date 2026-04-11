@@ -26,6 +26,8 @@ class GroupResponse(GroupBase):
     status: GroupStatus
     created_by: int
     created_at: datetime
+    members_count: int = 0
+    expenses_count: int = 0
     
     model_config = ConfigDict(from_attributes=True)
 

@@ -45,6 +45,8 @@ class SeederConfig:
     group_expenses_count: int
     personal_recurring_expenses_count: int = 0
     group_recurring_expenses_count: int = 0
+    max_personal_recurring_per_user: int = 3
+    max_group_recurring_per_group: int = 3
     password: str = "password"
     edge_case_ratio: float = 0.12
     max_days_back: int = 730
@@ -204,7 +206,7 @@ class TestDataSeeder:
 
         for index in range(1, count + 1):
             suffix = self.rng.randint(1000, 9999)
-            username = f"seed_{self.run_tag}_u{index}_{suffix}"
+            username = f"seed_u{index}_{suffix}_{uuid4().hex[:6]}"
             email = f"{username}@seed-expenses.dev"
 
             user = User(
@@ -237,7 +239,7 @@ class TestDataSeeder:
             creator = self.rng.choice(users)
             currency = self._random_group_currency()
             group = Group(
-                name=f"seed_{self.run_tag}_g{index}_{self.rng.randint(1000, 9999)}",
+                name=f"seed_group_{index}_{self.rng.randint(1000, 9999)}_{uuid4().hex[:4]}",
                 description=self._random_group_description(index),
                 status=GroupStatus.ACTIVE,
                 currency=currency,
@@ -356,11 +358,20 @@ class TestDataSeeder:
         if count <= 0 or not users or not categories:
             return
 
+        per_user_limit = max(1, self.config.max_personal_recurring_per_user)
+        max_possible = len(users) * per_user_limit
+        target_count = min(count, max_possible)
+        user_recurring_count = {user.id: 0 for user in users}
+
         today = date.today()
         batch_size = 300
 
-        for index in range(1, count + 1):
-            user = self.rng.choice(users)
+        for index in range(1, target_count + 1):
+            eligible_users = [user for user in users if user_recurring_count[user.id] < per_user_limit]
+            if not eligible_users:
+                break
+
+            user = self.rng.choice(eligible_users)
             category = self.rng.choice(categories)
             recurrence = self._build_recurrence_spec(today)
 
@@ -384,6 +395,7 @@ class TestDataSeeder:
             )
             self.db.add(recurring_expense)
             result.created_personal_recurring_expenses += 1
+            user_recurring_count[user.id] += 1
 
             if index % batch_size == 0:
                 self.db.flush()
@@ -402,20 +414,31 @@ class TestDataSeeder:
         if count <= 0 or not groups or not categories:
             return
 
+        per_group_limit = max(1, self.config.max_group_recurring_per_group)
+
         today = date.today()
         batch_size = 200
 
         eligible_groups = [group for group in groups if group.active_member_ids]
         active_groups = [group for group in eligible_groups if group.status == GroupStatus.ACTIVE]
+        group_recurring_count = {group.id: 0 for group in eligible_groups}
+        max_possible = len(eligible_groups) * per_group_limit
+        target_count = min(count, max_possible)
 
         if not eligible_groups:
             return
 
-        for index in range(1, count + 1):
+        for index in range(1, target_count + 1):
+            eligible_by_limit = [group for group in eligible_groups if group_recurring_count[group.id] < per_group_limit]
+            if not eligible_by_limit:
+                break
+
             use_archived = self.rng.random() < (self.config.edge_case_ratio * 0.5)
-            source_pool = eligible_groups
+            source_pool = eligible_by_limit
             if not use_archived and active_groups:
-                source_pool = active_groups
+                active_eligible = [group for group in active_groups if group_recurring_count[group.id] < per_group_limit]
+                if active_eligible:
+                    source_pool = active_eligible
 
             group = self.rng.choice(source_pool)
             member_ids = list(group.active_member_ids)
@@ -460,6 +483,7 @@ class TestDataSeeder:
 
             result.created_group_recurring_expenses += 1
             result.created_recurring_participants += len(participants)
+            group_recurring_count[group.id] += 1
 
             if index % batch_size == 0:
                 self.db.flush()
@@ -584,7 +608,6 @@ class TestDataSeeder:
         )[0]
 
     def _build_recurrence_spec(self, today: date) -> RecurrenceSpec:
-        starts_on = today - timedelta(days=self.rng.randint(0, max(180, self.config.max_days_back)))
         frequency = self._random_recurrence_frequency()
 
         interval_ranges = {
@@ -597,6 +620,32 @@ class TestDataSeeder:
         min_interval, max_interval = interval_ranges[frequency]
         interval_count = self.rng.randint(min_interval, max_interval)
 
+        status = RecurringExpenseStatus.ACTIVE
+        status_roll = self.rng.random()
+        if status_roll < (self.config.edge_case_ratio * 0.28):
+            status = RecurringExpenseStatus.PAUSED
+        elif status_roll < (self.config.edge_case_ratio * 0.43):
+            status = RecurringExpenseStatus.ARCHIVED
+        elif status_roll < (self.config.edge_case_ratio * 0.55):
+            status = RecurringExpenseStatus.ENDED
+
+        if status == RecurringExpenseStatus.ENDED:
+            starts_on = today - timedelta(days=self.rng.randint(120, 540))
+            ends_on = starts_on + timedelta(days=self.rng.randint(30, 210))
+            if ends_on >= today:
+                ends_on = today - timedelta(days=self.rng.randint(1, 45))
+            next_due_on = ends_on + timedelta(days=1)
+        else:
+            # Keep next_due close to current date/future to avoid massive backlog generation on scheduler startup.
+            if self.rng.random() < 0.2:
+                next_due_on = today - timedelta(days=self.rng.randint(0, 2))
+            else:
+                next_due_on = today + timedelta(days=self.rng.randint(0, 28))
+            starts_on = next_due_on - timedelta(days=self.rng.randint(0, 20))
+            ends_on = None
+            if self.rng.random() < (self.config.edge_case_ratio * 0.4):
+                ends_on = next_due_on + timedelta(days=self.rng.randint(30, 240))
+
         day_of_month = None
         day_of_week = None
         if frequency == RecurrenceFrequency.WEEKLY:
@@ -607,25 +656,6 @@ class TestDataSeeder:
             RecurrenceFrequency.YEARLY,
         ):
             day_of_month = starts_on.day
-
-        ends_on = None
-        if self.rng.random() < (self.config.edge_case_ratio * 0.55):
-            ends_on = starts_on + timedelta(days=self.rng.randint(30, 540))
-
-        status = RecurringExpenseStatus.ACTIVE
-        status_roll = self.rng.random()
-        if status_roll < (self.config.edge_case_ratio * 0.35):
-            status = RecurringExpenseStatus.PAUSED
-        elif status_roll < (self.config.edge_case_ratio * 0.55):
-            status = RecurringExpenseStatus.ARCHIVED
-        elif status_roll < (self.config.edge_case_ratio * 0.8):
-            status = RecurringExpenseStatus.ENDED
-
-        if status == RecurringExpenseStatus.ENDED:
-            ended_on = today - timedelta(days=self.rng.randint(1, 180))
-            if ended_on < starts_on:
-                ended_on = starts_on
-            ends_on = ended_on
 
         return RecurrenceSpec(
             frequency=frequency,
