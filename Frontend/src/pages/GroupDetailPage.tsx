@@ -2,12 +2,13 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil, Repeat2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import SpeedDial from "@/components/ui/speed-dial";
 import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
@@ -36,6 +37,7 @@ import type {
   ApiGroupInvitationCreate,
   ApiGroupMemberResponse,
   ApiRecurringGroupExpenseCreate,
+  ApiRecurringExpenseResponse,
   ApiGroupResponse,
   ApiGroupUpdate,
   ApiInvitationResponse,
@@ -47,6 +49,7 @@ import type { CategorySection, PaymentMethod } from "@/types/enums";
 const LIMIT = 20;
 const CONTACTS_LIMIT = 100;
 const SETTLEMENTS_LIMIT = 20;
+const RECURRING_LIMIT = 6;
 
 export default function GroupDetailPage() {
   const { t } = useTranslation();
@@ -169,6 +172,27 @@ export default function GroupDetailPage() {
   } = useQuery<ApiSettlementResponse[]>({
     queryKey: queryKeys.settlements.group(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
     queryFn: () => settlementsApi.getByGroup(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
+    enabled: !!user && isValidGroupId,
+  });
+
+  const {
+    data: recurringExpenses = [],
+    isLoading: recurringLoading,
+    error: recurringError,
+  } = useQuery<ApiRecurringExpenseResponse[]>({
+    queryKey: queryKeys.recurringExpenses.list({
+      scope: "group",
+      group_id: groupId,
+      limit: RECURRING_LIMIT,
+      offset: 0,
+    }),
+    queryFn: () =>
+      recurringExpensesApi.list({
+        scope: "group",
+        group_id: groupId,
+        limit: RECURRING_LIMIT,
+        offset: 0,
+      }),
     enabled: !!user && isValidGroupId,
   });
 
@@ -621,6 +645,46 @@ export default function GroupDetailPage() {
     return settlements.filter((settlement) => settlement.status === "completed");
   }, [settlements]);
 
+  const groupSpendChart = useMemo(() => {
+    const now = new Date();
+    const buckets = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      return {
+        key: monthKey,
+        label: format(date, "MMM"),
+        amount: 0,
+      };
+    });
+
+    const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+    expenses.forEach((expense) => {
+      const date = new Date(expense.expense_date);
+      if (Number.isNaN(date.getTime())) {
+        return;
+      }
+
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const bucket = bucketByKey.get(monthKey);
+      if (!bucket) {
+        return;
+      }
+
+      bucket.amount += Number(expense.amount) || 0;
+    });
+
+    const maxAmount = Math.max(...buckets.map((bucket) => bucket.amount), 1);
+
+    return {
+      maxAmount,
+      bars: buckets.map((bucket) => ({
+        ...bucket,
+        heightPercent: bucket.amount > 0 ? Math.max((bucket.amount / maxAmount) * 100, 10) : 4,
+      })),
+    };
+  }, [expenses]);
+
   const getMemberDisplayName = (userId: number) => {
     if (userId === user?.id) {
       return t("groupDetailPage.youLabel");
@@ -644,6 +708,11 @@ export default function GroupDetailPage() {
     }
 
     return t("groupDetailPage.settlementMethodCash");
+  };
+
+  const formatDateSafe = (dateValue: string) => {
+    const parsedDate = new Date(dateValue);
+    return Number.isNaN(parsedDate.getTime()) ? dateValue : format(parsedDate, "MMM d, yyyy");
   };
 
   if (!isValidGroupId) {
@@ -688,14 +757,14 @@ export default function GroupDetailPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+          className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12"
         >
-          <div className="min-w-0">
-            <Link to={createPageUrl("Groups")}>
+          <div className="min-w-0 lg:col-span-8">
+            <Link to={createPageUrl("Groups")} className="hidden sm:inline-flex">
               <Button variant="ghost" className="-ml-2 mb-3">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t("groupDetailPage.backToGroups")}
@@ -710,98 +779,195 @@ export default function GroupDetailPage() {
             </p>
           </div>
 
-          {isCurrentUserAdmin && (
-            <Button variant="outline" className="shrink-0" onClick={() => setShowEditGroupDialog(true)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              {t("groupDetailPage.editGroup")}
+          <div className="flex flex-wrap items-start justify-start gap-2 lg:col-span-4 lg:justify-end">
+            {isCurrentUserAdmin && (
+              <Button variant="outline" className="shrink-0 hidden sm:inline-flex" onClick={() => setShowEditGroupDialog(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.editGroup")}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex">
+              <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
+                <ScanSearch className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.scanReceipt")}
+              </Link>
             </Button>
-          )}
+            <Button size="sm" className="hidden sm:inline-flex" onClick={() => setShowAddExpenseDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("groupDetailPage.addExpense")}
+            </Button>
+          </div>
         </motion.div>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryMembers")}</p>
-              <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-foreground">
-                <Users className="h-5 w-5 text-primary" />
-                {group.members_count ?? members.length}
+        <div className="mb-6 grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-12">
+          <Card className="order-2 border border-border bg-card/80 shadow-sm backdrop-blur-sm lg:order-1 lg:col-span-8">
+            <CardContent className="p-4 md:p-5">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t("groupDetailPage.chartTitle", { defaultValue: "Group chart" })}
+                </h2>
+                <span className="text-xs text-muted-foreground">{group.currency}</span>
+              </div>
+
+              <div className="h-56 rounded-lg border border-border bg-background/50 p-4">
+                <div className="flex h-full items-end gap-3">
+                  {groupSpendChart.bars.map((bar) => (
+                    <div key={bar.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                      <div className="flex h-full w-full items-end">
+                        <div className="w-full rounded-md bg-primary/70" style={{ height: `${bar.heightPercent}%` }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{bar.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t("groupDetailPage.chartDescription", {
+                  defaultValue: "Monthly group expenses from the last 6 months.",
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("groupDetailPage.chartPeak", { defaultValue: "Peak month" })}: {groupSpendChart.maxAmount.toFixed(2)} {group.currency}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryExpenses")}</p>
-              <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-foreground">
-                <Wallet className="h-5 w-5 text-primary" />
-                {group.expenses_count ?? expenses.length}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="order-1 lg:order-2 lg:col-span-4">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3 lg:grid-cols-2">
+              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="flex h-full flex-col p-2 sm:p-3">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
+                      {t("groupDetailPage.summaryMembers")}
+                    </p>
+                    <Users className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                  </div>
+                  <div className="flex flex-1 items-center justify-center">
+                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
+                      {group.members_count ?? members.length}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{t("groupDetailPage.summaryTotal")}</p>
-              <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground md:text-base">
-                <Coins className="h-5 w-5 text-primary" />
-                {Number(group.total_amount ?? 0).toFixed(2)} {group.currency}
-              </p>
-            </CardContent>
-          </Card>
+              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="flex h-full flex-col p-2 sm:p-3">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
+                      {t("groupDetailPage.summaryExpenses")}
+                    </p>
+                    <Wallet className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                  </div>
+                  <div className="flex flex-1 items-center justify-center">
+                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
+                      {group.expenses_count ?? expenses.length}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="flex h-full flex-col p-2 sm:p-3">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
+                      {t("groupDetailPage.summaryTotal")}
+                    </p>
+                    <Coins className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                  </div>
+                  <div className="flex flex-1 items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-[clamp(0.95rem,4.6vw,1.5rem)] font-bold leading-none text-foreground sm:text-2xl md:text-4xl">
+                        {Number(group.total_amount ?? 0).toFixed(2)}
+                      </p>
+                      <p className="mt-1 text-[10px] font-medium text-muted-foreground sm:text-xs md:mt-2 md:text-sm">
+                        {group.currency}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="flex h-full flex-col p-2 sm:p-3">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
+                      {t("common.navRecurring", { defaultValue: "Recurring" })}
+                    </p>
+                    <Repeat2 className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                  </div>
+                  <div className="flex flex-1 items-center justify-center">
+                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
+                      {recurringLoading ? "..." : recurringExpenses.length}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
 
-        <Card className="mb-6 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-          <CardContent className="p-4 md:p-5">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-foreground">
-                {t("groupDetailPage.balanceSummarySection")}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+          <div className="order-2 space-y-6 md:col-span-1 lg:order-1 lg:col-span-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold text-foreground">
+                {t("groupDetailPage.balanceBreakdownTitle")}
               </h2>
-              <span className="text-xs text-muted-foreground">{group.currency}</span>
             </div>
 
-            {balancesLoading ? (
-              <p className="text-sm text-muted-foreground">{t("groupDetailPage.balanceSummaryLoading")}</p>
-            ) : balancesError ? (
-              <p className="text-sm text-destructive">{t("groupDetailPage.balanceSummaryError")}</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                    <p className="text-sm text-emerald-700">{t("groupDetailPage.balanceOthersOweYou")}</p>
-                    <p className="mt-1 text-xl font-semibold text-emerald-900">
-                      {userBalanceSummary.othersOweMe.toFixed(2)} {group.currency}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
-                    <p className="text-sm text-rose-700">{t("groupDetailPage.balanceYouOwe")}</p>
-                    <p className="mt-1 text-xl font-semibold text-rose-900">
-                      {userBalanceSummary.iOweOthers.toFixed(2)} {group.currency}
-                    </p>
-                  </div>
-                </div>
-
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {userBalanceSummary.unsettledCount === 0
-                    ? t("groupDetailPage.balanceAllSettled")
-                    : t("groupDetailPage.balanceOpenCount", {
-                        count: userBalanceSummary.unsettledCount,
-                      })}
-                </p>
-
-                {groupSettlementFeedback ? (
-                  <p
-                    className={`mt-2 text-sm ${
-                      groupSettlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+            <div>
+              {balancesLoading ? (
+                <p className="text-sm text-muted-foreground">{t("groupDetailPage.balanceSummaryLoading")}</p>
+              ) : balancesError ? (
+                <p className="text-sm text-destructive">{t("groupDetailPage.balanceSummaryError")}</p>
+              ) : (
+                <>
+                  <div
+                    className={`mb-4 rounded-lg border bg-card/80 p-3 shadow-sm backdrop-blur-sm ${
+                      userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
+                        ? "border-rose-200 bg-rose-50"
+                        : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
+                          ? "border-emerald-200 bg-emerald-50"
+                          : "border-border bg-background/60"
                     }`}
                   >
-                    {groupSettlementFeedback.message}
-                  </p>
-                ) : null}
+                    <p className="text-sm text-muted-foreground">
+                      {userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
+                        ? t("groupDetailPage.balanceYouOwe")
+                        : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
+                          ? t("groupDetailPage.balanceOthersOweYou")
+                          : t("groupDetailPage.balanceAllSettled")}
+                    </p>
+                    <p
+                      className={`mt-1 text-2xl font-bold ${
+                        userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
+                          ? "text-rose-700"
+                          : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
+                            ? "text-emerald-700"
+                            : "text-foreground"
+                      }`}
+                    >
+                      {Math.abs(userBalanceSummary.othersOweMe - userBalanceSummary.iOweOthers).toFixed(2)} {group.currency}
+                    </p>
+                  </div>
 
-                <div className="mt-4 border-t border-border pt-3">
-                  <p className="mb-2 text-sm font-medium text-foreground">
-                    {t("groupDetailPage.balanceBreakdownTitle")}
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    {userBalanceSummary.unsettledCount === 0
+                      ? t("groupDetailPage.balanceAllSettled")
+                      : t("groupDetailPage.balanceOpenCount", {
+                          count: userBalanceSummary.unsettledCount,
+                        })}
                   </p>
+
+                  {groupSettlementFeedback ? (
+                    <p
+                      className={`mb-3 text-sm ${
+                        groupSettlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+                      }`}
+                    >
+                      {groupSettlementFeedback.message}
+                    </p>
+                  ) : null}
 
                   {balanceRows.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -810,139 +976,163 @@ export default function GroupDetailPage() {
                   ) : (
                     <div className="space-y-2">
                       {balanceRows.map((row) => (
-                        <div
-                          key={row.userId}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-foreground">{row.memberName}</p>
-                            <p className="truncate text-xs text-muted-foreground">{row.relationLabel}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="whitespace-nowrap text-sm font-semibold text-foreground">
+                        <div key={row.userId} className="rounded-lg border border-border bg-card/80 px-3 py-3 shadow-sm backdrop-blur-sm">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{row.memberName}</p>
+                              <p className="truncate text-xs text-muted-foreground">{row.relationLabel}</p>
+                            </div>
+                            <p
+                              className={`whitespace-nowrap text-sm font-semibold ${
+                                row.amount > 0 ? "text-emerald-700" : row.amount < 0 ? "text-rose-700" : "text-foreground"
+                              }`}
+                            >
                               {row.absoluteAmount.toFixed(2)} {group.currency}
                             </p>
+                          </div>
 
-                            {row.amount < 0 ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={
-                                    settleGroupCashMutation.isPending &&
-                                    settleGroupCashMutation.variables === row.userId
-                                  }
-                                  onClick={() => settleGroupCashMutation.mutate(row.userId)}
-                                >
-                                  {settleGroupCashMutation.isPending &&
+                          {row.amount < 0 ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={
+                                  settleGroupCashMutation.isPending &&
                                   settleGroupCashMutation.variables === row.userId
-                                    ? t("groupDetailPage.settlingCash")
-                                    : t("groupDetailPage.settleCash")}
-                                </Button>
-                                {isPayPalSdkEnabled ? (
-                                  <div className="w-[165px]">
-                                    <PayPalCurrencyButtons
-                                      currency={group.currency}
-                                      fundingSource="paypal"
-                                      style={{ layout: "horizontal", tagline: false, height: 34 }}
-                                      forceReRender={[row.userId, groupId]}
-                                      createOrder={async () => {
-                                        try {
-                                          return await createGroupPayPalOrder(row.userId);
-                                        } catch (error) {
-                                          const message = error instanceof Error ? error.message : undefined;
-                                          setGroupSettlementFeedback({
-                                            tone: "error",
-                                            message: mapPayPalSettlementError(message),
-                                          });
-                                          throw error;
-                                        }
-                                      }}
-                                      onApprove={async (data) => {
-                                        if (!data.orderID) {
-                                          setGroupSettlementFeedback({
-                                            tone: "error",
-                                            message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
-                                          });
-                                          return;
-                                        }
-
-                                        try {
-                                          await finalizeGroupPayPalOrder(data.orderID, row.userId);
-                                        } catch (error) {
-                                          const message = error instanceof Error ? error.message : undefined;
-                                          setGroupSettlementFeedback({
-                                            tone: "error",
-                                            message: mapPayPalSettlementError(message),
-                                          });
-                                        }
-                                      }}
-                                      onCancel={() => {
-                                        setGroupSettlementFeedback({
-                                          tone: "error",
-                                          message: t("groupDetailPage.settlementErrors.paypalCancelled"),
-                                        });
-                                      }}
-                                      onError={(error) => {
+                                }
+                                onClick={() => settleGroupCashMutation.mutate(row.userId)}
+                              >
+                                {settleGroupCashMutation.isPending &&
+                                settleGroupCashMutation.variables === row.userId
+                                  ? t("groupDetailPage.settlingCash")
+                                  : t("groupDetailPage.settleCash")}
+                              </Button>
+                              {isPayPalSdkEnabled ? (
+                                <div className="w-[165px]">
+                                  <PayPalCurrencyButtons
+                                    currency={group.currency}
+                                    fundingSource="paypal"
+                                    style={{ layout: "horizontal", tagline: false, height: 34 }}
+                                    forceReRender={[row.userId, groupId]}
+                                    createOrder={async () => {
+                                      try {
+                                        return await createGroupPayPalOrder(row.userId);
+                                      } catch (error) {
                                         const message = error instanceof Error ? error.message : undefined;
                                         setGroupSettlementFeedback({
                                           tone: "error",
                                           message: mapPayPalSettlementError(message),
                                         });
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                                    {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
-                                  </p>
-                                )}
-                              </>
-                            ) : null}
-                          </div>
+                                        throw error;
+                                      }
+                                    }}
+                                    onApprove={async (data) => {
+                                      if (!data.orderID) {
+                                        setGroupSettlementFeedback({
+                                          tone: "error",
+                                          message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
+                                        });
+                                        return;
+                                      }
+
+                                      try {
+                                        await finalizeGroupPayPalOrder(data.orderID, row.userId);
+                                      } catch (error) {
+                                        const message = error instanceof Error ? error.message : undefined;
+                                        setGroupSettlementFeedback({
+                                          tone: "error",
+                                          message: mapPayPalSettlementError(message),
+                                        });
+                                      }
+                                    }}
+                                    onCancel={() => {
+                                      setGroupSettlementFeedback({
+                                        tone: "error",
+                                        message: t("groupDetailPage.settlementErrors.paypalCancelled"),
+                                      });
+                                    }}
+                                    onError={(error) => {
+                                      const message = error instanceof Error ? error.message : undefined;
+                                      setGroupSettlementFeedback({
+                                        tone: "error",
+                                        message: mapPayPalSettlementError(message),
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                                  {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
+                                </p>
+                              )}
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" asChild>
-                  <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
-                    <ScanSearch className="mr-2 h-4 w-4" />
-                    {t("groupDetailPage.scanReceipt")}
-                  </Link>
-                </Button>
-                <Button size="sm" onClick={() => setShowAddExpenseDialog(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("groupDetailPage.addExpense")}
-                </Button>
-              </div>
+                </>
+              )}
             </div>
-            <GroupExpensesList
-              expenses={expenses}
-              categories={categories}
-              memberNameById={memberNameById}
-              fallbackCurrency={group.currency}
-              isLoading={false}
-              onEdit={(expense) => {
-                setEditingExpense(expense);
-                setEditExpenseError(null);
-                setDeleteExpenseError(null);
-              }}
-              onDelete={(expenseId) => {
-                deleteExpenseMutation.mutate(expenseId);
-              }}
-              canManageExpense={(expense) => isCurrentUserAdmin || expense.user_id === user.id}
-            />
+
+            <div>
+              <h3 className="text-base font-semibold text-foreground">
+                {t("common.navRecurring", { defaultValue: "Recurring" })}
+              </h3>
+
+              {recurringLoading ? (
+                <div className="mt-3 space-y-2">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="h-12 animate-pulse rounded bg-muted" />
+                  ))}
+                </div>
+              ) : recurringError ? (
+                <p className="mt-3 rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+                  {(recurringError as Error).message || t("common.somethingWentWrong")}
+                </p>
+              ) : recurringExpenses.length === 0 ? (
+                <p className="mt-3 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+                  {t("recurringExpenses.empty", {
+                    defaultValue: "No recurring expenses yet. Create one from Add Expense / Add Group Expense dialogs.",
+                  })}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {recurringExpenses.map((series) => (
+                      <div key={series.id} className="rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm">
+                      <p className="truncate text-sm font-medium text-foreground">{series.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {Number(series.amount).toFixed(2)} {series.currency} · {formatDateSafe(series.next_due_on)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="order-1 md:col-span-2 lg:order-2 lg:col-span-6">
+            <div className="mx-auto mb-3 flex w-full max-w-xl items-center justify-between gap-2 md:max-w-2xl lg:max-w-5xl">
+              <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
+            </div>
+            <div className="mx-auto w-full max-w-xl md:max-w-2xl lg:max-w-5xl">
+              <GroupExpensesList
+                expenses={expenses}
+                categories={categories}
+                memberNameById={memberNameById}
+                fallbackCurrency={group.currency}
+                isLoading={false}
+                onEdit={(expense) => {
+                  setEditingExpense(expense);
+                  setEditExpenseError(null);
+                  setDeleteExpenseError(null);
+                }}
+                onDelete={(expenseId) => {
+                  deleteExpenseMutation.mutate(expenseId);
+                }}
+                canManageExpense={(expense) => isCurrentUserAdmin || expense.user_id === user.id}
+              />
+            </div>
 
             {deleteExpenseError ? (
               <p className="mt-3 text-sm text-destructive">{deleteExpenseError}</p>
@@ -960,7 +1150,7 @@ export default function GroupDetailPage() {
             )}
           </div>
 
-          <div>
+          <div className="order-3 space-y-4 md:col-span-1 lg:col-span-3">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.membersSection")}</h2>
               {isCurrentUserAdmin && (
@@ -970,10 +1160,12 @@ export default function GroupDetailPage() {
                 </Button>
               )}
             </div>
+
             <GroupMembersPanel
               members={members}
               currentUserId={user.id}
               canManageMembers={isCurrentUserAdmin}
+              canRemoveMembers={false}
               grantPendingUserId={grantAdminMutation.isPending ? grantAdminMutation.variables ?? null : null}
               removePendingUserId={removeMemberMutation.isPending ? removeMemberMutation.variables ?? null : null}
               leavePending={leaveGroupMutation.isPending}
@@ -983,103 +1175,110 @@ export default function GroupDetailPage() {
               isLoading={false}
             />
 
-            <Card className="mt-4 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-              <CardContent className="p-4">
+            <div className="mt-6">
+              <h3 className="mb-3 text-base font-semibold text-foreground">
+                {t("groupDetailPage.settlementsSection")}
+              </h3>
+
+              {settlementsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((item) => (
+                    <div key={item} className="h-14 animate-pulse rounded bg-muted" />
+                  ))}
+                </div>
+              ) : settlementsError ? (
+                <p className="text-sm text-destructive">
+                  {t("groupDetailPage.settlementsLoadError")}
+                </p>
+              ) : completedSettlements.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+                  {t("groupDetailPage.settlementsEmpty")}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {completedSettlements.map((settlement) => (
+                      <div key={settlement.id} className="rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm">
+                      <p className="text-sm font-medium text-foreground">
+                        {t("groupDetailPage.settlementItem", {
+                          from: getMemberDisplayName(settlement.from_user_id),
+                          to: getMemberDisplayName(settlement.to_user_id),
+                        })}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {Number(settlement.amount).toFixed(2)} {settlement.currency} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {isCurrentUserAdmin && (
+              <div>
                 <h3 className="mb-3 text-base font-semibold text-foreground">
-                  {t("groupDetailPage.settlementsSection")}
+                  {t("groupDetailPage.pendingInvitations")}
                 </h3>
 
-                {settlementsLoading ? (
+                {pendingInvitationsLoading ? (
                   <div className="space-y-2">
                     {[1, 2].map((item) => (
-                      <div key={item} className="h-14 animate-pulse rounded bg-muted" />
+                      <div key={item} className="h-12 animate-pulse rounded bg-muted" />
                     ))}
                   </div>
-                ) : settlementsError ? (
-                  <p className="text-sm text-destructive">
-                    {t("groupDetailPage.settlementsLoadError")}
+                ) : pendingInvitationsError ? (
+                  <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+                    {pendingInvitationsError.message || t("common.somethingWentWrong")}
                   </p>
-                ) : completedSettlements.length === 0 ? (
+                ) : pendingInvitations.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                    {t("groupDetailPage.settlementsEmpty")}
+                    {t("groupDetailPage.noPendingInvitations")}
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {completedSettlements.map((settlement) => (
-                      <div key={settlement.id} className="rounded-lg border border-border p-3">
-                        <p className="text-sm font-medium text-foreground">
-                          {t("groupDetailPage.settlementItem", {
-                            from: getMemberDisplayName(settlement.from_user_id),
-                            to: getMemberDisplayName(settlement.to_user_id),
-                          })}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {Number(settlement.amount).toFixed(2)} {settlement.currency} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
-                        </p>
+                    {pendingInvitations.map((invitation) => (
+                      <div
+                        key={invitation.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {t("groupDetailPage.pendingInvitationUser", {
+                              userId: invitation.to_user_id,
+                            })}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id}
+                          onClick={() => cancelInvitationMutation.mutate(invitation.id)}
+                        >
+                          {cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id
+                            ? t("groupDetailPage.cancelling")
+                            : t("groupDetailPage.cancelInvitation")}
+                        </Button>
                       </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {isCurrentUserAdmin && (
-              <Card className="mt-4 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <h3 className="mb-3 text-base font-semibold text-foreground">
-                    {t("groupDetailPage.pendingInvitations")}
-                  </h3>
-
-                  {pendingInvitationsLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2].map((item) => (
-                        <div key={item} className="h-12 animate-pulse rounded bg-muted" />
-                      ))}
-                    </div>
-                  ) : pendingInvitationsError ? (
-                    <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
-                      {pendingInvitationsError.message || t("common.somethingWentWrong")}
-                    </p>
-                  ) : pendingInvitations.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                      {t("groupDetailPage.noPendingInvitations")}
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {pendingInvitations.map((invitation) => (
-                        <div
-                          key={invitation.id}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {t("groupDetailPage.pendingInvitationUser", {
-                                userId: invitation.to_user_id,
-                              })}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
-                            </p>
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id}
-                            onClick={() => cancelInvitationMutation.mutate(invitation.id)}
-                          >
-                            {cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id
-                              ? t("groupDetailPage.cancelling")
-                              : t("groupDetailPage.cancelInvitation")}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              </div>
             )}
           </div>
         </div>
+      </div>
+
+      <div className="sm:hidden">
+        <SpeedDial
+          onAddExpense={() => setShowAddExpenseDialog(true)}
+          onScanReceipt={() => navigate(`/receipt-scan?mode=group&groupId=${groupId}`)}
+          onEditGroup={isCurrentUserAdmin ? () => setShowEditGroupDialog(true) : undefined}
+          addExpenseLabel={t("groupDetailPage.addExpense")}
+          scanReceiptLabel={t("groupDetailPage.scanReceipt")}
+          editGroupLabel={t("groupDetailPage.editGroup")}
+        />
       </div>
 
       <EditGroupDialog

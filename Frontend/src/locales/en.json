@@ -661,7 +661,7 @@
     "balanceOpenCount": "Open balances: {{count}}",
     "balanceSummaryLoading": "Loading balance summary...",
     "balanceSummaryError": "Could not load the balance summary.",
-    "balanceBreakdownTitle": "Breakdown by member",
+    "balanceBreakdownTitle": "Balances",
     "balanceNoBreakdownRows": "No unsettled balances between members.",
     "balanceUnknownUser": "User #{{userId}}",
     "balanceRowOwesYou": "Owes you",
@@ -697,7 +697,7 @@
       "paypalCaptureFailed": "Could not capture PayPal payment.",
       "paypalCancelled": "PayPal payment was cancelled."
     },
-    "expensesSection": "Group expenses",
+    "expensesSection": "Expenses",
     "addExpense": "Add expense",
     "scanReceipt": "Scan receipt",
     "membersSection": "Members",

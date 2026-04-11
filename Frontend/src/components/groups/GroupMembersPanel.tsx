@@ -21,6 +21,7 @@ type GroupMembersPanelProps = {
   members: ApiGroupMemberResponse[];
   currentUserId: number;
   canManageMembers: boolean;
+  canRemoveMembers?: boolean;
   grantPendingUserId?: number | null;
   removePendingUserId?: number | null;
   leavePending?: boolean;
@@ -39,6 +40,7 @@ export default function GroupMembersPanel({
   members,
   currentUserId,
   canManageMembers,
+  canRemoveMembers = true,
   grantPendingUserId,
   removePendingUserId,
   leavePending,
@@ -80,59 +82,29 @@ export default function GroupMembersPanel({
   }
 
   return (
-    <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-      <CardContent className="p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-foreground">{t("groupMembersPanel.title")}</h3>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{members.length}</Badge>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={leavePending}>
-                  {t("groupMembersPanel.leaveGroup")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("groupMembersPanel.leaveConfirmTitle")}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {isCurrentUserLastActiveMember
-                      ? t("groupMembersPanel.leaveConfirmDescriptionLastMember")
-                      : t("groupMembersPanel.leaveConfirmDescription")}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={onLeaveGroup}>
-                    {t("groupMembersPanel.leaveGroup")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {members.map((member) => {
-            const initials = (member.username || member.email).slice(0, 1).toUpperCase();
-            const isCurrentUser = member.user_id === currentUserId;
-            const canManageTarget = canManageMembers && !isCurrentUser;
-            return (
-              <div
-                key={member.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {initials}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{member.username}</p>
-                    <p className="truncate text-xs text-muted-foreground">{member.email}</p>
-                  </div>
+    <>
+      <div className="space-y-2">
+        {members.map((member) => {
+          const initials = (member.username || member.email).slice(0, 1).toUpperCase();
+          const isCurrentUser = member.user_id === currentUserId;
+          const canManageTarget = canManageMembers && !isCurrentUser;
+          return (
+            <div
+              key={member.id}
+              className="rounded-lg border border-border bg-card/80 px-3 py-2 shadow-sm backdrop-blur-sm"
+            >
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                  {initials}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{member.username}</p>
+                  <p className="truncate text-xs text-muted-foreground">{member.email}</p>
                 </div>
+              </div>
 
-                <div className="flex shrink-0 items-center gap-2">
+              <div className="mt-3 border-t border-border pt-3">
+                <div className="flex flex-wrap items-center gap-2">
                   {isCurrentUser && <Badge variant="outline">{t("groupMembersPanel.you")}</Badge>}
                   <Badge variant={roleVariant[member.role]}>{t(`groupMembersPanel.role.${member.role}`)}</Badge>
                   <Badge variant="outline">{t(`groupMembersPanel.status.${member.status}`)}</Badge>
@@ -140,6 +112,7 @@ export default function GroupMembersPanel({
                     <Button
                       size="sm"
                       variant="outline"
+                      className="h-7 px-2 text-xs"
                       disabled={grantPendingUserId === member.user_id}
                       onClick={() => onGrantAdmin(member.user_id)}
                     >
@@ -148,7 +121,7 @@ export default function GroupMembersPanel({
                         : t("groupMembersPanel.grantAdmin")}
                     </Button>
                   )}
-                  {canManageTarget && (
+                  {canManageTarget && canRemoveMembers && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -179,10 +152,36 @@ export default function GroupMembersPanel({
                   )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" disabled={leavePending}>
+              {t("groupMembersPanel.leaveGroup")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("groupMembersPanel.leaveConfirmTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {isCurrentUserLastActiveMember
+                  ? t("groupMembersPanel.leaveConfirmDescriptionLastMember")
+                  : t("groupMembersPanel.leaveConfirmDescription")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>
+              <AlertDialogAction onClick={onLeaveGroup}>
+                {t("groupMembersPanel.leaveGroup")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </>
   );
 }

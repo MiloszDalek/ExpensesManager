@@ -651,7 +651,7 @@
     "balanceOpenCount": "Otwarte salda: {{count}}",
     "balanceSummaryLoading": "Ładowanie podsumowania salda...",
     "balanceSummaryError": "Nie udało się załadować podsumowania salda.",
-    "balanceBreakdownTitle": "Rozpiska na członków",
+    "balanceBreakdownTitle": "Salda",
     "balanceNoBreakdownRows": "Brak nierozliczonych sald między członkami.",
     "balanceUnknownUser": "Użytkownik #{{userId}}",
     "balanceRowOwesYou": "Jest Ci winny/a",
@@ -687,7 +687,7 @@
       "paypalCaptureFailed": "Nie udało się potwierdzić płatności PayPal.",
       "paypalCancelled": "Płatność PayPal została anulowana."
     },
-    "expensesSection": "Wydatki grupy",
+    "expensesSection": "Wydatki",
     "addExpense": "Dodaj wydatek",
     "scanReceipt": "Skanuj paragon",
     "membersSection": "Członkowie",

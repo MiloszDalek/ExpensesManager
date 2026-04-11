@@ -199,7 +199,7 @@ export default function GroupsPage() {
         aria-label={t("groupsPage.createGroup")}
         className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-xl md:hidden"
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-6 w-6" strokeWidth={2.5} />
       </Button>
 
       <CreateGroupDialog
