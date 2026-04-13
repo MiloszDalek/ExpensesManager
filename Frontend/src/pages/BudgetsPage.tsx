@@ -10,6 +10,7 @@ import { queryKeys } from "@/api/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -331,12 +332,12 @@ export default function BudgetsPage() {
 
             <div className="space-y-1">
               <Label>{t("budgets.form.start", { defaultValue: "Start" })}</Label>
-              <Input type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} />
+              <DatePicker id="budget-period-start" value={periodStart} onChange={setPeriodStart} />
             </div>
 
             <div className="space-y-1">
               <Label>{t("budgets.form.end", { defaultValue: "End" })}</Label>
-              <Input type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} />
+              <DatePicker id="budget-period-end" value={periodEnd} onChange={setPeriodEnd} />
             </div>
 
             <div className="space-y-1">
@@ -450,7 +451,7 @@ export default function BudgetsPage() {
                   </div>
                   <div className="space-y-1">
                     <Label>{t("budgets.income.date", { defaultValue: "Date" })}</Label>
-                    <Input type="date" value={incomeDate} onChange={(event) => setIncomeDate(event.target.value)} />
+                    <DatePicker id="budget-income-date" value={incomeDate} onChange={setIncomeDate} />
                   </div>
                   <div className="flex items-end">
                     <Button onClick={() => addIncomeMutation.mutate()} disabled={isAddIncomeDisabled}>

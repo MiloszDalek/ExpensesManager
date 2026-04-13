@@ -36,7 +36,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -621,15 +621,14 @@ export default function DetailedSummaryPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
-                  <Input
+                  <DatePicker
                     id="summary-date-from"
-                    type="date"
                     value={draftFilters.dateFrom}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       setDraftFilters((previous) => ({
                         ...previous,
                         periodPreset: "custom",
-                        dateFrom: event.target.value,
+                        dateFrom: value,
                       }))
                     }
                   />
@@ -637,15 +636,14 @@ export default function DetailedSummaryPage() {
 
                 <div className="space-y-1">
                   <Label htmlFor="summary-date-to">{t("expenseFilters.to")}</Label>
-                  <Input
+                  <DatePicker
                     id="summary-date-to"
-                    type="date"
                     value={draftFilters.dateTo}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       setDraftFilters((previous) => ({
                         ...previous,
                         periodPreset: "custom",
-                        dateTo: event.target.value,
+                        dateTo: value,
                       }))
                     }
                   />

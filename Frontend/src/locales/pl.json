@@ -73,6 +73,12 @@
     "errorLoadingData": "Błąd ładowania danych",
     "somethingWentWrong": "Coś poszło nie tak"
   },
+  "datePicker": {
+    "selectDate": "Wybierz datę",
+    "close": "Zamknij",
+    "previousMonth": "Poprzedni miesiąc",
+    "nextMonth": "Następny miesiąc"
+  },
   "globalHeader": {
     "navDashboard": "Pulpit",
     "navSummaries": "Podsumowania",
@@ -297,6 +303,7 @@
     "trackSpending": "Śledź swoje wydatki",
     "total": "Suma",
     "addExpense": "Dodaj wydatek",
+    "addRecurringExpense": "Dodaj cykliczny",
     "scanReceipt": "Skanuj paragon",
     "loadMore": "Załaduj więcej"
   },
@@ -319,8 +326,17 @@
     "loading": "Ładowanie...",
     "forecastCount": "Planowane wystąpienia: {{count}}",
     "seriesTitle": "Serie cykliczne",
-    "empty": "Brak wydatków cyklicznych. Dodaj je z poziomu formularza dodawania wydatku osobistego lub grupowego.",
+    "empty": "Brak wydatków cyklicznych. Użyj akcji Dodaj cykliczny, aby utworzyć pierwszą serię.",
+    "cardAmount": "Kwota",
+    "cardFrequency": "Częstotliwość",
+    "cardInterval": "Co {{count}} okresów",
+    "cardStatus": "Status",
     "nextDue": "Następny termin",
+    "startsOn": "Początek",
+    "editSeries": "Edytuj / Zarządzaj",
+    "editDialogTitle": "Edycja serii cyklicznej",
+    "actionsTitle": "Akcje serii",
+    "saveChanges": "Zapisz zmiany",
     "generateNow": "Generuj teraz",
     "pause": "Wstrzymaj",
     "resume": "Wznów",
@@ -575,6 +591,11 @@
       "receiptUploadFailed": "Nie udało się przesłać zdjęcia paragonu."
     }
   },
+  "addRecurringExpenseDialog": {
+    "title": "Dodaj wydatek cykliczny",
+    "submit": "Dodaj cykliczny",
+    "submitting": "Dodawanie..."
+  },
   "expensesList": {
     "emptyTitle": "Brak wydatków",
     "emptyDescription": "Zacznij śledzić wydatki, dodając pierwszy wpis",
@@ -657,8 +678,13 @@
     "balanceRowOwesYou": "Jest Ci winny/a",
     "balanceRowYouOwe": "Ty jesteś winny/a",
     "balanceRowSettled": "Wyrównane",
+    "settle": "Rozlicz",
     "settleCash": "Rozlicz gotówką",
     "settlingCash": "Rozliczanie...",
+    "settleOutsideApp": "Rozlicz poza aplikacją",
+    "settlementOutsideConfirmTitle": "Zapisać rozliczenie poza aplikacją?",
+    "settlementOutsideConfirmDescription": "Czy na pewno chcesz zapisać rozliczenie poza aplikacją na kwotę {{amount}} {{currency}}?",
+    "settlementOutsideConfirmAction": "Zapisz rozliczenie",
     "settlePayPal": "Rozlicz przez PayPal",
     "settlementSuccess": "Rozliczenie w grupie zostało zapisane.",
     "settlementsSection": "Zakończone rozliczenia",
@@ -688,7 +714,12 @@
       "paypalCancelled": "Płatność PayPal została anulowana."
     },
     "expensesSection": "Wydatki",
+    "mobileTabExpenses": "Wydatki",
+    "mobileTabBalances": "Salda",
+    "mobileTabRecurring": "Cykliczne",
+    "mobileTabMembers": "Członkowie",
     "addExpense": "Dodaj wydatek",
+    "addRecurringExpense": "Dodaj cykliczny",
     "scanReceipt": "Skanuj paragon",
     "membersSection": "Członkowie",
     "addMember": "Dodaj członka",
@@ -753,6 +784,13 @@
     "deleteDescription": "Tej operacji nie można cofnąć.",
     "cancel": "Anuluj",
     "paidBy": "Zapłacił",
+    "paidByShort": "Zapłacił/a",
+    "paidByMember": "Zapłacił/a: {{name}}",
+    "youPaid": "Zapłaciłeś/aś",
+    "youBorrowed": "Pożyczyłeś/aś",
+    "youLent": "Pożyczyłeś/aś innym",
+    "noBalance": "Brak salda",
+    "notApplicable": "nie dotyczy",
     "splitType": "Typ podziału",
     "shares": "Udziały",
     "split": {
@@ -837,6 +875,14 @@
       "createFailed": "Nie udało się utworzyć wydatku grupowego.",
       "updateFailed": "Nie udało się zaktualizować wydatku grupowego.",
       "deleteFailed": "Nie udało się usunąć wydatku grupowego."
+    }
+  },
+  "addGroupRecurringExpenseDialog": {
+    "title": "Dodaj cykliczny wydatek grupowy",
+    "submit": "Dodaj cykliczny",
+    "submitting": "Dodawanie...",
+    "errors": {
+      "startDateRequired": "Data rozpoczęcia jest wymagana."
     }
   },
   "addGroupMemberDialog": {

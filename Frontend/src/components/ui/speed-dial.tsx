@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Edit3, Plus, ReceiptText, ScanSearch } from "lucide-react";
+import { Edit3, Plus, ReceiptText, Repeat2, ScanSearch } from "lucide-react";
 
 type SpeedDialProps = {
   onAddExpense: () => void;
+  onAddRecurringExpense?: () => void;
   onScanReceipt: () => void;
   onEditGroup?: () => void;
   addExpenseLabel?: string;
+  addRecurringExpenseLabel?: string;
   scanReceiptLabel?: string;
   editGroupLabel?: string;
 };
@@ -20,9 +22,11 @@ type SpeedDialAction = {
 
 export function SpeedDial({
   onAddExpense,
+  onAddRecurringExpense,
   onScanReceipt,
   onEditGroup,
   addExpenseLabel = "Dodaj wydatek",
+  addRecurringExpenseLabel = "Dodaj cykliczny",
   scanReceiptLabel = "Skanuj paragon",
   editGroupLabel = "Edytuj grupę",
 }: SpeedDialProps) {
@@ -37,6 +41,15 @@ export function SpeedDial({
         label: editGroupLabel,
         icon: Edit3,
         onClick: onEditGroup,
+      });
+    }
+
+    if (onAddRecurringExpense) {
+      nextActions.push({
+        id: "add-recurring-expense",
+        label: addRecurringExpenseLabel,
+        icon: Repeat2,
+        onClick: onAddRecurringExpense,
       });
     }
 
@@ -56,7 +69,16 @@ export function SpeedDial({
     );
 
     return nextActions;
-  }, [addExpenseLabel, editGroupLabel, onAddExpense, onEditGroup, onScanReceipt, scanReceiptLabel]);
+  }, [
+    addExpenseLabel,
+    addRecurringExpenseLabel,
+    editGroupLabel,
+    onAddExpense,
+    onAddRecurringExpense,
+    onEditGroup,
+    onScanReceipt,
+    scanReceiptLabel,
+  ]);
 
   const handleActionClick = (onClick: () => void) => {
     onClick();

@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -246,14 +247,13 @@ export default function EditExpenseDialog({
 
           <div className="space-y-1">
             <Label htmlFor="edit-expense-date">{t("addExpenseDialog.date")}</Label>
-            <Input
+            <DatePicker
               id="edit-expense-date"
-              type="date"
               value={formData.expense_date}
-              onChange={(event) =>
+              onChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,
-                  expense_date: event.target.value,
+                  expense_date: value,
                 }))
               }
             />

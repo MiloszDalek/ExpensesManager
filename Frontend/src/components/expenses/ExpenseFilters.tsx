@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Input } from "@/components/ui/input";
+import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -112,7 +112,7 @@ export default function ExpenseFilters({
 
   return (
     <div className="mb-6 rounded-xl border border-border bg-card/80 p-4 text-card-foreground backdrop-blur-sm">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-1">
           <Label>{t("expenseFilters.category")}</Label>
           <CategoryPicker
@@ -229,18 +229,17 @@ export default function ExpenseFilters({
       </div>
 
       {filters.periodPreset === "custom" && (
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4">
           <div className="space-y-1">
             <Label htmlFor="date-from">{t("expenseFilters.from")}</Label>
-            <Input
+            <DatePicker
               id="date-from"
-              type="date"
               value={filters.dateFrom}
-              onChange={(event) =>
+              onChange={(value) =>
                 onFilterChange({
                   ...filters,
                   periodPreset: "custom",
-                  dateFrom: event.target.value,
+                  dateFrom: value,
                 })
               }
             />
@@ -248,15 +247,14 @@ export default function ExpenseFilters({
 
           <div className="space-y-1">
             <Label htmlFor="date-to">{t("expenseFilters.to")}</Label>
-            <Input
+            <DatePicker
               id="date-to"
-              type="date"
               value={filters.dateTo}
-              onChange={(event) =>
+              onChange={(value) =>
                 onFilterChange({
                   ...filters,
                   periodPreset: "custom",
-                  dateTo: event.target.value,
+                  dateTo: value,
                 })
               }
             />

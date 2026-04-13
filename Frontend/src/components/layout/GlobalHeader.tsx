@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, PiggyBank, ReceiptText, RefreshCcw, Shield, Users, BookUser, X } from "lucide-react";
+import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,6 @@ export default function GlobalHeader() {
     { to: "/dashboard", label: t("globalHeader.navDashboard"), icon: LayoutDashboard },
     { to: "/groups", label: t("globalHeader.navGroups"), icon: Users },
     { to: "/personal", label: t("globalHeader.navPersonal"), icon: ReceiptText },
-    { to: "/recurring", label: t("globalHeader.navRecurring", { defaultValue: "Recurring" }), icon: RefreshCcw },
     { to: "/budgets", label: t("globalHeader.navBudgets", { defaultValue: "Budgets" }), icon: PiggyBank },    
     { to: "/contacts", label: t("globalHeader.navContacts", { defaultValue: "Contacts" }), icon: BookUser },
     { to: "/summaries", label: t("globalHeader.navSummaries"), icon: BarChart3 },

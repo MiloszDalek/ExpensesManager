@@ -83,6 +83,12 @@
     "errorLoadingData": "Error Loading Data",
     "somethingWentWrong": "Something went wrong"
   },
+  "datePicker": {
+    "selectDate": "Select date",
+    "close": "Close",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
   "globalHeader": {
     "navDashboard": "Dashboard",
     "navSummaries": "Summaries",
@@ -307,6 +313,7 @@
     "trackSpending": "Track your spending",
     "total": "Total",
     "addExpense": "Add Expense",
+    "addRecurringExpense": "Add recurring",
     "scanReceipt": "Scan Receipt",
     "loadMore": "Load More"
   },
@@ -329,8 +336,17 @@
     "loading": "Loading...",
     "forecastCount": "Planned occurrences: {{count}}",
     "seriesTitle": "Recurring series",
-    "empty": "No recurring expenses yet. Create one from Add Expense / Add Group Expense dialogs.",
+    "empty": "No recurring expenses yet. Use the Add recurring action to create your first series.",
+    "cardAmount": "Amount",
+    "cardFrequency": "Frequency",
+    "cardInterval": "Every {{count}} periods",
+    "cardStatus": "Status",
     "nextDue": "Next due",
+    "startsOn": "Starts on",
+    "editSeries": "Edit / Manage",
+    "editDialogTitle": "Edit recurring series",
+    "actionsTitle": "Series actions",
+    "saveChanges": "Save changes",
     "generateNow": "Generate now",
     "pause": "Pause",
     "resume": "Resume",
@@ -585,6 +601,11 @@
       "receiptUploadFailed": "Could not upload receipt image."
     }
   },
+  "addRecurringExpenseDialog": {
+    "title": "Add recurring expense",
+    "submit": "Add recurring",
+    "submitting": "Adding..."
+  },
   "expensesList": {
     "emptyTitle": "No expenses yet",
     "emptyDescription": "Start tracking your spending by adding your first expense",
@@ -667,8 +688,13 @@
     "balanceRowOwesYou": "Owes you",
     "balanceRowYouOwe": "You owe",
     "balanceRowSettled": "Settled",
+    "settle": "Settle",
     "settleCash": "Settle cash",
     "settlingCash": "Settling...",
+    "settleOutsideApp": "Settle outside app",
+    "settlementOutsideConfirmTitle": "Record settlement outside the app?",
+    "settlementOutsideConfirmDescription": "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
+    "settlementOutsideConfirmAction": "Record settlement",
     "settlePayPal": "Settle with PayPal",
     "settlementSuccess": "Group settlement recorded.",
     "settlementsSection": "Completed settlements",
@@ -698,7 +724,12 @@
       "paypalCancelled": "PayPal payment was cancelled."
     },
     "expensesSection": "Expenses",
+    "mobileTabExpenses": "Expenses",
+    "mobileTabBalances": "Balances",
+    "mobileTabRecurring": "Recurring",
+    "mobileTabMembers": "Members",
     "addExpense": "Add expense",
+    "addRecurringExpense": "Add recurring",
     "scanReceipt": "Scan receipt",
     "membersSection": "Members",
     "addMember": "Add member",
@@ -763,6 +794,13 @@
     "deleteDescription": "This action cannot be undone.",
     "cancel": "Cancel",
     "paidBy": "Paid by",
+    "paidByShort": "Paid by",
+    "paidByMember": "Paid by {{name}}",
+    "youPaid": "You paid",
+    "youBorrowed": "You borrowed",
+    "youLent": "You lent",
+    "noBalance": "No balance",
+    "notApplicable": "not applicable",
     "splitType": "Split type",
     "shares": "Shares",
     "split": {
@@ -847,6 +885,14 @@
       "createFailed": "Could not create group expense.",
       "updateFailed": "Could not update group expense.",
       "deleteFailed": "Could not delete group expense."
+    }
+  },
+  "addGroupRecurringExpenseDialog": {
+    "title": "Add recurring group expense",
+    "submit": "Add recurring",
+    "submitting": "Adding...",
+    "errors": {
+      "startDateRequired": "Start date is required."
     }
   },
   "addGroupMemberDialog": {

@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -629,24 +630,22 @@ export default function ReceiptScannerPage() {
 
               <div className="space-y-1">
                 <Label htmlFor="receipt-scan-date">{t("receiptScannerPage.parsedDate")}</Label>
-                <Input
+                <DatePicker
                   id="receipt-scan-date"
-                  type="date"
                   value={parsedDate}
-                  onChange={(event) => {
-                    setParsedDate(event.target.value);
-                    setExpenseDate(event.target.value);
+                  onChange={(value) => {
+                    setParsedDate(value);
+                    setExpenseDate(value);
                   }}
                 />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="receipt-expense-date">{t("receiptScannerPage.expenseDate")}</Label>
-                <Input
+                <DatePicker
                   id="receipt-expense-date"
-                  type="date"
                   value={expenseDate}
-                  onChange={(event) => setExpenseDate(event.target.value)}
+                  onChange={setExpenseDate}
                 />
               </div>
 

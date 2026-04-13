@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Wallet, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { enUS, pl } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,7 @@ type GroupExpensesListProps = {
   expenses: ApiGroupExpenseResponse[];
   categories: ApiCategoryResponse[];
   memberNameById: Record<number, string>;
+  currentUserId: number;
   fallbackCurrency: string;
   isLoading: boolean;
   onEdit?: (expense: ApiGroupExpenseResponse) => void;
@@ -35,14 +37,16 @@ export default function GroupExpensesList({
   expenses,
   categories,
   memberNameById,
+  currentUserId,
   fallbackCurrency,
   isLoading,
   onEdit,
   onDelete,
   canManageExpense,
 }: GroupExpensesListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [expandedExpenseId, setExpandedExpenseId] = useState<number | null>(null);
+  const dateLocale = i18n.language.startsWith("pl") ? pl : enUS;
 
   const getCategory = (categoryId: number) => categories.find((category) => category.id === categoryId) ?? null;
 
@@ -96,6 +100,38 @@ export default function GroupExpensesList({
           const hasNotes = !!expense.notes?.trim();
           const displayCurrency = expense.currency ?? fallbackCurrency;
           const canManage = canManageExpense ? canManageExpense(expense) : Boolean(onEdit || onDelete);
+          const payerName = memberNameById[expense.user_id] ?? `${t("groupExpensesList.userPrefix")}#${expense.user_id}`;
+          const expenseDateLabel = format(new Date(expense.expense_date), "MMM d", { locale: dateLocale })
+            .replace(".", "")
+            .toUpperCase();
+          const payerLabel =
+            expense.user_id === currentUserId
+              ? t("groupExpensesList.youPaid", { defaultValue: "You paid" })
+              : `${t("groupExpensesList.paidByShort", { defaultValue: "Paid by" })}:`;
+          const totalAmount = Number(expense.amount);
+          const ownShareAmount = Number(
+            expense.shares.find((share) => share.user_id === currentUserId)?.share_amount ?? 0
+          );
+          const borrowedAmount = expense.user_id === currentUserId ? 0 : ownShareAmount;
+          const lentAmount = expense.user_id === currentUserId ? Math.max(totalAmount - ownShareAmount, 0) : 0;
+
+          const secondaryAmount = borrowedAmount > 0 ? borrowedAmount : lentAmount;
+          const secondaryLabel =
+            borrowedAmount > 0
+              ? t("groupExpensesList.youBorrowed", { defaultValue: "You borrowed" })
+              : lentAmount > 0
+                ? t("groupExpensesList.youLent", { defaultValue: "You lent" })
+                : t("groupExpensesList.noBalance", { defaultValue: "No balance" });
+          const secondaryAmountClass =
+            borrowedAmount > 0
+              ? "text-red-600"
+              : lentAmount > 0
+                ? "text-emerald-600"
+                : "text-muted-foreground";
+          const secondaryAmountText =
+            borrowedAmount > 0 || lentAmount > 0
+              ? `${secondaryAmount.toFixed(2)} ${displayCurrency}`
+              : t("groupExpensesList.notApplicable", { defaultValue: "not applicable" });
 
           return (
             <motion.div
@@ -106,11 +142,15 @@ export default function GroupExpensesList({
               transition={{ delay: index * 0.04 }}
             >
               <Card className="group overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-                <CardContent className="px-3 py-2">
+                <CardContent className="relative px-2.5 py-2 sm:px-3">
+                  <p className="pointer-events-none absolute left-2.5 top-1 text-[10px] font-semibold tracking-wide text-muted-foreground sm:left-3">
+                    {expenseDateLabel}
+                  </p>
+
                   <div
                     role="button"
                     tabIndex={0}
-                    className="flex cursor-pointer items-center gap-2"
+                    className="flex w-full min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden"
                     onClick={() => setExpandedExpenseId((previous) => (previous === expense.id ? null : expense.id))}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -120,20 +160,18 @@ export default function GroupExpensesList({
                     }}
                     aria-expanded={isExpanded}
                   >
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${visualStyle.badgeClass}`}>
-                      <Icon className="h-6 w-6" />
+                    <span className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">{expense.title}</p>
-                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <span>{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
-                        <span className="text-muted-foreground/50">•</span>
+                    <div className="min-w-0 flex-1 max-w-[6.5rem] sm:max-w-[9.5rem] md:max-w-none">
+                      <p className="truncate text-[13px] font-semibold text-foreground sm:text-sm">{expense.title}</p>
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
                         <span className="truncate">{categoryName}</span>
                         {expense.recurring_expense_id ? (
                           <>
                             <span className="text-muted-foreground/50">•</span>
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                               {t("groupExpensesList.recurring", { defaultValue: "Recurring" })}
                             </span>
                           </>
@@ -141,9 +179,22 @@ export default function GroupExpensesList({
                       </div>
                     </div>
 
-                    <p className="shrink-0 text-sm font-bold text-foreground">
-                      {Number(expense.amount).toFixed(2)} {displayCurrency}
-                    </p>
+                    <div className="w-[74px] shrink-0 text-right sm:w-[88px]">
+                      <p className="truncate text-[10px] text-muted-foreground">{payerLabel}</p>
+                      {expense.user_id !== currentUserId ? (
+                        <p className="truncate text-[10px] text-muted-foreground">{payerName}</p>
+                      ) : null}
+                      <p className="truncate text-[12px] font-bold text-foreground sm:text-sm">
+                        {totalAmount.toFixed(2)} {displayCurrency}
+                      </p>
+                    </div>
+
+                    <div className="w-[70px] shrink-0 text-right sm:w-[84px]">
+                      <p className="truncate text-[10px] text-muted-foreground">{secondaryLabel}</p>
+                      <p className={`truncate text-[12px] font-bold ${secondaryAmountClass} sm:text-sm`}>
+                        {secondaryAmountText}
+                      </p>
+                    </div>
 
                     {canManage && onDelete ? (
                       <AlertDialog>
@@ -152,7 +203,7 @@ export default function GroupExpensesList({
                             variant="ghost"
                             size="icon"
                             aria-label={t("groupExpensesList.delete")}
-                            className="h-7 w-7 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                            className="h-7 w-7 shrink-0 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                             onPointerDown={(event) => {
                               event.preventDefault();
                               event.stopPropagation();

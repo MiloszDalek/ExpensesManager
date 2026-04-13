@@ -23,22 +23,19 @@ import {
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
 import { getDefaultCategoryId } from "@/utils/category";
-import { receiptsApi } from "@/api/receiptsApi";
 
 import type {
   ApiCategoryResponse,
   ApiExpenseShare,
-  ApiGroupExpenseCreate,
-  ApiGroupExpenseResponse,
   ApiGroupMemberResponse,
-  ApiReceiptLineItem,
+  ApiRecurringGroupExpenseCreate,
 } from "@/types";
-import type { CategorySection, CurrencyEnum, SplitType } from "@/types/enums";
+import type { CategorySection, CurrencyEnum, RecurrenceFrequency, SplitType } from "@/types/enums";
 
-type AddGroupExpenseDialogProps = {
+type AddGroupRecurringExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (expenseData: ApiGroupExpenseCreate) => void;
+  onSubmit: (payload: ApiRecurringGroupExpenseCreate) => void;
   onCreateGroupCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
   onDeleteGroupCategory?: (categoryId: number) => Promise<void>;
   isLoading?: boolean;
@@ -46,8 +43,6 @@ type AddGroupExpenseDialogProps = {
   members: ApiGroupMemberResponse[];
   groupCurrency: CurrencyEnum;
   errorMessage?: string | null;
-  mode?: "create" | "edit";
-  expense?: ApiGroupExpenseResponse | null;
 };
 
 type FormData = {
@@ -55,27 +50,18 @@ type FormData = {
   amount: string;
   split_type: SplitType;
   category_id: number;
-  expense_date: string;
+  frequency: RecurrenceFrequency;
+  interval_count: string;
+  starts_on: string;
+  ends_on: string;
   notes: string;
   selectedMemberIds: number[];
 };
 
 const parseDecimal = (value: string): number => Number(value.replace(",", "."));
-
-const extractErrorMessage = (error: unknown): string => {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim().length > 0) {
-      return message;
-    }
-  }
-
-  return "";
-};
-
 const toAmountString = (value: number) => (Math.round(value * 100) / 100).toFixed(2);
-
 const toCents = (value: number): number => Math.round(value * 100);
+const toDateInput = (value: Date) => format(value, "yyyy-MM-dd");
 
 const buildEqualPercentInputs = (participantIds: number[]): Record<number, string> => {
   const inputs: Record<number, string> = {};
@@ -111,43 +97,6 @@ const buildEqualShares = (totalCents: number, participantIds: number[]): ApiExpe
       share_amount: toAmountString(cents / 100),
     };
   });
-};
-
-const buildPercentInputsFromShares = (
-  shares: ApiExpenseShare[],
-  totalCents: number,
-  participantIds: number[]
-): Record<number, string> => {
-  if (participantIds.length === 0) {
-    return {};
-  }
-
-  if (totalCents <= 0) {
-    return buildEqualPercentInputs(participantIds);
-  }
-
-  const shareCentsByUser = shares.reduce<Record<number, number>>((accumulator, share) => {
-    accumulator[share.user_id] = toCents(Number(share.share_amount));
-    return accumulator;
-  }, {});
-
-  const result: Record<number, string> = {};
-  let assigned = 0;
-
-  participantIds.forEach((userId, index) => {
-    if (index === participantIds.length - 1) {
-      const remainder = Math.max(0, Math.round((100 - assigned) * 100) / 100);
-      result[userId] = remainder.toFixed(2);
-      return;
-    }
-
-    const shareCents = shareCentsByUser[userId] ?? 0;
-    const percent = Math.round(((shareCents * 100) / totalCents) * 100) / 100;
-    assigned = Math.round((assigned + percent) * 100) / 100;
-    result[userId] = percent.toFixed(2);
-  });
-
-  return result;
 };
 
 const buildPercentShares = (
@@ -219,7 +168,7 @@ const buildExactShares = (
   });
 };
 
-export default function AddGroupExpenseDialog({
+export default function AddGroupRecurringExpenseDialog({
   open,
   onOpenChange,
   onSubmit,
@@ -230,11 +179,8 @@ export default function AddGroupExpenseDialog({
   members,
   groupCurrency,
   errorMessage,
-  mode = "create",
-  expense = null,
-}: AddGroupExpenseDialogProps) {
+}: AddGroupRecurringExpenseDialogProps) {
   const { t } = useTranslation();
-  const isEditMode = mode === "edit";
 
   const activeMembers = useMemo(
     () => members.filter((member) => member.status === "active"),
@@ -248,7 +194,10 @@ export default function AddGroupExpenseDialog({
     amount: "",
     split_type: "equal",
     category_id: defaultCategoryId,
-    expense_date: format(new Date(), "yyyy-MM-dd"),
+    frequency: "monthly",
+    interval_count: "1",
+    starts_on: toDateInput(new Date()),
+    ends_on: "",
     notes: "",
     selectedMemberIds: activeMembers.map((member) => member.user_id),
   });
@@ -257,72 +206,36 @@ export default function AddGroupExpenseDialog({
   const [exactShareInputs, setExactShareInputs] = useState<Record<number, string>>({});
   const [percentShareInputs, setPercentShareInputs] = useState<Record<number, string>>({});
   const [localError, setLocalError] = useState<string | null>(null);
-  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null);
-  const [receiptText, setReceiptText] = useState<string | null>(null);
-  const [receiptItems, setReceiptItems] = useState<ApiReceiptLineItem[]>([]);
-  const [parsedReceiptVendor, setParsedReceiptVendor] = useState<string | null>(null);
-  const [parsedReceiptDate, setParsedReceiptDate] = useState<string | null>(null);
-  const [parsedReceiptTotal, setParsedReceiptTotal] = useState<string | null>(null);
-  const [detectedReceiptAmount, setDetectedReceiptAmount] = useState<string | null>(null);
-  const [receiptOcrStatus, setReceiptOcrStatus] = useState<string | null>(null);
-  const [receiptUploadError, setReceiptUploadError] = useState<string | null>(null);
-  const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
-  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    if (isEditMode && expense) {
-      const expenseAmount = Number(expense.amount);
-      const expenseTotalCents = Number.isFinite(expenseAmount) && expenseAmount > 0 ? toCents(expenseAmount) : 0;
-      const participantIds = expense.shares.map((share) => share.user_id);
-      const exactInputs = expense.shares.reduce<Record<number, string>>((accumulator, share) => {
-        accumulator[share.user_id] = toAmountString(Number(share.share_amount));
-        return accumulator;
-      }, {});
-
-      setFormData({
-        title: expense.title,
-        amount: toAmountString(Number(expense.amount)),
-        split_type: expense.split_type,
-        category_id: expense.category_id,
-        expense_date: format(new Date(expense.expense_date), "yyyy-MM-dd"),
-        notes: expense.notes ?? "",
-        selectedMemberIds: participantIds,
-      });
-      setExactShareInputs(exactInputs);
-      setPercentShareInputs(buildPercentInputsFromShares(expense.shares, expenseTotalCents, participantIds));
-      setReceiptImageUrl(expense.receipt_image_url ?? null);
-      setReceiptText(expense.receipt_text ?? null);
-      setReceiptItems([]);
-      setParsedReceiptVendor(null);
-      setParsedReceiptDate(null);
-      setParsedReceiptTotal(null);
-      setDetectedReceiptAmount(null);
-      setReceiptOcrStatus(null);
-      setReceiptUploadError(null);
-      setReceiptFileName(null);
-      setLocalError(null);
-      return;
-    }
-
     setFormData(buildInitialState());
     setExactShareInputs({});
     setPercentShareInputs(buildEqualPercentInputs(activeMembers.map((member) => member.user_id)));
-    setReceiptImageUrl(null);
-    setReceiptText(null);
-    setReceiptItems([]);
-    setParsedReceiptVendor(null);
-    setParsedReceiptDate(null);
-    setParsedReceiptTotal(null);
-    setDetectedReceiptAmount(null);
-    setReceiptOcrStatus(null);
-    setReceiptUploadError(null);
-    setReceiptFileName(null);
     setLocalError(null);
-  }, [open, defaultCategoryId, activeMembers, isEditMode, expense]);
+  }, [open, defaultCategoryId, activeMembers]);
+
+  useEffect(() => {
+    if (!open || categories.length === 0) {
+      return;
+    }
+
+    setFormData((previous) => {
+      const hasCurrentCategory = categories.some((category) => category.id === previous.category_id);
+
+      if (hasCurrentCategory && previous.category_id !== 0) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        category_id: defaultCategoryId,
+      };
+    });
+  }, [open, categories, defaultCategoryId]);
 
   const selectedMemberIdSet = useMemo(
     () => new Set(formData.selectedMemberIds),
@@ -460,110 +373,28 @@ export default function AddGroupExpenseDialog({
     }));
   };
 
-  const handleReceiptFileUpload = async (file: File) => {
-    setReceiptUploadError(null);
-    setIsUploadingReceipt(true);
-
-    try {
-      const uploadResult = await receiptsApi.upload(file);
-      const parsedTotal = uploadResult.parsed_total ?? uploadResult.detected_amount ?? null;
-      const parsedDate = uploadResult.parsed_date ?? null;
-      const parsedVendor = uploadResult.parsed_vendor ?? null;
-
-      setReceiptFileName(file.name);
-      setReceiptImageUrl(uploadResult.image_url ?? null);
-      setReceiptText(uploadResult.receipt_text ?? null);
-      setReceiptItems(uploadResult.parsed_items ?? uploadResult.detected_items ?? []);
-      setDetectedReceiptAmount(uploadResult.detected_amount ?? parsedTotal);
-      setParsedReceiptTotal(parsedTotal);
-      setParsedReceiptDate(parsedDate);
-      setParsedReceiptVendor(parsedVendor);
-      setReceiptOcrStatus(uploadResult.ocr_status);
-
-      if (parsedTotal && (!formData.amount || Number(formData.amount) <= 0)) {
-        setFormData((previous) => ({
-          ...previous,
-          amount: parsedTotal,
-        }));
-      }
-
-      if (parsedVendor && !formData.title.trim()) {
-        setFormData((previous) => ({
-          ...previous,
-          title: parsedVendor,
-        }));
-      }
-
-      const today = format(new Date(), "yyyy-MM-dd");
-      if (parsedDate && formData.expense_date === today) {
-        setFormData((previous) => ({
-          ...previous,
-          expense_date: parsedDate,
-        }));
-      }
-    } catch (error) {
-      const message = extractErrorMessage(error);
-      setReceiptUploadError(message || t("addGroupExpenseDialog.errors.receiptUploadFailed"));
-    } finally {
-      setIsUploadingReceipt(false);
-    }
-  };
-
-  const handleApplyDetectedAmount = () => {
-    const nextAmount = parsedReceiptTotal ?? detectedReceiptAmount;
-    if (!nextAmount) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      amount: nextAmount,
-    }));
-    setLocalError(null);
-  };
-
-  const handleApplyDetectedVendor = () => {
-    if (!parsedReceiptVendor) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      title: parsedReceiptVendor,
-    }));
-  };
-
-  const handleApplyDetectedDate = () => {
-    if (!parsedReceiptDate) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      expense_date: parsedReceiptDate,
-    }));
-  };
-
   const handleSubmit = () => {
     const title = formData.title.trim();
+    const parsedInterval = Number.parseInt(formData.interval_count || "1", 10);
+    const normalizedInterval = Number.isFinite(parsedInterval) && parsedInterval > 0 ? parsedInterval : 1;
 
     if (!title) {
       setLocalError(t("addGroupExpenseDialog.errors.titleRequired"));
       return;
     }
 
-    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
-      setLocalError(t("addGroupExpenseDialog.errors.invalidAmount"));
-      return;
-    }
-
-    if (totalCents <= 0) {
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0 || totalCents <= 0) {
       setLocalError(t("addGroupExpenseDialog.errors.invalidAmount"));
       return;
     }
 
     if (!formData.category_id) {
       setLocalError(t("addGroupExpenseDialog.errors.categoryRequired"));
+      return;
+    }
+
+    if (!formData.starts_on) {
+      setLocalError(t("addGroupRecurringExpenseDialog.errors.startDateRequired", { defaultValue: "Start date is required." }));
       return;
     }
 
@@ -633,17 +464,17 @@ export default function AddGroupExpenseDialog({
       title,
       amount: toAmountString(totalCents / 100),
       currency: groupCurrency,
-      split_type: formData.split_type,
-      shares: computedShares,
       category_id: formData.category_id,
-      expense_date: formData.expense_date,
+      split_type: formData.split_type,
+      participants: computedShares.map((share) => ({
+        user_id: share.user_id,
+        share_amount: share.share_amount,
+      })),
+      frequency: formData.frequency,
+      interval_count: normalizedInterval,
+      starts_on: formData.starts_on,
+      ends_on: formData.ends_on || null,
       notes: formData.notes.trim() ? formData.notes.trim() : null,
-      receipt_image_url: receiptImageUrl,
-      receipt_text: receiptText,
-      is_recurring: false,
-      recurrence_frequency: null,
-      recurrence_interval: null,
-      recurrence_ends_on: null,
     });
   };
 
@@ -654,15 +485,15 @@ export default function AddGroupExpenseDialog({
       <DialogContent className="sm:max-w-lg [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? t("addGroupExpenseDialog.titleEdit") : t("addGroupExpenseDialog.titleCreate")}
+            {t("addGroupRecurringExpenseDialog.title", { defaultValue: "Add recurring group expense" })}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="group-expense-title">{t("addGroupExpenseDialog.titleLabel")}</Label>
+            <Label htmlFor="group-recurring-title">{t("addGroupExpenseDialog.titleLabel")}</Label>
             <Input
-              id="group-expense-title"
+              id="group-recurring-title"
               placeholder={t("addGroupExpenseDialog.titlePlaceholder")}
               value={formData.title}
               onChange={(event) => {
@@ -674,11 +505,12 @@ export default function AddGroupExpenseDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="group-expense-amount">{t("addGroupExpenseDialog.amount")}</Label>
+              <Label htmlFor="group-recurring-amount">{t("addGroupExpenseDialog.amount")}</Label>
               <Input
-                id="group-expense-amount"
+                id="group-recurring-amount"
                 type="number"
                 step="0.01"
+                min="0"
                 placeholder={t("addGroupExpenseDialog.amountPlaceholder")}
                 value={formData.amount}
                 onChange={(event) => {
@@ -689,15 +521,15 @@ export default function AddGroupExpenseDialog({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="group-expense-currency">{t("addGroupExpenseDialog.currency")}</Label>
-              <Input id="group-expense-currency" value={groupCurrency} disabled />
+              <Label htmlFor="group-recurring-currency">{t("addGroupExpenseDialog.currency")}</Label>
+              <Input id="group-recurring-currency" value={groupCurrency} disabled readOnly />
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="group-expense-split-type">{t("addGroupExpenseDialog.splitType")}</Label>
+            <Label htmlFor="group-recurring-split-type">{t("addGroupExpenseDialog.splitType")}</Label>
             <Select value={formData.split_type} onValueChange={(value) => handleSplitTypeChange(value as SplitType)}>
-              <SelectTrigger id="group-expense-split-type" className="w-full">
+              <SelectTrigger id="group-recurring-split-type" className="w-full">
                 <SelectValue placeholder={t("addGroupExpenseDialog.splitTypePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
@@ -709,7 +541,7 @@ export default function AddGroupExpenseDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="group-expense-category">{t("addGroupExpenseDialog.category")}</Label>
+            <Label htmlFor="group-recurring-category">{t("addGroupExpenseDialog.category")}</Label>
             <CategoryPicker
               value={String(formData.category_id)}
               onValueChange={(value) => {
@@ -729,22 +561,87 @@ export default function AddGroupExpenseDialog({
             />
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="group-expense-date">{t("addGroupExpenseDialog.date")}</Label>
-            <DatePicker
-              id="group-expense-date"
-              value={formData.expense_date}
-              onChange={(value) => {
-                setLocalError(null);
-                setFormData((previous) => ({ ...previous, expense_date: value }));
-              }}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="group-recurring-frequency">
+                {t("addExpenseDialog.recurringFrequency", { defaultValue: "Frequency" })}
+              </Label>
+              <Select
+                value={formData.frequency}
+                onValueChange={(value) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    frequency: value as RecurrenceFrequency,
+                  }))
+                }
+              >
+                <SelectTrigger id="group-recurring-frequency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">{t("addExpenseDialog.recurringDaily", { defaultValue: "Daily" })}</SelectItem>
+                  <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly", { defaultValue: "Weekly" })}</SelectItem>
+                  <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly", { defaultValue: "Monthly" })}</SelectItem>
+                  <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" })}</SelectItem>
+                  <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly", { defaultValue: "Yearly" })}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="group-recurring-interval">
+                {t("addExpenseDialog.recurringInterval", { defaultValue: "Every N periods" })}
+              </Label>
+              <Input
+                id="group-recurring-interval"
+                type="number"
+                min="1"
+                step="1"
+                value={formData.interval_count}
+                onChange={(event) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    interval_count: event.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="group-recurring-starts-on">{t("recurringExpenses.startsOn", { defaultValue: "Starts on" })}</Label>
+              <DatePicker
+                id="group-recurring-starts-on"
+                value={formData.starts_on}
+                onChange={(value) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    starts_on: value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="group-recurring-ends-on">{t("addExpenseDialog.recurringEndsOn", { defaultValue: "End date (optional)" })}</Label>
+              <DatePicker
+                id="group-recurring-ends-on"
+                value={formData.ends_on}
+                onChange={(value) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    ends_on: value,
+                  }))
+                }
+              />
+            </div>
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="group-expense-notes">{t("addGroupExpenseDialog.notes")}</Label>
+            <Label htmlFor="group-recurring-notes">{t("addGroupExpenseDialog.notes")}</Label>
             <Textarea
-              id="group-expense-notes"
+              id="group-recurring-notes"
               placeholder={t("addGroupExpenseDialog.notesPlaceholder")}
               value={formData.notes}
               onChange={(event) => {
@@ -753,125 +650,6 @@ export default function AddGroupExpenseDialog({
               }}
               rows={2}
             />
-          </div>
-
-          <div className="space-y-2 rounded-md border border-border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="group-expense-receipt">{t("addGroupExpenseDialog.receiptImage")}</Label>
-              {receiptImageUrl ? (
-                <a
-                  href={receiptImageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-primary hover:underline"
-                >
-                  {t("addGroupExpenseDialog.viewReceipt")}
-                </a>
-              ) : null}
-            </div>
-
-            <Input
-              id="group-expense-receipt"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={isUploadingReceipt || isLoading}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) {
-                  return;
-                }
-
-                void handleReceiptFileUpload(file);
-                event.target.value = "";
-              }}
-            />
-
-            {isUploadingReceipt ? (
-              <p className="text-xs text-muted-foreground">{t("addGroupExpenseDialog.receiptUploading")}</p>
-            ) : null}
-
-            {receiptFileName ? (
-              <p className="text-xs text-muted-foreground">
-                {t("addGroupExpenseDialog.receiptUploadedFile", { fileName: receiptFileName })}
-              </p>
-            ) : null}
-
-            {receiptOcrStatus ? (
-              <p className="text-xs text-muted-foreground">
-                {receiptOcrStatus === "done"
-                  ? t("addGroupExpenseDialog.ocrDone")
-                  : receiptOcrStatus === "unavailable"
-                    ? t("addGroupExpenseDialog.ocrUnavailable")
-                    : t("addGroupExpenseDialog.ocrFailed")}
-              </p>
-            ) : null}
-
-            {detectedReceiptAmount ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addGroupExpenseDialog.detectedAmount", {
-                    amount: parsedReceiptTotal ?? detectedReceiptAmount,
-                    currency: groupCurrency,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedAmount}>
-                  {t("addGroupExpenseDialog.useDetectedAmount")}
-                </Button>
-              </div>
-            ) : null}
-
-            {parsedReceiptVendor ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addGroupExpenseDialog.detectedVendor", {
-                    vendor: parsedReceiptVendor,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedVendor}>
-                  {t("addGroupExpenseDialog.useDetectedVendor")}
-                </Button>
-              </div>
-            ) : null}
-
-            {parsedReceiptDate ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addGroupExpenseDialog.detectedDate", {
-                    date: parsedReceiptDate,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedDate}>
-                  {t("addGroupExpenseDialog.useDetectedDate")}
-                </Button>
-              </div>
-            ) : null}
-
-            {receiptItems.length > 0 ? (
-              <div className="space-y-1 rounded-md bg-muted/50 px-2 py-2">
-                <p className="text-xs font-medium text-foreground">{t("addGroupExpenseDialog.detectedItemsLabel")}</p>
-                <div className="space-y-1">
-                  {receiptItems.slice(0, 6).map((item, index) => (
-                    <p key={`${item.name}-${item.amount}-${index}`} className="text-xs text-muted-foreground">
-                      {item.name} - {item.amount} {groupCurrency}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {receiptText ? (
-              <div className="space-y-1">
-                <Label htmlFor="group-expense-ocr-text">{t("addGroupExpenseDialog.ocrText")}</Label>
-                <Textarea
-                  id="group-expense-ocr-text"
-                  rows={4}
-                  value={receiptText}
-                  onChange={(event) => setReceiptText(event.target.value)}
-                />
-              </div>
-            ) : null}
-
-            {receiptUploadError ? <p className="text-xs text-destructive">{receiptUploadError}</p> : null}
           </div>
 
           <div className="space-y-2">
@@ -891,12 +669,12 @@ export default function AddGroupExpenseDialog({
                 return (
                   <label
                     key={member.id}
-                    htmlFor={`participant-${member.user_id}`}
+                    htmlFor={`recurring-participant-${member.user_id}`}
                     className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted/60"
                   >
                     <span className="text-sm text-foreground">{member.username}</span>
                     <input
-                      id={`participant-${member.user_id}`}
+                      id={`recurring-participant-${member.user_id}`}
                       type="checkbox"
                       checked={checked}
                       onChange={(event) => handleParticipantToggle(member.user_id, event.target.checked)}
@@ -914,7 +692,7 @@ export default function AddGroupExpenseDialog({
             {formData.split_type === "exact" ? (
               <div className="space-y-2 rounded-md border border-border p-3">
                 {selectedParticipantIds.map((userId) => (
-                  <div key={`exact-share-${userId}`} className="grid grid-cols-[1fr_140px] items-center gap-2">
+                  <div key={`recurring-exact-share-${userId}`} className="grid grid-cols-[1fr_140px] items-center gap-2">
                     <span className="truncate text-sm text-foreground">
                       {memberNameById[userId] ?? `${t("groupExpensesList.userPrefix")}#${userId}`}
                     </span>
@@ -946,7 +724,7 @@ export default function AddGroupExpenseDialog({
             {formData.split_type === "percent" ? (
               <div className="space-y-2 rounded-md border border-border p-3">
                 {selectedParticipantIds.map((userId) => (
-                  <div key={`percent-share-${userId}`} className="grid grid-cols-[1fr_90px_120px] items-center gap-2">
+                  <div key={`recurring-percent-share-${userId}`} className="grid grid-cols-[1fr_90px_120px] items-center gap-2">
                     <span className="truncate text-sm text-foreground">
                       {memberNameById[userId] ?? `${t("groupExpensesList.userPrefix")}#${userId}`}
                     </span>
@@ -984,14 +762,10 @@ export default function AddGroupExpenseDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("addGroupExpenseDialog.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || isUploadingReceipt}>
+          <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading
-              ? isEditMode
-                ? t("addGroupExpenseDialog.submittingEdit")
-                : t("addGroupExpenseDialog.submittingCreate")
-              : isEditMode
-                ? t("addGroupExpenseDialog.submitEdit")
-                : t("addGroupExpenseDialog.submitCreate")}
+              ? t("addGroupRecurringExpenseDialog.submitting", { defaultValue: "Adding..." })
+              : t("addGroupRecurringExpenseDialog.submit", { defaultValue: "Add recurring" })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -5,7 +5,6 @@ type PageName =
   | "NewGroup"
   | "Settings"
   | "Dashboard"
-  | "Recurring"
   | "Summaries"
   | "Contacts"
   | "Profile";
@@ -18,7 +17,6 @@ const PAGE_PATHS: Record<PageName, string> = {
   NewGroup: "/groups/new",
   Settings: "/settings",
   Dashboard: "/dashboard",
-  Recurring: "/recurring",
   Summaries: "/summaries",
   Contacts: "/contacts",
   Profile: "/profile",

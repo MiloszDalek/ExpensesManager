@@ -111,7 +111,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                   <div
                     role="button"
                     tabIndex={0}
-                    className="flex cursor-pointer items-center gap-1.5 sm:gap-2"
+                    className="flex min-w-0 cursor-pointer items-center gap-1.5 sm:gap-2"
                     onClick={() => toggleExpandedExpense(expense.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -122,8 +122,8 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                     aria-expanded={isExpanded}
                     aria-label={isExpanded ? t("expensesList.collapse") : t("expensesList.expand")}
                   >
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${visualStyle.badgeClass}`}>
-                      <Icon className="h-6 w-6" />
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
                     <div className="min-w-0 flex-1">
@@ -147,9 +147,12 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-[12px] font-bold text-foreground sm:text-sm">
-                        {Number(expense.amount).toFixed(2)} {expense.currency}
+                    <div className="w-[5.8rem] shrink-0 text-right sm:w-auto">
+                      <p className="truncate text-[11px] font-bold text-foreground sm:text-sm">
+                        {Number(expense.amount).toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground sm:text-xs">
+                        {expense.currency}
                       </p>
                     </div>
 
