@@ -17,8 +17,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import SpeedDial from "@/components/ui/speed-dial";
 import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
@@ -78,7 +84,15 @@ export default function GroupDetailPage() {
   const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
   const [editingRecurringExpense, setEditingRecurringExpense] = useState<ApiRecurringExpenseResponse | null>(null);
   const [mobileSection, setMobileSection] = useState<"expenses" | "balances" | "recurring" | "members">("expenses");
-  const [expandedSettlementUserId, setExpandedSettlementUserId] = useState<number | null>(null);
+  const [settlementDialogTarget, setSettlementDialogTarget] = useState<{
+    userId: number;
+    memberName: string;
+    absoluteAmount: number;
+  } | null>(null);
+  const [outsideAppConfirmTarget, setOutsideAppConfirmTarget] = useState<{
+    userId: number;
+    absoluteAmount: number;
+  } | null>(null);
   const [inviteMemberError, setInviteMemberError] = useState<string | null>(null);
   const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
   const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
@@ -399,6 +413,8 @@ export default function GroupDetailPage() {
       tone: "success",
       message: t("groupDetailPage.settlementSuccess"),
     });
+    setSettlementDialogTarget(null);
+    setOutsideAppConfirmTarget(null);
   };
 
   const settleGroupCashMutation = useMutation({
@@ -421,6 +437,8 @@ export default function GroupDetailPage() {
         tone: "success",
         message: t("groupDetailPage.settlementSuccess"),
       });
+      setSettlementDialogTarget(null);
+      setOutsideAppConfirmTarget(null);
     },
     onError: (mutationError: Error) => {
       setGroupSettlementFeedback({
@@ -1163,130 +1181,20 @@ export default function GroupDetailPage() {
                             </div>
 
                             {row.amount < 0 ? (
-                              <div className="flex flex-col gap-2">
+                              <div className="flex">
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  disabled={
-                                    settleGroupCashMutation.isPending &&
-                                    settleGroupCashMutation.variables === row.userId
-                                  }
-                                  onClick={() =>
-                                    setExpandedSettlementUserId((previous) =>
-                                      previous === row.userId ? null : row.userId
-                                    )
-                                  }
+                                  onClick={() => {
+                                    setSettlementDialogTarget({
+                                      userId: row.userId,
+                                      memberName: row.memberName,
+                                      absoluteAmount: row.absoluteAmount,
+                                    });
+                                  }}
                                 >
                                   {t("groupDetailPage.settle", { defaultValue: "Settle" })}
                                 </Button>
-
-                                {expandedSettlementUserId === row.userId ? (
-                                  <div className="flex flex-col gap-2 rounded-md border border-border/70 bg-background/60 p-2">
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={
-                                            settleGroupCashMutation.isPending &&
-                                            settleGroupCashMutation.variables === row.userId
-                                          }
-                                        >
-                                          {t("groupDetailPage.settleOutsideApp", { defaultValue: "Settle outside app" })}
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>
-                                            {t("groupDetailPage.settlementOutsideConfirmTitle", {
-                                              defaultValue: "Record settlement outside the app?",
-                                            })}
-                                          </AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            {t("groupDetailPage.settlementOutsideConfirmDescription", {
-                                              defaultValue:
-                                                "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
-                                              amount: row.absoluteAmount.toFixed(2),
-                                              currency: group.currency,
-                                            })}
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>{t("common.cancel", { defaultValue: "Cancel" })}</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => settleGroupCashMutation.mutate(row.userId)}
-                                          >
-                                            {settleGroupCashMutation.isPending &&
-                                            settleGroupCashMutation.variables === row.userId
-                                              ? t("groupDetailPage.settlingCash")
-                                              : t("groupDetailPage.settlementOutsideConfirmAction", {
-                                                  defaultValue: "Record settlement",
-                                                })}
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-
-                                    {isPayPalSdkEnabled ? (
-                                      <div className="w-[165px]">
-                                        <PayPalCurrencyButtons
-                                          currency={group.currency}
-                                          fundingSource="paypal"
-                                          style={{ layout: "horizontal", tagline: false, height: 34 }}
-                                          forceReRender={[row.userId, groupId]}
-                                          createOrder={async () => {
-                                            try {
-                                              return await createGroupPayPalOrder(row.userId);
-                                            } catch (error) {
-                                              const message = error instanceof Error ? error.message : undefined;
-                                              setGroupSettlementFeedback({
-                                                tone: "error",
-                                                message: mapPayPalSettlementError(message),
-                                              });
-                                              throw error;
-                                            }
-                                          }}
-                                          onApprove={async (data) => {
-                                            if (!data.orderID) {
-                                              setGroupSettlementFeedback({
-                                                tone: "error",
-                                                message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
-                                              });
-                                              return;
-                                            }
-
-                                            try {
-                                              await finalizeGroupPayPalOrder(data.orderID, row.userId);
-                                            } catch (error) {
-                                              const message = error instanceof Error ? error.message : undefined;
-                                              setGroupSettlementFeedback({
-                                                tone: "error",
-                                                message: mapPayPalSettlementError(message),
-                                              });
-                                            }
-                                          }}
-                                          onCancel={() => {
-                                            setGroupSettlementFeedback({
-                                              tone: "error",
-                                              message: t("groupDetailPage.settlementErrors.paypalCancelled"),
-                                            });
-                                          }}
-                                          onError={(error) => {
-                                            const message = error instanceof Error ? error.message : undefined;
-                                            setGroupSettlementFeedback({
-                                              tone: "error",
-                                              message: mapPayPalSettlementError(message),
-                                            });
-                                          }}
-                                        />
-                                      </div>
-                                    ) : (
-                                      <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                                        {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
-                                      </p>
-                                    )}
-                                  </div>
-                                ) : null}
                               </div>
                             ) : null}
                           </div>
@@ -1544,6 +1452,171 @@ export default function GroupDetailPage() {
           scanReceiptLabel={t("groupDetailPage.scanReceipt")}
         />
       </div>
+
+      <Dialog
+        open={settlementDialogTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSettlementDialogTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("groupDetailPage.settle", { defaultValue: "Settle" })}</DialogTitle>
+            <DialogDescription>
+              {settlementDialogTarget
+                ? t("groupDetailPage.settlementDialogDescription", {
+                    defaultValue: "Choose how to settle with {{member}}.",
+                    member: settlementDialogTarget.memberName,
+                  })
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                !settlementDialogTarget ||
+                (settleGroupCashMutation.isPending &&
+                  settleGroupCashMutation.variables === settlementDialogTarget.userId)
+              }
+              onClick={() => {
+                if (!settlementDialogTarget) {
+                  return;
+                }
+
+                setOutsideAppConfirmTarget({
+                  userId: settlementDialogTarget.userId,
+                  absoluteAmount: settlementDialogTarget.absoluteAmount,
+                });
+                setSettlementDialogTarget(null);
+              }}
+            >
+              {settleGroupCashMutation.isPending
+                ? t("groupDetailPage.settlingCash")
+                : t("groupDetailPage.settleOutsideApp", { defaultValue: "Settle outside app" })}
+            </Button>
+
+            {isPayPalSdkEnabled ? (
+              <div className="w-[165px]">
+                <PayPalCurrencyButtons
+                  currency={group.currency}
+                  fundingSource="paypal"
+                  style={{ layout: "horizontal", tagline: false, height: 34 }}
+                  forceReRender={[settlementDialogTarget?.userId ?? 0, groupId]}
+                  createOrder={async () => {
+                    if (!settlementDialogTarget) {
+                      throw new Error("Missing settlement target");
+                    }
+
+                    try {
+                      return await createGroupPayPalOrder(settlementDialogTarget.userId);
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setGroupSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                      throw error;
+                    }
+                  }}
+                  onApprove={async (data) => {
+                    if (!data.orderID || !settlementDialogTarget) {
+                      setGroupSettlementFeedback({
+                        tone: "error",
+                        message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
+                      });
+                      return;
+                    }
+
+                    try {
+                      await finalizeGroupPayPalOrder(data.orderID, settlementDialogTarget.userId);
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setGroupSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                    }
+                  }}
+                  onCancel={() => {
+                    setGroupSettlementFeedback({
+                      tone: "error",
+                      message: t("groupDetailPage.settlementErrors.paypalCancelled"),
+                    });
+                  }}
+                  onError={(error) => {
+                    const message = error instanceof Error ? error.message : undefined;
+                    setGroupSettlementFeedback({
+                      tone: "error",
+                      message: mapPayPalSettlementError(message),
+                    });
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={outsideAppConfirmTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOutsideAppConfirmTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("groupDetailPage.settlementOutsideConfirmTitle", {
+                defaultValue: "Record settlement outside the app?",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {outsideAppConfirmTarget
+                ? t("groupDetailPage.settlementOutsideConfirmDescription", {
+                    defaultValue:
+                      "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
+                    amount: outsideAppConfirmTarget.absoluteAmount.toFixed(2),
+                    currency: group.currency,
+                  })
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel", { defaultValue: "Cancel" })}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                !outsideAppConfirmTarget ||
+                (settleGroupCashMutation.isPending &&
+                  settleGroupCashMutation.variables === outsideAppConfirmTarget.userId)
+              }
+              onClick={() => {
+                if (!outsideAppConfirmTarget) {
+                  return;
+                }
+
+                settleGroupCashMutation.mutate(outsideAppConfirmTarget.userId);
+              }}
+            >
+              {settleGroupCashMutation.isPending
+                ? t("groupDetailPage.settlingCash")
+                : t("groupDetailPage.settlementOutsideConfirmAction", {
+                    defaultValue: "Record settlement",
+                  })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EditGroupDialog
         open={showEditGroupDialog}

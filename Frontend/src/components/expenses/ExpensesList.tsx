@@ -111,7 +111,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                   <div
                     role="button"
                     tabIndex={0}
-                    className="flex min-w-0 cursor-pointer items-center gap-1.5 sm:gap-2"
+                    className="flex w-full min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden sm:gap-2"
                     onClick={() => toggleExpandedExpense(expense.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -126,16 +126,16 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                       <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 max-w-[9rem] sm:max-w-none">
                       <p className="truncate text-[12px] font-semibold leading-tight text-foreground sm:text-[13px]">{expense.title}</p>
-                      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <span>{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden text-[11px] text-muted-foreground">
+                        <span className="shrink-0">{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
                         <span className="text-muted-foreground/50">•</span>
                         <span className="truncate">{categoryGroupLabel}</span>
                         {expense.recurring_expense_id ? (
                           <>
                             <span className="text-muted-foreground/50">•</span>
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                               {t("expensesList.recurring", { defaultValue: "Recurring" })}
                             </span>
                           </>
@@ -147,7 +147,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                       </div>
                     </div>
 
-                    <div className="w-[5.8rem] shrink-0 text-right sm:w-auto">
+                    <div className="w-[5.2rem] shrink-0 text-right sm:w-auto">
                       <p className="truncate text-[11px] font-bold text-foreground sm:text-sm">
                         {Number(expense.amount).toFixed(2)}
                       </p>
@@ -162,7 +162,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           variant="ghost"
                           size="icon"
                           aria-label={t("expensesList.delete")}
-                          className="h-7 w-7 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                          className="h-7 w-7 shrink-0 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                           onPointerDown={(event) => {
                             event.stopPropagation();
                           }}

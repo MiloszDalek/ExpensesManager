@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown, ChevronUp, HandCoins, UsersRound } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, HandCoins, Search, UsersRound } from "lucide-react";
 
 import {
   AlertDialog,
@@ -16,6 +16,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import { useAuth } from "@/contexts/AuthContext";
 import { contactsApi } from "@/api/contactsApi";
@@ -54,6 +63,12 @@ type TotalSettlementTarget = {
   contactUsername: string;
 };
 
+type TotalSettlementOptionsTarget = {
+  contactUserId: number;
+  contactUsername: string;
+  currency: string;
+};
+
 export default function ContactsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -63,8 +78,12 @@ export default function ContactsPage() {
     tone: "success" | "error";
     message: string;
   } | null>(null);
+  const [totalSettlementOptionsTarget, setTotalSettlementOptionsTarget] = useState<TotalSettlementOptionsTarget | null>(null);
+  const [groupSettlementOptionsTarget, setGroupSettlementOptionsTarget] = useState<GroupSettlementTarget | null>(null);
   const [groupSettlementTarget, setGroupSettlementTarget] = useState<GroupSettlementTarget | null>(null);
   const [totalSettlementTarget, setTotalSettlementTarget] = useState<TotalSettlementTarget | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [selectedSummaryCurrency, setSelectedSummaryCurrency] = useState<string>("");
   const isPayPalSdkEnabled = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
 
   const mapTotalSettlementError = (message: string | undefined) => {
@@ -131,6 +150,7 @@ export default function ContactsPage() {
       tone: "success",
       message: t("contactsBalancesPage.settlementSuccess"),
     });
+    setTotalSettlementOptionsTarget(null);
     setTotalSettlementTarget(null);
   };
 
@@ -159,6 +179,7 @@ export default function ContactsPage() {
       tone: "success",
       message: t("contactsBalancesPage.settlementGroupSuccess", { groupName }),
     });
+    setGroupSettlementOptionsTarget(null);
     setGroupSettlementTarget(null);
   };
 
@@ -179,6 +200,7 @@ export default function ContactsPage() {
         tone: "success",
         message: t("contactsBalancesPage.settlementSuccess"),
       });
+      setTotalSettlementOptionsTarget(null);
       setTotalSettlementTarget(null);
     },
     onError: (mutationError: Error) => {
@@ -215,6 +237,7 @@ export default function ContactsPage() {
           groupName,
         }),
       });
+      setGroupSettlementOptionsTarget(null);
       setGroupSettlementTarget(null);
     },
     onError: (mutationError: Error) => {
@@ -321,19 +344,52 @@ export default function ContactsPage() {
     );
   }, [contactRows]);
 
-  const formatCurrencyTotals = (currencyTotals: Record<string, number>) => {
-    const entries = Object.entries(currencyTotals)
-      .filter(([, amount]) => amount !== 0)
-      .sort((left, right) => right[1] - left[1]);
+  const summaryCurrencies = useMemo(() => {
+    const currencySet = new Set<string>();
 
-    if (entries.length === 0) {
-      return t("contactsBalancesPage.settled");
+    contactRows.forEach((row) => {
+      Object.entries(row.currencyTotals).forEach(([currency, amount]) => {
+        if (amount !== 0) {
+          currencySet.add(currency);
+        }
+      });
+    });
+
+    return Array.from(currencySet).sort((left, right) => left.localeCompare(right));
+  }, [contactRows]);
+
+  useEffect(() => {
+    if (summaryCurrencies.length === 0) {
+      setSelectedSummaryCurrency("");
+      return;
     }
 
-    return entries
-      .map(([currency, amount]) => `${Math.abs(amount).toFixed(2)} ${currency}`)
-      .join(" · ");
-  };
+    if (!summaryCurrencies.includes(selectedSummaryCurrency)) {
+      setSelectedSummaryCurrency(summaryCurrencies[0]);
+    }
+  }, [summaryCurrencies, selectedSummaryCurrency]);
+
+  const summaryOthersOweAmount = selectedSummaryCurrency
+    ? summary.othersOweMe[selectedSummaryCurrency] ?? 0
+    : 0;
+
+  const summaryYouOweAmount = selectedSummaryCurrency
+    ? summary.iOweOthers[selectedSummaryCurrency] ?? 0
+    : 0;
+
+  const filteredContactRows = useMemo(() => {
+    const normalizedSearch = contactSearch.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return contactRows;
+    }
+
+    return contactRows.filter((row) => {
+      const username = row.contact.username.toLowerCase();
+      const email = row.contact.email.toLowerCase();
+      return username.includes(normalizedSearch) || email.includes(normalizedSearch);
+    });
+  }, [contactRows, contactSearch]);
 
   const formatSignedCurrencyTotals = (currencyTotals: Record<string, number>) => {
     const entries = Object.entries(currencyTotals)
@@ -421,66 +477,127 @@ export default function ContactsPage() {
           <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
+        <div className="mb-6 mx-auto flex w-full max-w-md items-stretch gap-3">
+          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardContent className="flex aspect-square flex-col justify-between p-4">
               <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.contactsCount")}</p>
-              <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-foreground">
-                <UsersRound className="h-5 w-5 text-primary" />
-                {contactRows.length}
+              <div className="self-center text-center">
+                <p className="flex items-center justify-center gap-2 text-2xl font-bold text-foreground sm:text-3xl">
+                  <UsersRound className="h-5 w-5 text-primary" />
+                  {contactRows.length}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardContent className="flex aspect-square flex-col justify-between p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs text-muted-foreground sm:text-sm">{t("contactsBalancesPage.othersOweYou")}</p>
+                {summaryCurrencies.length > 0 ? (
+                  <Select value={selectedSummaryCurrency} onValueChange={setSelectedSummaryCurrency}>
+                    <SelectTrigger className="h-8 w-[74px] text-xs sm:w-[92px] sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {summaryCurrencies.map((currency) => (
+                        <SelectItem key={`summary-others-${currency}`} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
+
+              <p className="text-center text-lg font-bold text-emerald-700 sm:text-2xl">
+                {summaryCurrencies.length > 0
+                  ? `${summaryOthersOweAmount.toFixed(2)} ${selectedSummaryCurrency}`
+                  : t("contactsBalancesPage.settled")}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.othersOweYou")}</p>
-              <p className="mt-1 text-sm font-bold text-emerald-700">{formatCurrencyTotals(summary.othersOweMe)}</p>
-            </CardContent>
-          </Card>
+          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardContent className="flex aspect-square flex-col justify-between p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs text-muted-foreground sm:text-sm">{t("contactsBalancesPage.youOweOthers")}</p>
+                {summaryCurrencies.length > 0 ? (
+                  <Select value={selectedSummaryCurrency} onValueChange={setSelectedSummaryCurrency}>
+                    <SelectTrigger className="h-8 w-[74px] text-xs sm:w-[92px] sm:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {summaryCurrencies.map((currency) => (
+                        <SelectItem key={`summary-owe-${currency}`} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
 
-          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.youOweOthers")}</p>
-              <p className="mt-1 text-sm font-bold text-rose-700">{formatCurrencyTotals(summary.iOweOthers)}</p>
+              <p className="text-center text-lg font-bold text-rose-700 sm:text-2xl">
+                {summaryCurrencies.length > 0
+                  ? `${summaryYouOweAmount.toFixed(2)} ${selectedSummaryCurrency}`
+                  : t("contactsBalancesPage.settled")}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-          <CardContent className="p-4 md:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <HandCoins className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">{t("contactsBalancesPage.listTitle")}</h2>
-            </div>
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <HandCoins className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">{t("contactsBalancesPage.listTitle")}</h2>
+          </div>
 
-            {settlementFeedback ? (
-              <p
-                className={`mb-3 text-sm ${
-                  settlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
-                }`}
-              >
-                {settlementFeedback.message}
-              </p>
-            ) : null}
+          <div className="relative w-full md:w-80">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={contactSearch}
+              onChange={(event) => setContactSearch(event.target.value)}
+              placeholder={t("contactsBalancesPage.searchPlaceholder", { defaultValue: "Search contacts" })}
+              className="pl-9"
+            />
+          </div>
+        </div>
 
-            {contactRows.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-                {t("contactsBalancesPage.empty")}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {contactRows.map((row) => {
+        {settlementFeedback ? (
+          <p
+            className={`mb-3 text-sm ${
+              settlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+            }`}
+          >
+            {settlementFeedback.message}
+          </p>
+        ) : null}
+
+        {filteredContactRows.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+            {contactRows.length === 0
+              ? t("contactsBalancesPage.empty")
+              : t("contactsBalancesPage.searchNoResults", { defaultValue: "No contacts match your search." })}
+          </p>
+        ) : (
+          <div className="mx-auto max-w-3xl space-y-2">
+            {filteredContactRows.map((row) => {
+                  const rowBreakdown = breakdownByContactId[row.contact.contact_id] ?? [];
+                  const payableGroupCount = rowBreakdown.filter((item) => Number(item.balance) < 0).length;
+                  const payableCurrency =
+                    Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN";
                   const isExpanded = expandedContactUserId === row.contact.contact_id;
                   const balanceLabel = formatSignedCurrencyTotals(row.currencyTotals);
                   const hasPositive = Object.values(row.currencyTotals).some((amount) => amount > 0);
                   const hasNegative = Object.values(row.currencyTotals).some((amount) => amount < 0);
+                  const canSettleTotal = hasNegative && payableGroupCount > 1;
 
                   return (
-                    <div key={row.contact.id} className="rounded-lg border border-border">
+                    <div key={row.contact.id} className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                       <button
                         type="button"
-                        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-muted/40"
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/40"
                         onClick={() =>
                           setExpandedContactUserId((previous) =>
                             previous === row.contact.contact_id ? null : row.contact.contact_id
@@ -519,86 +636,21 @@ export default function ContactsPage() {
 
                       {isExpanded && (
                         <div className="border-t border-border px-3 py-3">
-                          {hasNegative ? (
-                            <div className="mb-3 flex flex-wrap items-center gap-2">
+                          {canSettleTotal ? (
+                            <div className="mb-3 flex flex-col gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={
-                                  settleTotalCashMutation.isPending &&
-                                  settleTotalCashMutation.variables === row.contact.contact_id
-                                }
                                 onClick={() => {
-                                  setTotalSettlementTarget({
+                                  setTotalSettlementOptionsTarget({
                                     contactUserId: row.contact.contact_id,
                                     contactUsername: row.contact.username,
+                                    currency: payableCurrency,
                                   });
                                 }}
                               >
-                                {settleTotalCashMutation.isPending &&
-                                settleTotalCashMutation.variables === row.contact.contact_id
-                                  ? t("contactsBalancesPage.settlingTotalCash")
-                                  : t("contactsBalancesPage.settleTotalCash")}
+                                {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
                               </Button>
-
-                              {isPayPalSdkEnabled ? (
-                                <div className="w-[180px]">
-                                  <PayPalCurrencyButtons
-                                    currency={Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN"}
-                                    fundingSource="paypal"
-                                    style={{ layout: "horizontal", tagline: false, height: 34 }}
-                                    forceReRender={[row.contact.contact_id]}
-                                    createOrder={async () => {
-                                      try {
-                                        return await createTotalPayPalOrder(row.contact.contact_id);
-                                      } catch (error) {
-                                        const message = error instanceof Error ? error.message : undefined;
-                                        setSettlementFeedback({
-                                          tone: "error",
-                                          message: mapPayPalSettlementError(message),
-                                        });
-                                        throw error;
-                                      }
-                                    }}
-                                    onApprove={async (data) => {
-                                      if (!data.orderID) {
-                                        setSettlementFeedback({
-                                          tone: "error",
-                                          message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
-                                        });
-                                        return;
-                                      }
-
-                                      try {
-                                        await finalizeTotalPayPalOrder(data.orderID, row.contact.contact_id);
-                                      } catch (error) {
-                                        const message = error instanceof Error ? error.message : undefined;
-                                        setSettlementFeedback({
-                                          tone: "error",
-                                          message: mapPayPalSettlementError(message),
-                                        });
-                                      }
-                                    }}
-                                    onCancel={() => {
-                                      setSettlementFeedback({
-                                        tone: "error",
-                                        message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
-                                      });
-                                    }}
-                                    onError={(error) => {
-                                      const message = error instanceof Error ? error.message : undefined;
-                                      setSettlementFeedback({
-                                        tone: "error",
-                                        message: mapPayPalSettlementError(message),
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              ) : (
-                                <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                                  {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
-                                </p>
-                              )}
                             </div>
                           ) : null}
 
@@ -629,13 +681,8 @@ export default function ContactsPage() {
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          disabled={
-                                            (settleGroupCashMutation.isPending &&
-                                              settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
-                                              settleGroupCashMutation.variables?.toUserId === row.contact.contact_id)
-                                          }
                                           onClick={() => {
-                                            setGroupSettlementTarget({
+                                            setGroupSettlementOptionsTarget({
                                               contactUserId: row.contact.contact_id,
                                               contactUsername: row.contact.username,
                                               groupId: groupRow.groupId,
@@ -645,78 +692,8 @@ export default function ContactsPage() {
                                             });
                                           }}
                                         >
-                                          {settleGroupCashMutation.isPending &&
-                                          settleGroupCashMutation.variables?.groupId === groupRow.groupId &&
-                                          settleGroupCashMutation.variables?.toUserId === row.contact.contact_id
-                                            ? t("contactsBalancesPage.settlingGroupCash")
-                                            : t("contactsBalancesPage.settleGroupCash")}
+                                          {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
                                         </Button>
-
-                                        {isPayPalSdkEnabled ? (
-                                          <div className="w-[170px]">
-                                            <PayPalCurrencyButtons
-                                              currency={groupRow.groupCurrency}
-                                              fundingSource="paypal"
-                                              style={{ layout: "horizontal", tagline: false, height: 34 }}
-                                              forceReRender={[row.contact.contact_id, groupRow.groupId]}
-                                              createOrder={async () => {
-                                                try {
-                                                  return await createGroupPayPalOrder(
-                                                    row.contact.contact_id,
-                                                    groupRow.groupId
-                                                  );
-                                                } catch (error) {
-                                                  const message = error instanceof Error ? error.message : undefined;
-                                                  setSettlementFeedback({
-                                                    tone: "error",
-                                                    message: mapPayPalSettlementError(message),
-                                                  });
-                                                  throw error;
-                                                }
-                                              }}
-                                              onApprove={async (data) => {
-                                                if (!data.orderID) {
-                                                  setSettlementFeedback({
-                                                    tone: "error",
-                                                    message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
-                                                  });
-                                                  return;
-                                                }
-
-                                                try {
-                                                  await finalizeGroupPayPalOrder(
-                                                    data.orderID,
-                                                    row.contact.contact_id,
-                                                    groupRow.groupId
-                                                  );
-                                                } catch (error) {
-                                                  const message = error instanceof Error ? error.message : undefined;
-                                                  setSettlementFeedback({
-                                                    tone: "error",
-                                                    message: mapPayPalSettlementError(message),
-                                                  });
-                                                }
-                                              }}
-                                              onCancel={() => {
-                                                setSettlementFeedback({
-                                                  tone: "error",
-                                                  message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
-                                                });
-                                              }}
-                                              onError={(error) => {
-                                                const message = error instanceof Error ? error.message : undefined;
-                                                setSettlementFeedback({
-                                                  tone: "error",
-                                                  message: mapPayPalSettlementError(message),
-                                                });
-                                              }}
-                                            />
-                                          </div>
-                                        ) : (
-                                          <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                                            {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
-                                          </p>
-                                        )}
                                       </>
                                     ) : null}
                                   </div>
@@ -729,11 +706,246 @@ export default function ContactsPage() {
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
+
+      <Dialog
+        open={totalSettlementOptionsTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTotalSettlementOptionsTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("contactsBalancesPage.settle", { defaultValue: "Settle" })}</DialogTitle>
+            <DialogDescription>
+              {totalSettlementOptionsTarget
+                ? t("contactsBalancesPage.totalSettleDialogDescription", {
+                    defaultValue: "Choose how to settle with {{contact}}.",
+                    contact: totalSettlementOptionsTarget.contactUsername,
+                  })
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                !totalSettlementOptionsTarget ||
+                (settleTotalCashMutation.isPending &&
+                  settleTotalCashMutation.variables === totalSettlementOptionsTarget.contactUserId)
+              }
+              onClick={() => {
+                if (!totalSettlementOptionsTarget) {
+                  return;
+                }
+
+                setTotalSettlementTarget({
+                  contactUserId: totalSettlementOptionsTarget.contactUserId,
+                  contactUsername: totalSettlementOptionsTarget.contactUsername,
+                });
+                setTotalSettlementOptionsTarget(null);
+              }}
+            >
+              {settleTotalCashMutation.isPending
+                ? t("contactsBalancesPage.settlingTotalCash")
+                : t("contactsBalancesPage.settleOutsideGroup", { defaultValue: "Outside group" })}
+            </Button>
+
+            {isPayPalSdkEnabled ? (
+              <div className="w-[180px]">
+                <PayPalCurrencyButtons
+                  currency={totalSettlementOptionsTarget?.currency ?? "PLN"}
+                  fundingSource="paypal"
+                  style={{ layout: "horizontal", tagline: false, height: 34 }}
+                  forceReRender={[
+                    totalSettlementOptionsTarget?.contactUserId ?? 0,
+                    totalSettlementOptionsTarget?.currency ?? "PLN",
+                  ]}
+                  createOrder={async () => {
+                    if (!totalSettlementOptionsTarget) {
+                      throw new Error("Missing total settlement target");
+                    }
+
+                    try {
+                      return await createTotalPayPalOrder(totalSettlementOptionsTarget.contactUserId);
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                      throw error;
+                    }
+                  }}
+                  onApprove={async (data) => {
+                    if (!data.orderID || !totalSettlementOptionsTarget) {
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
+                      });
+                      return;
+                    }
+
+                    try {
+                      await finalizeTotalPayPalOrder(data.orderID, totalSettlementOptionsTarget.contactUserId);
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                    }
+                  }}
+                  onCancel={() => {
+                    setSettlementFeedback({
+                      tone: "error",
+                      message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
+                    });
+                  }}
+                  onError={(error) => {
+                    const message = error instanceof Error ? error.message : undefined;
+                    setSettlementFeedback({
+                      tone: "error",
+                      message: mapPayPalSettlementError(message),
+                    });
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={groupSettlementOptionsTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGroupSettlementOptionsTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("contactsBalancesPage.settle", { defaultValue: "Settle" })}</DialogTitle>
+            <DialogDescription>
+              {groupSettlementOptionsTarget
+                ? t("contactsBalancesPage.groupSettleDialogDescription", {
+                    defaultValue: "Choose how to settle in group {{group}}.",
+                    group: groupSettlementOptionsTarget.groupName,
+                  })
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                !groupSettlementOptionsTarget ||
+                (settleGroupCashMutation.isPending &&
+                  settleGroupCashMutation.variables?.groupId === groupSettlementOptionsTarget.groupId &&
+                  settleGroupCashMutation.variables?.toUserId === groupSettlementOptionsTarget.contactUserId)
+              }
+              onClick={() => {
+                if (!groupSettlementOptionsTarget) {
+                  return;
+                }
+
+                setGroupSettlementTarget(groupSettlementOptionsTarget);
+                setGroupSettlementOptionsTarget(null);
+              }}
+            >
+              {settleGroupCashMutation.isPending
+                ? t("contactsBalancesPage.settlingGroupCash")
+                : t("contactsBalancesPage.settleOutsideGroup", { defaultValue: "Outside group" })}
+            </Button>
+
+            {isPayPalSdkEnabled ? (
+              <div className="w-[170px]">
+                <PayPalCurrencyButtons
+                  currency={groupSettlementOptionsTarget?.currency ?? "PLN"}
+                  fundingSource="paypal"
+                  style={{ layout: "horizontal", tagline: false, height: 34 }}
+                  forceReRender={[
+                    groupSettlementOptionsTarget?.contactUserId ?? 0,
+                    groupSettlementOptionsTarget?.groupId ?? 0,
+                  ]}
+                  createOrder={async () => {
+                    if (!groupSettlementOptionsTarget) {
+                      throw new Error("Missing group settlement target");
+                    }
+
+                    try {
+                      return await createGroupPayPalOrder(
+                        groupSettlementOptionsTarget.contactUserId,
+                        groupSettlementOptionsTarget.groupId
+                      );
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                      throw error;
+                    }
+                  }}
+                  onApprove={async (data) => {
+                    if (!data.orderID || !groupSettlementOptionsTarget) {
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: t("contactsBalancesPage.settlementErrors.paypalInitFailed"),
+                      });
+                      return;
+                    }
+
+                    try {
+                      await finalizeGroupPayPalOrder(
+                        data.orderID,
+                        groupSettlementOptionsTarget.contactUserId,
+                        groupSettlementOptionsTarget.groupId
+                      );
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : undefined;
+                      setSettlementFeedback({
+                        tone: "error",
+                        message: mapPayPalSettlementError(message),
+                      });
+                    }
+                  }}
+                  onCancel={() => {
+                    setSettlementFeedback({
+                      tone: "error",
+                      message: t("contactsBalancesPage.settlementErrors.paypalCancelled"),
+                    });
+                  }}
+                  onError={(error) => {
+                    const message = error instanceof Error ? error.message : undefined;
+                    setSettlementFeedback({
+                      tone: "error",
+                      message: mapPayPalSettlementError(message),
+                    });
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={groupSettlementTarget !== null}

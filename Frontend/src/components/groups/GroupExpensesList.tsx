@@ -143,9 +143,14 @@ export default function GroupExpensesList({
             >
               <Card className="group overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
                 <CardContent className="relative px-2.5 py-2 sm:px-3">
-                  <p className="pointer-events-none absolute left-2.5 top-1 text-[10px] font-semibold tracking-wide text-muted-foreground sm:left-3">
-                    {expenseDateLabel}
-                  </p>
+                  <div className="pointer-events-none absolute left-2.5 top-1 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-muted-foreground sm:left-3">
+                    <span>{expenseDateLabel}</span>
+                    {expense.recurring_expense_id ? (
+                      <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
+                        {t("groupExpensesList.recurring", { defaultValue: "Recurring" })}
+                      </span>
+                    ) : null}
+                  </div>
 
                   <div
                     role="button"
@@ -168,14 +173,6 @@ export default function GroupExpensesList({
                       <p className="truncate text-[13px] font-semibold text-foreground sm:text-sm">{expense.title}</p>
                       <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
                         <span className="truncate">{categoryName}</span>
-                        {expense.recurring_expense_id ? (
-                          <>
-                            <span className="text-muted-foreground/50">•</span>
-                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                              {t("groupExpensesList.recurring", { defaultValue: "Recurring" })}
-                            </span>
-                          </>
-                        ) : null}
                       </div>
                     </div>
 
