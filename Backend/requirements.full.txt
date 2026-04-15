@@ -1,0 +1,5 @@
+-r requirements.light.txt
+
+numpy==2.4.4
+paddleocr==3.4.1
+paddlepaddle==3.2.2
