@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     PAYPAL_WEBHOOK_ID: str | None = None
     PAYPAL_RETURN_URL: str | None = None
     PAYPAL_CANCEL_URL: str | None = None
+    RECEIPT_OCR_ENGINE: str = "auto"
+    RECEIPT_OCR_PADDLE_LANG: str = "en"
+    PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK: bool = True
 
     class Config:
         env_file = ".env"

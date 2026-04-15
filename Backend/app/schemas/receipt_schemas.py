@@ -18,3 +18,4 @@ class ReceiptUploadResponse(BaseModel):
     parsed_vendor: Optional[str] = None
     parsed_items: list[ReceiptLineItem] = Field(default_factory=list)
     ocr_status: Literal["done", "unavailable", "failed"]
+    ocr_engine: Literal["paddle", "tesseract"] | None = None

@@ -1,4 +1,6 @@
 export type OcrStatus = "done" | "unavailable" | "failed";
+export type OcrEngine = "paddle" | "tesseract";
+export type OcrEngineMode = "auto" | OcrEngine;
 
 export interface ApiReceiptLineItem {
   name: string;
@@ -16,4 +18,5 @@ export interface ApiReceiptUploadResponse {
   parsed_vendor?: string | null;
   parsed_items?: ApiReceiptLineItem[];
   ocr_status: OcrStatus;
+  ocr_engine?: OcrEngine | null;
 }

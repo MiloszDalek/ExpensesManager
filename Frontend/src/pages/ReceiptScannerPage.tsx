@@ -34,6 +34,8 @@ import type {
   ApiGroupResponse,
   ApiPersonalExpenseCreate,
   ApiReceiptLineItem,
+  OcrEngine,
+  OcrEngineMode,
 } from "@/types";
 
 type ScannerItem = ApiReceiptLineItem & {
@@ -107,6 +109,8 @@ export default function ReceiptScannerPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
   const [ocrStatus, setOcrStatus] = useState<"done" | "unavailable" | "failed" | null>(null);
+  const [ocrEngine, setOcrEngine] = useState<OcrEngine | null>(null);
+  const [ocrMode, setOcrMode] = useState<OcrEngineMode>("paddle");
   const [isUploading, setIsUploading] = useState(false);
 
   const [ocrText, setOcrText] = useState("");
@@ -297,10 +301,12 @@ export default function ReceiptScannerPage() {
     }
     setImagePreviewUrl(URL.createObjectURL(file));
     setReceiptFileName(file.name);
+    setOcrEngine(null);
 
     try {
-      const result = await receiptsApi.upload(file);
+      const result = await receiptsApi.upload(file, ocrMode);
       setOcrStatus(result.ocr_status);
+      setOcrEngine(result.ocr_engine ?? null);
       setOcrText(result.receipt_text ?? "");
       setParsedTotal(result.parsed_total ?? result.detected_amount ?? "");
       setParsedDate(result.parsed_date ?? "");
@@ -497,8 +503,34 @@ export default function ReceiptScannerPage() {
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="space-y-3 rounded-md border border-border p-4">
+          <section className="space-y-3 rounded-lg border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
             <Label htmlFor="receipt-scan-file">{t("receiptScannerPage.uploadLabel")}</Label>
+
+            <div className="space-y-2">
+              <Label>{t("receiptScannerPage.ocrModeLabel")}</Label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant={ocrMode === "tesseract" ? "default" : "outline"}
+                  size="sm"
+                  disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                  onClick={() => setOcrMode("tesseract")}
+                >
+                  {t("receiptScannerPage.ocrModeFast")}
+                </Button>
+                <Button
+                  type="button"
+                  variant={ocrMode === "paddle" ? "default" : "outline"}
+                  size="sm"
+                  disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                  onClick={() => setOcrMode("paddle")}
+                >
+                  {t("receiptScannerPage.ocrModeAccurate")}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t("receiptScannerPage.ocrModeHint")}</p>
+            </div>
+
             <Input
               id="receipt-scan-file"
               type="file"
@@ -529,11 +561,12 @@ export default function ReceiptScannerPage() {
                   : ocrStatus === "unavailable"
                     ? t("receiptScannerPage.ocrUnavailable")
                     : t("receiptScannerPage.ocrFailed")}
+                {ocrEngine ? ` (${ocrEngine.toUpperCase()})` : ""}
               </p>
             ) : null}
 
             {imagePreviewUrl ? (
-              <div className="overflow-hidden rounded-md border border-border bg-muted/20">
+              <div className="overflow-hidden rounded-md border border-border bg-background/60">
                 <img src={imagePreviewUrl} alt={t("receiptScannerPage.previewAlt")} className="max-h-80 w-full object-contain" />
               </div>
             ) : null}
@@ -549,7 +582,7 @@ export default function ReceiptScannerPage() {
             </div>
           </section>
 
-          <section className="space-y-4 rounded-md border border-border p-4">
+          <section className="space-y-4 rounded-lg border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="receipt-scan-scope">{t("receiptScannerPage.scopeLabel")}</Label>
@@ -702,7 +735,7 @@ export default function ReceiptScannerPage() {
                     </p>
                   </div>
 
-                  <div className="max-h-36 space-y-2 overflow-y-auto rounded-md border border-border p-2">
+                  <div className="max-h-36 space-y-2 overflow-y-auto rounded-md border border-border bg-background/40 p-2">
                     {activeGroupMembers.map((member) => {
                       const checked = selectedMemberIds.includes(member.user_id);
                       return (
@@ -776,7 +809,7 @@ export default function ReceiptScannerPage() {
           </section>
         </div>
 
-        <section className="space-y-3 rounded-md border border-border p-4">
+        <section className="space-y-3 rounded-lg border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">{t("receiptScannerPage.itemsTitle")}</h2>
             <Button type="button" variant="outline" size="sm" onClick={handleAddManualItem}>
@@ -789,7 +822,7 @@ export default function ReceiptScannerPage() {
           ) : (
             <div className="space-y-2">
               {items.map((item) => (
-                <div key={item.id} className="grid grid-cols-[auto_1fr_120px_auto] items-center gap-2 rounded-md border border-border p-2">
+                <div key={item.id} className="grid grid-cols-[auto_1fr_120px_auto] items-center gap-2 rounded-md border border-border bg-background/60 p-2">
                   <input
                     type="checkbox"
                     checked={item.is_selected}
