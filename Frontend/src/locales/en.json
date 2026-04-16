@@ -361,7 +361,8 @@
     "tabs": {
       "periods": "Periods",
       "income": "Income",
-      "pools": "Pools"
+      "pools": "Pools",
+      "goals": "Goals"
     },
     "form": {
       "name": "Budget name",
@@ -375,6 +376,10 @@
     "period": {
       "monthly": "Monthly",
       "weekly": "Weekly"
+    },
+    "periods": {
+      "current": "Selected period",
+      "none": "No period selected"
     },
     "status": {
       "active": "Active",
@@ -391,9 +396,23 @@
       "selected": "Selected",
       "select": "Select",
       "saving": "Saving...",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
       "addIncome": "Add income",
       "addPool": "Add pool",
-      "delete": "Delete"
+      "delete": "Delete",
+      "recalculate": "Recalculate",
+      "recalculating": "Recalculating...",
+      "recalculated": "Budget recalculated.",
+      "autoAllocateGoals": "Auto-allocate goals",
+      "autoAllocating": "Auto-allocating...",
+      "closePeriod": "Close period",
+      "closing": "Closing...",
+      "budgetClosed": "Budget closed. New budget #{{toBudgetId}} created.",
+      "runDueRollovers": "Run due rollovers",
+      "runningDue": "Running...",
+      "runDueDone": "Processed {{processedCount}} budgets, created {{createdCount}} new periods."
     },
     "income": {
       "title": "Title",
@@ -419,7 +438,46 @@
       "empty": "No summary data.",
       "income": "Income",
       "spent": "Spent",
-      "saved": "Saved"
+      "saved": "Saved",
+      "policy": "Overspending policy",
+      "remaining": "Remaining"
+    },
+    "goals": {
+      "name": "Goal name",
+      "namePlaceholder": "Emergency fund",
+      "target": "Target amount",
+      "deadline": "Deadline (optional)",
+      "pool": "Source pool",
+      "poolOptional": "Optional",
+      "noPool": "No linked pool",
+      "currentPool": "Current pool #{{poolId}}",
+      "autoAllocate": "Auto allocate / period",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "create": "Create goal",
+      "creating": "Creating...",
+      "created": "Savings goal created.",
+      "updated": "Savings goal updated.",
+      "deleted": "Savings goal deleted.",
+      "empty": "No savings goals yet.",
+      "showInactive": "Show inactive",
+      "hideInactive": "Hide inactive",
+      "allocate": "Allocate amount",
+      "allocateAction": "Allocate",
+      "allocating": "Allocating...",
+      "allocated": "Funds allocated to goal.",
+      "autoAllocated": "Auto-allocation done. Updated {{allocatedCount}} goals.",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "activated": "Goal activated.",
+      "deactivated": "Goal deactivated.",
+      "showHistory": "Show history",
+      "hideHistory": "Hide history",
+      "history": "Allocation history",
+      "historyEmpty": "No allocation history yet.",
+      "autoAllocation": "Auto allocation",
+      "manualAllocation": "Manual allocation"
     },
     "errors": {
       "generic": "Something went wrong.",
@@ -514,7 +572,7 @@
     "ocrModeLabel": "OCR mode",
     "ocrModeFast": "Fast (Tesseract)",
     "ocrModeAccurate": "Accurate (PaddleOCR)",
-    "ocrModeHint": "If PaddleOCR is unavailable, scanner automatically falls back to Tesseract.",
+    "ocrFallbackToTesseract": "PaddleOCR was unavailable for this scan. Tesseract engine was used.",
     "uploading": "Uploading and scanning...",
     "uploadedFile": "Uploaded: {{fileName}}",
     "ocrDone": "OCR scan completed.",

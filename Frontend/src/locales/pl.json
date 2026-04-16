@@ -351,7 +351,8 @@
     "tabs": {
       "periods": "Okresy",
       "income": "Przychody",
-      "pools": "Pule"
+      "pools": "Pule",
+      "goals": "Cele"
     },
     "form": {
       "name": "Nazwa budżetu",
@@ -365,6 +366,10 @@
     "period": {
       "monthly": "Miesięczny",
       "weekly": "Tygodniowy"
+    },
+    "periods": {
+      "current": "Wybrany okres",
+      "none": "Nie wybrano okresu"
     },
     "status": {
       "active": "Aktywny",
@@ -381,9 +386,23 @@
       "selected": "Wybrany",
       "select": "Wybierz",
       "saving": "Zapisywanie...",
+      "save": "Zapisz",
+      "cancel": "Anuluj",
+      "edit": "Edytuj",
       "addIncome": "Dodaj przychód",
       "addPool": "Dodaj pulę",
-      "delete": "Usuń"
+      "delete": "Usuń",
+      "recalculate": "Przelicz",
+      "recalculating": "Przeliczanie...",
+      "recalculated": "Budżet został przeliczony.",
+      "autoAllocateGoals": "Autoalokuj cele",
+      "autoAllocating": "Autoalokowanie...",
+      "closePeriod": "Zamknij okres",
+      "closing": "Zamykanie...",
+      "budgetClosed": "Budżet zamknięty. Utworzono nowy budżet #{{toBudgetId}}.",
+      "runDueRollovers": "Uruchom należne rollover",
+      "runningDue": "Uruchamianie...",
+      "runDueDone": "Przetworzono {{processedCount}} budżetów, utworzono {{createdCount}} nowych okresów."
     },
     "income": {
       "title": "Tytuł",
@@ -409,7 +428,46 @@
       "empty": "Brak danych podsumowania.",
       "income": "Przychód",
       "spent": "Wydane",
-      "saved": "Zaoszczędzone"
+      "saved": "Zaoszczędzone",
+      "policy": "Polityka nadwydatków",
+      "remaining": "Pozostało"
+    },
+    "goals": {
+      "name": "Nazwa celu",
+      "namePlaceholder": "Fundusz awaryjny",
+      "target": "Kwota docelowa",
+      "deadline": "Termin (opcjonalnie)",
+      "pool": "Pula źródłowa",
+      "poolOptional": "Opcjonalnie",
+      "noPool": "Bez powiązanej puli",
+      "currentPool": "Obecna pula #{{poolId}}",
+      "autoAllocate": "Autoalokacja / okres",
+      "status": "Status",
+      "active": "Aktywny",
+      "inactive": "Nieaktywny",
+      "create": "Utwórz cel",
+      "creating": "Tworzenie...",
+      "created": "Cel oszczędnościowy utworzony.",
+      "updated": "Cel oszczędnościowy zaktualizowany.",
+      "deleted": "Cel oszczędnościowy usunięty.",
+      "empty": "Brak celów oszczędnościowych.",
+      "showInactive": "Pokaż nieaktywne",
+      "hideInactive": "Ukryj nieaktywne",
+      "allocate": "Przydziel kwotę",
+      "allocateAction": "Przydziel",
+      "allocating": "Przydzielanie...",
+      "allocated": "Środki przydzielono do celu.",
+      "autoAllocated": "Autoalokacja zakończona. Zaktualizowano {{allocatedCount}} celów.",
+      "activate": "Aktywuj",
+      "deactivate": "Dezaktywuj",
+      "activated": "Cel aktywowany.",
+      "deactivated": "Cel dezaktywowany.",
+      "showHistory": "Pokaż historię",
+      "hideHistory": "Ukryj historię",
+      "history": "Historia przydziałów",
+      "historyEmpty": "Brak historii przydziałów.",
+      "autoAllocation": "Autoalokacja",
+      "manualAllocation": "Przydział ręczny"
     },
     "errors": {
       "generic": "Coś poszło nie tak.",
@@ -504,7 +562,7 @@
     "ocrModeLabel": "Tryb OCR",
     "ocrModeFast": "Szybki (Tesseract)",
     "ocrModeAccurate": "Dokładny (PaddleOCR)",
-    "ocrModeHint": "Jeśli PaddleOCR jest niedostępny, skaner automatycznie przejdzie na Tesseract.",
+    "ocrFallbackToTesseract": "PaddleOCR był niedostępny dla tego skanu. Użyto silnika Tesseract.",
     "uploading": "Przesyłanie i skanowanie...",
     "uploadedFile": "Przesłano: {{fileName}}",
     "ocrDone": "Skan OCR zakończony.",

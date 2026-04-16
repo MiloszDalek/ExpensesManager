@@ -34,7 +34,11 @@ export type GroupMemberStatus = "active" | "left";
 export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled" | "archived";
 export type InvitationType = "contact" | "group";
 
-export type NotificationType = "invitation";
+export type NotificationType =
+	| "invitation"
+	| "budget_near_limit"
+	| "budget_overspending"
+	| "upcoming_recurring_expense";
 
 export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgiven";
 export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";
@@ -43,6 +47,8 @@ export type RecurringExpenseStatus = "active" | "paused" | "ended" | "archived";
 export type BudgetPeriodType = "weekly" | "monthly";
 export type BudgetPoolType = "fixed_amount" | "percent_income";
 export type BudgetStatus = "active" | "archived";
+export type BudgetAllocationStrategy = "fixed" | "percent_income" | "zero_based";
+export type OverspendingStrategy = "allow_negative" | "block" | "auto_reallocate";
 
 export type CategorySection =
 	| "food"

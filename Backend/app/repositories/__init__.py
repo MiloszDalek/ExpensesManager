@@ -10,3 +10,4 @@ from .contact_repository import ContactRepository
 from .recurring_expense_repository import RecurringExpenseRepository
 from .income_repository import IncomeRepository
 from .budget_repository import BudgetRepository
+from .savings_goal_repository import SavingsGoalRepository

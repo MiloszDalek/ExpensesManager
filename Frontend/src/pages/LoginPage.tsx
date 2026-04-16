@@ -5,6 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+type ApiErrorWithDetail = {
+  response?: {
+    data?: {
+      detail?: unknown;
+    };
+  };
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -41,8 +49,11 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/dashboard");
-    } catch (err: any) {
-      const apiDetail = err?.response?.data?.detail;
+    } catch (err: unknown) {
+      const apiDetail =
+        typeof err === "object" && err !== null
+          ? (err as ApiErrorWithDetail).response?.data?.detail
+          : undefined;
       const message = typeof apiDetail === "string" && apiDetail.trim()
         ? apiDetail
         : (err instanceof Error ? err.message : null);

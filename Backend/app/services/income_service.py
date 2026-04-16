@@ -9,10 +9,13 @@ from app.models import IncomeEntry
 from app.repositories import IncomeRepository
 from app.schemas import IncomeEntryCreate
 
+from .budget_service import BudgetService
+
 
 class IncomeService:
     def __init__(self, db: Session):
         self.income_repo = IncomeRepository(db)
+        self.budget_service = BudgetService(db)
 
     def create_income_entry(self, income_in: IncomeEntryCreate, user_id: int) -> IncomeEntry:
         if income_in.amount <= 0:
@@ -29,6 +32,14 @@ class IncomeService:
                 notes=income_in.notes,
             )
             income_entry = self.income_repo.create(income_entry)
+
+            self.budget_service.sync_budget_state_for_date(
+                user_id=user_id,
+                currency=income_entry.currency,
+                check_date=income_entry.income_date.date(),
+                enforce_overspending=False,
+            )
+
             self.income_repo.save_all()
             return income_entry
         except Exception:
@@ -92,4 +103,12 @@ class IncomeService:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         self.income_repo.delete(income_entry)
+
+        self.budget_service.sync_budget_state_for_date(
+            user_id=user_id,
+            currency=income_entry.currency,
+            check_date=income_entry.income_date.date(),
+            enforce_overspending=False,
+        )
+
         self.income_repo.save_all()

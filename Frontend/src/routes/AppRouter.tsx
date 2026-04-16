@@ -1,21 +1,23 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import DashboardPage from "@/pages/DashboardPage";
-import GroupsPage from "@/pages/GroupsPage";
-import GroupDetailPage from "@/pages/GroupDetailPage";
-import ContactsPage from "@/pages/ContactsPage";
-import PersonalExpensesPage from "@/pages/PersonalExpensesPage";
-import DetailedSummaryPage from "@/pages/DetailedSummaryPage";
-import BudgetsPage from "@/pages/BudgetsPage";
-import ReceiptScannerPage from "@/pages/ReceiptScannerPage";
-import LoginPage from "@/pages/LoginPage";
-import NotFoundPage from "@/pages/NotFoundPage";
-import HomePage from "@/pages/HomePage";
-import AdminPage from "@/pages/AdminPage";
-import RegisterPage from "@/pages/RegisterPage";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import AppLayout from "@/components/layout/AppLayout";
+import {
+  AdminPage,
+  BudgetsPage,
+  ContactsPage,
+  DashboardPage,
+  DetailedSummaryPage,
+  GroupDetailPage,
+  GroupsPage,
+  HomePage,
+  LoginPage,
+  NotFoundPage,
+  PersonalExpensesPage,
+  ReceiptScannerPage,
+  RegisterPage,
+} from "./lazyPages";
 
 
 const AppRouter = () => {

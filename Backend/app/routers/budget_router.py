@@ -5,6 +5,8 @@ from app.database import get_db
 from app.enums import BudgetStatus
 from app.models import User
 from app.schemas import (
+    BudgetRolloverExecutionResponse,
+    BudgetRolloverRunDueResponse,
     BudgetPlanCreate,
     BudgetPlanResponse,
     BudgetPlanUpdate,
@@ -14,7 +16,7 @@ from app.schemas import (
     BudgetSummaryResponse,
 )
 from app.services import BudgetService
-from app.utils.auth_dependencies import get_current_active_user
+from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
 
 budget_router = APIRouter(
@@ -111,3 +113,29 @@ def get_budget_summary(
     current_user: User = Depends(get_current_active_user),
 ):
     return service.get_budget_summary(budget_id, current_user.id)
+
+
+@budget_router.post("/{budget_id}/recalculate", response_model=BudgetSummaryResponse, status_code=status.HTTP_200_OK)
+def recalculate_budget_state(
+    budget_id: int,
+    service: BudgetService = Depends(get_budget_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.recalculate_budget_state(budget_id, current_user.id)
+
+
+@budget_router.post("/{budget_id}/close", response_model=BudgetRolloverExecutionResponse, status_code=status.HTTP_200_OK)
+def close_budget_period(
+    budget_id: int,
+    service: BudgetService = Depends(get_budget_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.close_budget_period(budget_id, current_user.id)
+
+
+@budget_router.post("/rollover/run-due", response_model=BudgetRolloverRunDueResponse, status_code=status.HTTP_200_OK)
+def run_due_budget_rollovers(
+    service: BudgetService = Depends(get_budget_service),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return service.run_due_rollovers()

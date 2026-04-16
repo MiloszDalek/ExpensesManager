@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 
@@ -189,7 +189,7 @@ export default function AddGroupRecurringExpenseDialog({
 
   const defaultCategoryId = getDefaultCategoryId(categories);
 
-  const buildInitialState = (): FormData => ({
+  const buildInitialState = useCallback((): FormData => ({
     title: "",
     amount: "",
     split_type: "equal",
@@ -200,7 +200,7 @@ export default function AddGroupRecurringExpenseDialog({
     ends_on: "",
     notes: "",
     selectedMemberIds: activeMembers.map((member) => member.user_id),
-  });
+  }), [activeMembers, defaultCategoryId]);
 
   const [formData, setFormData] = useState<FormData>(buildInitialState);
   const [exactShareInputs, setExactShareInputs] = useState<Record<number, string>>({});
@@ -216,7 +216,7 @@ export default function AddGroupRecurringExpenseDialog({
     setExactShareInputs({});
     setPercentShareInputs(buildEqualPercentInputs(activeMembers.map((member) => member.user_id)));
     setLocalError(null);
-  }, [open, defaultCategoryId, activeMembers]);
+  }, [open, buildInitialState, activeMembers]);
 
   useEffect(() => {
     if (!open || categories.length === 0) {

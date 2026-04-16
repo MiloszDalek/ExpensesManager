@@ -69,4 +69,15 @@ from .budget_schemas import (
     BudgetPlanResponse,
     BudgetPoolSummaryResponse,
     BudgetSummaryResponse,
+    BudgetRolloverExecutionResponse,
+    BudgetRolloverRunDueResponse,
+)
+from .savings_goal_schemas import (
+    SavingsGoalCreate,
+    SavingsGoalUpdate,
+    SavingsGoalAllocateRequest,
+    SavingsGoalAllocationResponse,
+    SavingsGoalResponse,
+    SavingsGoalProgressResponse,
+    SavingsGoalAutoAllocateSummaryResponse,
 )

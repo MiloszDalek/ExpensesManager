@@ -30,6 +30,11 @@ export type GenerateDueParams = {
   limit?: number;
 };
 
+export type GenerateDueGlobalParams = {
+  up_to_date?: string;
+  limit?: number;
+};
+
 export type GenerateNowParams = {
   up_to_date?: string;
 };
@@ -116,6 +121,17 @@ export const recurringExpensesApi = {
   generateDue: async (params: GenerateDueParams = {}): Promise<ApiRecurringGenerationSummaryResponse> => {
     const { data } = await client.post<ApiRecurringGenerationSummaryResponse>(
       "/recurring-expenses/generate-due",
+      null,
+      { params }
+    );
+    return data;
+  },
+
+  generateDueGlobal: async (
+    params: GenerateDueGlobalParams = {}
+  ): Promise<ApiRecurringGenerationSummaryResponse> => {
+    const { data } = await client.post<ApiRecurringGenerationSummaryResponse>(
+      "/recurring-expenses/generate-due/global",
       null,
       { params }
     );

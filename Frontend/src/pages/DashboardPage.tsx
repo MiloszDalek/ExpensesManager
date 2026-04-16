@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import { invitationsApi } from "@/api/invitationsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
+import { prefetchGroupsPage, prefetchPersonalExpensesPage } from "@/routes/lazyPages";
 import { format } from "date-fns";
 
 import type {
@@ -79,6 +80,18 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [contactEmail, setContactEmail] = useState("");
   const [contactInviteFeedback, setContactInviteFeedback] = useState<ContactFeedback | null>(null);
+
+  useEffect(() => {
+    // Warm up the most common routes users open from dashboard navigation.
+    const timeoutId = window.setTimeout(() => {
+      prefetchGroupsPage();
+      prefetchPersonalExpensesPage();
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   const {
     data: notifications = [],
@@ -296,7 +309,12 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mt-2">{t("dashboardInbox.subtitle")}</p>
           </div>
           <div className="flex gap-3">
-            <Link to={createPageUrl("Groups")}>
+            <Link
+              to={createPageUrl("Groups")}
+              onMouseEnter={prefetchGroupsPage}
+              onFocus={prefetchGroupsPage}
+              onTouchStart={prefetchGroupsPage}
+            >
               <Button className="shadow-lg">
                 <Plus className="w-4 h-4 mr-2" />
                 {t("dashboardInbox.newGroup")}

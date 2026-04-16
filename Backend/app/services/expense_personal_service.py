@@ -9,11 +9,14 @@ from app.schemas import PersonalExpenseCreate, PersonalExpenseUpdate
 from fastapi import HTTPException
 from app.enums import CurrencyEnum
 
+from .budget_service import BudgetService
+
 
 class ExpensePersonalService:
     def __init__(self, db: Session):
         self.expense_repo = ExpenseRepository(db)
         self.category_service = CategoryService(db)
+        self.budget_service = BudgetService(db)
 
     
     # -- Personal Expenses
@@ -67,6 +70,13 @@ class ExpensePersonalService:
             )
 
             expense = self.expense_repo.create(expense)
+
+            self.budget_service.sync_budget_state_for_date(
+                user_id=user_id,
+                currency=expense.currency,
+                check_date=expense.expense_date.date(),
+                enforce_overspending=True,
+            )
 
             self.expense_repo.save_all()
 
@@ -158,6 +168,9 @@ class ExpensePersonalService:
         
         if expense.group_id is not None:
             raise HTTPException(status_code=400, detail="Not a personal expense")
+
+        old_expense_date = expense.expense_date.date()
+        old_currency = expense.currency
         
         try:
             update_data = expense_in.model_dump(exclude_unset=True)
@@ -166,6 +179,31 @@ class ExpensePersonalService:
                 self.category_service.validate_available_for_personal_expense(update_data["category_id"], user_id)
 
             expense = self.expense_repo.update(expense, update_data)
+
+            new_expense_date = expense.expense_date.date()
+            new_currency = expense.currency
+
+            if old_currency == new_currency and old_expense_date == new_expense_date:
+                self.budget_service.sync_budget_state_for_date(
+                    user_id=user_id,
+                    currency=new_currency,
+                    check_date=new_expense_date,
+                    enforce_overspending=True,
+                )
+            else:
+                self.budget_service.sync_budget_state_for_date(
+                    user_id=user_id,
+                    currency=old_currency,
+                    check_date=old_expense_date,
+                    enforce_overspending=False,
+                )
+                self.budget_service.sync_budget_state_for_date(
+                    user_id=user_id,
+                    currency=new_currency,
+                    check_date=new_expense_date,
+                    enforce_overspending=True,
+                )
+
             self.expense_repo.save_all()
 
             return expense
@@ -186,7 +224,18 @@ class ExpensePersonalService:
         
         if expense.group_id is not None:
             raise HTTPException(status_code=400, detail="Not a personal expense")
+
+        expense_date = expense.expense_date.date()
+        expense_currency = expense.currency
         
         self.expense_repo.delete(expense)
+
+        self.budget_service.sync_budget_state_for_date(
+            user_id=user_id,
+            currency=expense_currency,
+            check_date=expense_date,
+            enforce_overspending=False,
+        )
+
         self.expense_repo.save_all()
 

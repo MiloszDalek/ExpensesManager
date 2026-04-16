@@ -1,5 +1,7 @@
 import client from "./client";
 import type {
+  ApiBudgetRolloverExecutionResponse,
+  ApiBudgetRolloverRunDueResponse,
   ApiBudgetPlanCreate,
   ApiBudgetPlanResponse,
   ApiBudgetPlanUpdate,
@@ -61,6 +63,21 @@ export const budgetsApi = {
 
   getBudgetSummary: async (budgetId: number): Promise<ApiBudgetSummaryResponse> => {
     const { data } = await client.get<ApiBudgetSummaryResponse>(`/budgets/${budgetId}/summary`);
+    return data;
+  },
+
+  recalculateBudget: async (budgetId: number): Promise<ApiBudgetSummaryResponse> => {
+    const { data } = await client.post<ApiBudgetSummaryResponse>(`/budgets/${budgetId}/recalculate`);
+    return data;
+  },
+
+  closeBudgetPeriod: async (budgetId: number): Promise<ApiBudgetRolloverExecutionResponse> => {
+    const { data } = await client.post<ApiBudgetRolloverExecutionResponse>(`/budgets/${budgetId}/close`);
+    return data;
+  },
+
+  runDueRollovers: async (): Promise<ApiBudgetRolloverRunDueResponse> => {
+    const { data } = await client.post<ApiBudgetRolloverRunDueResponse>("/budgets/rollover/run-due");
     return data;
   },
 

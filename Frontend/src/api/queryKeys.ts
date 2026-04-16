@@ -53,6 +53,14 @@ export const queryKeys = {
     summary: (budgetId: number) => ["budgets", "summary", budgetId] as const,
   },
 
+  savingsGoals: {
+    all: ["savingsGoals"] as const,
+    list: (params?: { include_inactive?: boolean }) => ["savingsGoals", "list", params ?? {}] as const,
+    byId: (goalId: number) => ["savingsGoals", "byId", goalId] as const,
+    progress: (goalId: number) => ["savingsGoals", "progress", goalId] as const,
+    autoAllocateSummary: (budgetId: number) => ["savingsGoals", "autoAllocate", budgetId] as const,
+  },
+
   budgetIncome: {
     all: ["income"] as const,
     list: (params?: ApiIncomeListParams) => ["income", "list", params ?? {}] as const,

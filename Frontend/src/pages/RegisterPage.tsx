@@ -5,6 +5,14 @@ import { register } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+type ApiErrorWithDetail = {
+  response?: {
+    data?: {
+      detail?: unknown;
+    };
+  };
+};
+
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -33,8 +41,16 @@ export default function RegisterPage() {
     try {
       await register(email, username, password);
       navigate("/login");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || t("authPages.register.errors.registrationFailed"));
+    } catch (err: unknown) {
+      const apiDetail =
+        typeof err === "object" && err !== null
+          ? (err as ApiErrorWithDetail).response?.data?.detail
+          : undefined;
+      setError(
+        typeof apiDetail === "string" && apiDetail.trim()
+          ? apiDetail
+          : t("authPages.register.errors.registrationFailed")
+      );
     } finally {
       setLoading(false);
     }

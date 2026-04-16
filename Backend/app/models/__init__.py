@@ -13,3 +13,6 @@ from .invitation_model import Invitation
 from .income_entry_model import IncomeEntry
 from .budget_plan_model import BudgetPlan
 from .budget_pool_model import BudgetPool
+from .budget_rollover_model import BudgetRollover
+from .savings_goal_model import SavingsGoal
+from .savings_goal_allocation_model import SavingsGoalAllocation

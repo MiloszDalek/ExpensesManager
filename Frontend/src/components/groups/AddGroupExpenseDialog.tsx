@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 
@@ -243,7 +243,7 @@ export default function AddGroupExpenseDialog({
 
   const defaultCategoryId = getDefaultCategoryId(categories);
 
-  const buildInitialState = (): FormData => ({
+  const buildInitialState = useCallback((): FormData => ({
     title: "",
     amount: "",
     split_type: "equal",
@@ -251,7 +251,7 @@ export default function AddGroupExpenseDialog({
     expense_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     selectedMemberIds: activeMembers.map((member) => member.user_id),
-  });
+  }), [activeMembers, defaultCategoryId]);
 
   const [formData, setFormData] = useState<FormData>(buildInitialState);
   const [exactShareInputs, setExactShareInputs] = useState<Record<number, string>>({});
@@ -322,7 +322,7 @@ export default function AddGroupExpenseDialog({
     setReceiptUploadError(null);
     setReceiptFileName(null);
     setLocalError(null);
-  }, [open, defaultCategoryId, activeMembers, isEditMode, expense]);
+  }, [open, isEditMode, expense, buildInitialState, activeMembers]);
 
   const selectedMemberIdSet = useMemo(
     () => new Set(formData.selectedMemberIds),

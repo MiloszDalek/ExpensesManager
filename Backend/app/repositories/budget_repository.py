@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.enums import BudgetStatus, CurrencyEnum
-from app.models import BudgetPlan, BudgetPool, Expense
+from app.models import BudgetPlan, BudgetPool, BudgetRollover, Expense, SavingsGoalAllocation
 
 
 class BudgetRepository:
@@ -52,6 +52,26 @@ class BudgetRepository:
     def get_pool_by_id(self, pool_id: int) -> BudgetPool | None:
         return self.db.query(BudgetPool).options(selectinload(BudgetPool.category)).filter(BudgetPool.id == pool_id).first()
 
+    def get_active_plan_for_date(
+        self,
+        user_id: int,
+        check_date: date,
+        currency: CurrencyEnum,
+    ) -> BudgetPlan | None:
+        return (
+            self.db.query(BudgetPlan)
+            .options(selectinload(BudgetPlan.pools).selectinload(BudgetPool.category))
+            .filter(
+                BudgetPlan.user_id == user_id,
+                BudgetPlan.status == BudgetStatus.ACTIVE,
+                BudgetPlan.currency == currency,
+                BudgetPlan.period_start <= check_date,
+                BudgetPlan.period_end >= check_date,
+            )
+            .order_by(BudgetPlan.period_start.desc(), BudgetPlan.id.desc())
+            .first()
+        )
+
     def find_overlapping_active_plan(
         self,
         user_id: int,
@@ -70,6 +90,31 @@ class BudgetRepository:
             query = query.filter(BudgetPlan.id != exclude_budget_id)
 
         return query.first()
+
+    def list_due_active_plans(self, as_of_date: date) -> list[BudgetPlan]:
+        return (
+            self.db.query(BudgetPlan)
+            .options(selectinload(BudgetPlan.pools).selectinload(BudgetPool.category))
+            .filter(
+                BudgetPlan.status == BudgetStatus.ACTIVE,
+                BudgetPlan.period_end <= as_of_date,
+            )
+            .order_by(BudgetPlan.period_end.asc(), BudgetPlan.id.asc())
+            .all()
+        )
+
+    def has_rollover_for_budget(self, from_budget_id: int) -> bool:
+        return (
+            self.db.query(BudgetRollover)
+            .filter(BudgetRollover.from_budget_id == from_budget_id)
+            .first()
+            is not None
+        )
+
+    def create_rollover(self, rollover: BudgetRollover) -> BudgetRollover:
+        self.db.add(rollover)
+        self.db.flush()
+        return rollover
 
     def delete_plan(self, budget_plan: BudgetPlan):
         self.db.delete(budget_plan)
@@ -119,6 +164,20 @@ class BudgetRepository:
                 Expense.expense_date <= date_to,
             )
             .group_by(Expense.category_id)
+            .all()
+        )
+
+    def get_goal_allocated_by_pool(self, budget_id: int):
+        return (
+            self.db.query(
+                SavingsGoalAllocation.budget_pool_id.label("pool_id"),
+                func.coalesce(func.sum(SavingsGoalAllocation.amount), 0).label("allocated_amount"),
+            )
+            .filter(
+                SavingsGoalAllocation.budget_id == budget_id,
+                SavingsGoalAllocation.budget_pool_id.isnot(None),
+            )
+            .group_by(SavingsGoalAllocation.budget_pool_id)
             .all()
         )
 

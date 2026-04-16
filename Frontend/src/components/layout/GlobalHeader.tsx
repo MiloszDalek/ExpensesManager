@@ -8,6 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import { prefetchRouteByPath } from "@/routes/lazyPages";
 import logoTextDark from "@/assets/logo_text_dark.webp";
 import logoTextLight from "@/assets/logo_text_light.webp";
 
@@ -200,6 +201,9 @@ export default function GlobalHeader() {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    onMouseEnter={() => prefetchRouteByPath(item.to)}
+                    onFocus={() => prefetchRouteByPath(item.to)}
+                    onTouchStart={() => prefetchRouteByPath(item.to)}
                     className={({ isActive }) =>
                       cn(
                         "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
@@ -281,6 +285,9 @@ export default function GlobalHeader() {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    onMouseEnter={() => prefetchRouteByPath(item.to)}
+                    onFocus={() => prefetchRouteByPath(item.to)}
+                    onTouchStart={() => prefetchRouteByPath(item.to)}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) =>
                       cn(

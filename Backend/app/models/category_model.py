@@ -13,11 +13,14 @@ class Category(Base):
     section = Column(SAEnum(CategorySection, name="category_section"), nullable=False, default=CategorySection.OTHER)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+    parent_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     expenses = relationship("Expense", back_populates="category")
     recurring_expenses = relationship("RecurringExpense", back_populates="category")
     budget_pools = relationship("BudgetPool", back_populates="category")
+    parent = relationship("Category", remote_side=[id], back_populates="children", foreign_keys=[parent_id])
+    children = relationship("Category", back_populates="parent")
 
     user = relationship("User", back_populates="personal_categories")
     group = relationship("Group", back_populates="group_categories")
@@ -46,6 +49,7 @@ class Category(Base):
             unique=True,
             postgresql_where=group_id.isnot(None)
         ),
+        Index("idx_categories_parent_id", "parent_id"),
     )
 
     CheckConstraint(

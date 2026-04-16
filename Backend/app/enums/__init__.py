@@ -17,4 +17,6 @@ from .recurrence_frequency_enum import RecurrenceFrequency
 from .recurring_expense_status_enum import RecurringExpenseStatus
 from .budget_period_type_enum import BudgetPeriodType
 from .budget_pool_type_enum import BudgetPoolType
+from .budget_allocation_strategy_enum import BudgetAllocationStrategy
 from .budget_status_enum import BudgetStatus
+from .overspending_strategy_enum import OverspendingStrategy

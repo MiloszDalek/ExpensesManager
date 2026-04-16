@@ -20,8 +20,9 @@ from app.routers import (
         recurring_expense_router,
         income_router,
         budget_router,
+        savings_goal_router,
     )
-from app.services import AuthService, RecurringExpensesScheduler
+from app.services import AuthService, BudgetRolloverScheduler, RecurringExpensesScheduler
 from app.utils import seed_default_categories, reset_database
 from app import models
 import logging
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 recurring_scheduler = RecurringExpensesScheduler(interval_seconds=300)
+budget_rollover_scheduler = BudgetRolloverScheduler(interval_seconds=settings.BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS)
 
 app = FastAPI(title="Expenses Manager API")
 
@@ -66,6 +68,7 @@ app.include_router(receipt_router, prefix='/api')
 app.include_router(recurring_expense_router, prefix='/api')
 app.include_router(income_router, prefix='/api')
 app.include_router(budget_router, prefix='/api')
+app.include_router(savings_goal_router, prefix='/api')
 
 
 @app.on_event("startup")
@@ -79,11 +82,14 @@ async def startup_event():
         db.close()
 
     await recurring_scheduler.start()
+    if settings.BUDGET_ROLLOVER_SCHEDULER_ENABLED:
+        await budget_rollover_scheduler.start()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await recurring_scheduler.stop()
+    await budget_rollover_scheduler.stop()
 
 @app.get("/")
 def root():

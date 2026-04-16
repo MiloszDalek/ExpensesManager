@@ -16,7 +16,7 @@ from app.schemas import (
     RecurringGenerationSummaryResponse,
 )
 from app.services import RecurringExpenseService
-from app.utils.auth_dependencies import get_current_active_user
+from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
 
 recurring_expense_router = APIRouter(
@@ -83,6 +83,20 @@ def generate_due_recurring_expenses(
 ):
     return service.generate_due_expenses(
         user_id=current_user.id,
+        up_to_date=up_to_date,
+        limit=limit,
+    )
+
+
+@recurring_expense_router.post("/generate-due/global", response_model=RecurringGenerationSummaryResponse)
+def generate_due_recurring_expenses_global(
+    up_to_date: date | None = Query(default=None),
+    limit: int = Query(default=500, ge=1, le=5000),
+    service: RecurringExpenseService = Depends(get_recurring_expense_service),
+    current_user: User = Depends(get_current_admin_user),
+):
+    return service.generate_due_expenses(
+        user_id=None,
         up_to_date=up_to_date,
         limit=limit,
     )

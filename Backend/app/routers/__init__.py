@@ -15,3 +15,4 @@ from .receipt_router import receipt_router
 from .recurring_expense_router import recurring_expense_router
 from .income_router import income_router
 from .budget_router import budget_router
+from .savings_goal_router import savings_goal_router

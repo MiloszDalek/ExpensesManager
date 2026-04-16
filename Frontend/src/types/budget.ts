@@ -1,5 +1,12 @@
 import type { DecimalLike, ISODateTimeString } from "./common";
-import type { BudgetPeriodType, BudgetPoolType, BudgetStatus, CurrencyEnum } from "./enums";
+import type {
+  BudgetAllocationStrategy,
+  BudgetPeriodType,
+  BudgetPoolType,
+  BudgetStatus,
+  CurrencyEnum,
+  OverspendingStrategy,
+} from "./enums";
 
 export interface ApiIncomeEntryCreate {
   title: string;
@@ -42,6 +49,8 @@ export interface ApiBudgetPoolCreate {
   pool_type: BudgetPoolType;
   target_value: DecimalLike;
   alert_threshold?: DecimalLike;
+  rollover_enabled?: boolean;
+  rollover_negative_enabled?: boolean;
 }
 
 export interface ApiBudgetPoolUpdate {
@@ -50,6 +59,8 @@ export interface ApiBudgetPoolUpdate {
   pool_type?: BudgetPoolType | null;
   target_value?: DecimalLike | null;
   alert_threshold?: DecimalLike | null;
+  rollover_enabled?: boolean | null;
+  rollover_negative_enabled?: boolean | null;
 }
 
 export interface ApiBudgetPoolResponse {
@@ -60,6 +71,13 @@ export interface ApiBudgetPoolResponse {
   pool_type: BudgetPoolType;
   target_value: DecimalLike;
   alert_threshold: DecimalLike;
+  allocated_amount: DecimalLike;
+  spent_amount: DecimalLike;
+  remaining_amount: DecimalLike;
+  rollover_amount: DecimalLike;
+  rollover_enabled: boolean;
+  rollover_negative_enabled: boolean;
+  last_recalculated_at: ISODateTimeString | null;
   created_at: ISODateTimeString;
   updated_at: ISODateTimeString;
 }
@@ -68,6 +86,7 @@ export interface ApiBudgetPlanCreate {
   name: string;
   currency?: CurrencyEnum;
   period_type: BudgetPeriodType;
+  allocation_strategy?: BudgetAllocationStrategy;
   period_start: string;
   period_end: string;
   income_target?: DecimalLike | null;
@@ -77,6 +96,7 @@ export interface ApiBudgetPlanCreate {
 
 export interface ApiBudgetPlanUpdate {
   name?: string | null;
+  allocation_strategy?: BudgetAllocationStrategy | null;
   income_target?: DecimalLike | null;
   status?: BudgetStatus | null;
 }
@@ -87,6 +107,7 @@ export interface ApiBudgetPlanResponse {
   name: string;
   currency: CurrencyEnum;
   period_type: BudgetPeriodType;
+  allocation_strategy: BudgetAllocationStrategy;
   period_start: string;
   period_end: string;
   income_target: DecimalLike | null;
@@ -104,6 +125,7 @@ export interface ApiBudgetPoolSummaryResponse {
   category_name: string;
   pool_type: BudgetPoolType;
   configured_value: DecimalLike;
+  allocated_amount: DecimalLike;
   target_amount: DecimalLike;
   spent_amount: DecimalLike;
   remaining_amount: DecimalLike;
@@ -121,5 +143,19 @@ export interface ApiBudgetSummaryResponse {
   spent_total: DecimalLike;
   saved_total: DecimalLike;
   savings_rate: number | null;
+  overspending_strategy: OverspendingStrategy;
   pools: ApiBudgetPoolSummaryResponse[];
+}
+
+export interface ApiBudgetRolloverExecutionResponse {
+  from_budget_id: number;
+  to_budget_id: number;
+  rolled_pools_count: number;
+  total_rollover_amount: DecimalLike;
+  closed_at: string;
+}
+
+export interface ApiBudgetRolloverRunDueResponse {
+  processed_budgets_count: number;
+  created_budgets_count: number;
 }

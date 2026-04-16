@@ -131,6 +131,7 @@ export default function ReceiptScannerPage() {
   const [titleDraft, setTitleDraft] = useState("");
 
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localWarning, setLocalWarning] = useState<string | null>(null);
   const [localSuccess, setLocalSuccess] = useState<string | null>(null);
 
   const { data: personalCategories = [], isLoading: personalCategoriesLoading } = useQuery<ApiCategoryResponse[]>({
@@ -293,6 +294,7 @@ export default function ReceiptScannerPage() {
 
   const handleUpload = async (file: File) => {
     setLocalError(null);
+    setLocalWarning(null);
     setLocalSuccess(null);
     setIsUploading(true);
 
@@ -305,8 +307,11 @@ export default function ReceiptScannerPage() {
 
     try {
       const result = await receiptsApi.upload(file, ocrMode);
+      const didFallbackToTesseract = ocrMode === "paddle" && result.ocr_engine === "tesseract";
+
       setOcrStatus(result.ocr_status);
       setOcrEngine(result.ocr_engine ?? null);
+      setLocalWarning(didFallbackToTesseract ? t("receiptScannerPage.ocrFallbackToTesseract") : null);
       setOcrText(result.receipt_text ?? "");
       setParsedTotal(result.parsed_total ?? result.detected_amount ?? "");
       setParsedDate(result.parsed_date ?? "");
@@ -514,7 +519,10 @@ export default function ReceiptScannerPage() {
                   variant={ocrMode === "tesseract" ? "default" : "outline"}
                   size="sm"
                   disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
-                  onClick={() => setOcrMode("tesseract")}
+                  onClick={() => {
+                    setOcrMode("tesseract");
+                    setLocalWarning(null);
+                  }}
                 >
                   {t("receiptScannerPage.ocrModeFast")}
                 </Button>
@@ -523,12 +531,14 @@ export default function ReceiptScannerPage() {
                   variant={ocrMode === "paddle" ? "default" : "outline"}
                   size="sm"
                   disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
-                  onClick={() => setOcrMode("paddle")}
+                  onClick={() => {
+                    setOcrMode("paddle");
+                    setLocalWarning(null);
+                  }}
                 >
                   {t("receiptScannerPage.ocrModeAccurate")}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">{t("receiptScannerPage.ocrModeHint")}</p>
             </div>
 
             <Input
@@ -564,6 +574,8 @@ export default function ReceiptScannerPage() {
                 {ocrEngine ? ` (${ocrEngine.toUpperCase()})` : ""}
               </p>
             ) : null}
+
+            {localWarning ? <p className="text-xs text-amber-700">{localWarning}</p> : null}
 
             {imagePreviewUrl ? (
               <div className="overflow-hidden rounded-md border border-border bg-background/60">

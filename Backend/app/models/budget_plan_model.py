@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
-from app.enums import BudgetPeriodType, BudgetStatus, CurrencyEnum
+from app.enums import BudgetAllocationStrategy, BudgetPeriodType, BudgetStatus, CurrencyEnum
 
 
 class BudgetPlan(Base):
@@ -15,6 +15,11 @@ class BudgetPlan(Base):
     name = Column(String(120), nullable=False)
     currency = Column(SAEnum(CurrencyEnum, name="currency_enum"), default=CurrencyEnum.PLN, nullable=False)
     period_type = Column(SAEnum(BudgetPeriodType, name="budget_period_type"), nullable=False)
+    allocation_strategy = Column(
+        SAEnum(BudgetAllocationStrategy, name="budget_allocation_strategy"),
+        default=BudgetAllocationStrategy.PERCENT_INCOME,
+        nullable=False,
+    )
     period_start = Column(Date, nullable=False)
     period_end = Column(Date, nullable=False)
     income_target = Column(Numeric(12, 2), nullable=True)

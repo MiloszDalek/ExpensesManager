@@ -13,6 +13,8 @@ from .settlement_service import SettlementService
 from .paypal_service import PayPalService
 from .recurring_expense_service import RecurringExpenseService
 from .recurring_scheduler_service import RecurringExpensesScheduler
+from .budget_rollover_scheduler_service import BudgetRolloverScheduler
 from .income_service import IncomeService
 from .budget_service import BudgetService
+from .goal_service import GoalService
 from .receipt_service import ReceiptService

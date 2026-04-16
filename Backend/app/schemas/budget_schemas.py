@@ -3,7 +3,14 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.enums import BudgetPeriodType, BudgetPoolType, BudgetStatus, CurrencyEnum
+from app.enums import (
+    BudgetAllocationStrategy,
+    BudgetPeriodType,
+    BudgetPoolType,
+    BudgetStatus,
+    CurrencyEnum,
+    OverspendingStrategy,
+)
 
 
 class IncomeEntryBase(BaseModel):
@@ -43,6 +50,8 @@ class BudgetPoolBase(BaseModel):
     pool_type: BudgetPoolType
     target_value: Decimal
     alert_threshold: Decimal = Decimal("80")
+    rollover_enabled: bool = True
+    rollover_negative_enabled: bool = False
 
 
 class BudgetPoolCreate(BudgetPoolBase):
@@ -55,11 +64,18 @@ class BudgetPoolUpdate(BaseModel):
     pool_type: BudgetPoolType | None = None
     target_value: Decimal | None = None
     alert_threshold: Decimal | None = None
+    rollover_enabled: bool | None = None
+    rollover_negative_enabled: bool | None = None
 
 
 class BudgetPoolResponse(BudgetPoolBase):
     id: int
     budget_id: int
+    allocated_amount: Decimal
+    spent_amount: Decimal
+    remaining_amount: Decimal
+    rollover_amount: Decimal
+    last_recalculated_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -70,6 +86,7 @@ class BudgetPlanCreate(BaseModel):
     name: str
     currency: CurrencyEnum = CurrencyEnum.PLN
     period_type: BudgetPeriodType
+    allocation_strategy: BudgetAllocationStrategy = BudgetAllocationStrategy.PERCENT_INCOME
     period_start: date
     period_end: date
     income_target: Decimal | None = None
@@ -79,6 +96,7 @@ class BudgetPlanCreate(BaseModel):
 
 class BudgetPlanUpdate(BaseModel):
     name: str | None = None
+    allocation_strategy: BudgetAllocationStrategy | None = None
     income_target: Decimal | None = None
     status: BudgetStatus | None = None
 
@@ -89,6 +107,7 @@ class BudgetPlanResponse(BaseModel):
     name: str
     currency: CurrencyEnum
     period_type: BudgetPeriodType
+    allocation_strategy: BudgetAllocationStrategy
     period_start: date
     period_end: date
     income_target: Decimal | None = None
@@ -108,6 +127,7 @@ class BudgetPoolSummaryResponse(BaseModel):
     category_name: str
     pool_type: BudgetPoolType
     configured_value: Decimal
+    allocated_amount: Decimal
     target_amount: Decimal
     spent_amount: Decimal
     remaining_amount: Decimal
@@ -125,4 +145,18 @@ class BudgetSummaryResponse(BaseModel):
     spent_total: Decimal
     saved_total: Decimal
     savings_rate: float | None
+    overspending_strategy: OverspendingStrategy
     pools: list[BudgetPoolSummaryResponse]
+
+
+class BudgetRolloverExecutionResponse(BaseModel):
+    from_budget_id: int
+    to_budget_id: int
+    rolled_pools_count: int
+    total_rollover_amount: Decimal
+    closed_at: date
+
+
+class BudgetRolloverRunDueResponse(BaseModel):
+    processed_budgets_count: int
+    created_budgets_count: int

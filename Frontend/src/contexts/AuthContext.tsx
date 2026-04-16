@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import { createContext, useState, useContext, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { User, TokenResponse } from "@/types";

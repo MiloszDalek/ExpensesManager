@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { budgetsApi } from "@/api/budgetsApi";
 import { categoriesApi } from "@/api/categoriesApi";
+import { savingsGoalsApi } from "@/api/savingsGoalsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { type ApiBudgetPlanResponse, type ApiBudgetPoolCreate, type ApiCategoryResponse } from "@/types";
+import {
+  type ApiBudgetPlanResponse,
+  type ApiBudgetPoolCreate,
+  type ApiCategoryResponse,
+  type ApiSavingsGoalCreate,
+  type ApiSavingsGoalProgressResponse,
+  type ApiSavingsGoalResponse,
+  type ApiSavingsGoalUpdate,
+} from "@/types";
 import { SUPPORTED_CURRENCIES } from "@/types/enums";
 
 
@@ -25,6 +34,40 @@ const formatMoney = (value: number | string, currency: string) => {
 };
 
 const toIsoDateStart = (value: string) => `${value}T00:00:00`;
+
+const parsePositiveNumber = (value: string) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+  return numeric;
+};
+
+const getGoalProgressPercent = (goal: ApiSavingsGoalResponse): number => {
+  const target = Number(goal.target_amount || 0);
+  const current = Number(goal.current_amount || 0);
+
+  if (target <= 0) {
+    return 0;
+  }
+
+  return Math.min((current / target) * 100, 100);
+};
+
+const getGoalRemainingAmount = (goal: ApiSavingsGoalResponse): number => {
+  const target = Number(goal.target_amount || 0);
+  const current = Number(goal.current_amount || 0);
+  return Math.max(target - current, 0);
+};
+
+type GoalEditDraft = {
+  name: string;
+  targetAmount: string;
+  deadline: string;
+  budgetPoolId: string;
+  autoAllocateAmount: string;
+  isActive: boolean;
+};
 
 const BUDGET_ERROR_TRANSLATIONS: Record<string, string> = {
   "period_start cannot be greater than period_end": "budgets.errors.periodRangeInvalid",
@@ -47,6 +90,13 @@ const BUDGET_ERROR_TRANSLATIONS: Record<string, string> = {
   "Income entry not found": "budgets.errors.incomeNotFound",
   "Category not found": "budgets.errors.categoryNotFound",
   "Not a personal category": "budgets.errors.categoryNotPersonal",
+  "target_amount must be greater than 0": "budgets.errors.goalTargetInvalid",
+  "auto_allocate_amount cannot be negative": "budgets.errors.goalAutoAllocateInvalid",
+  "Savings goal not found": "budgets.errors.goalNotFound",
+  "Insufficient remaining amount in selected budget pool": "budgets.errors.goalPoolBalanceInsufficient",
+  "Budget period has not ended yet": "budgets.errors.budgetPeriodNotEnded",
+  "Budget rollover already executed": "budgets.errors.rolloverAlreadyExecuted",
+  "Next budget period overlaps with existing active budget": "budgets.errors.rolloverPeriodOverlap",
   "Not authorized": "budgets.errors.notAuthorized",
 };
 
@@ -99,6 +149,7 @@ export default function BudgetsPage() {
 
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [budgetName, setBudgetName] = useState("");
   const [budgetCurrency, setBudgetCurrency] = useState<typeof SUPPORTED_CURRENCIES[number]>("PLN");
@@ -116,6 +167,17 @@ export default function BudgetsPage() {
   const [poolType, setPoolType] = useState<"fixed_amount" | "percent_income">("fixed_amount");
   const [poolTarget, setPoolTarget] = useState("");
   const [poolAlert, setPoolAlert] = useState("80");
+
+  const [goalName, setGoalName] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+  const [goalDeadline, setGoalDeadline] = useState("");
+  const [goalBudgetPoolId, setGoalBudgetPoolId] = useState("none");
+  const [goalAutoAllocateAmount, setGoalAutoAllocateAmount] = useState("");
+  const [includeInactiveGoals, setIncludeInactiveGoals] = useState(false);
+  const [goalAllocationAmounts, setGoalAllocationAmounts] = useState<Record<number, string>>({});
+  const [expandedGoalHistoryId, setExpandedGoalHistoryId] = useState<number | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
+  const [goalEditDraft, setGoalEditDraft] = useState<GoalEditDraft | null>(null);
 
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
     queryKey: queryKeys.budgets.list("active"),
@@ -173,9 +235,41 @@ export default function BudgetsPage() {
     enabled: !!user,
   });
 
+  const { data: savingsGoals = [], isLoading: savingsGoalsLoading } = useQuery<ApiSavingsGoalResponse[]>({
+    queryKey: queryKeys.savingsGoals.list({ include_inactive: includeInactiveGoals }),
+    queryFn: () => savingsGoalsApi.list({ include_inactive: includeInactiveGoals }),
+    enabled: !!user,
+  });
+
+  const { data: expandedGoalProgress, isLoading: expandedGoalProgressLoading } = useQuery<ApiSavingsGoalProgressResponse>({
+    queryKey:
+      expandedGoalHistoryId !== null
+        ? queryKeys.savingsGoals.progress(expandedGoalHistoryId)
+        : ["savingsGoals", "progress", "none"],
+    queryFn: () => savingsGoalsApi.getProgress(expandedGoalHistoryId as number),
+    enabled: expandedGoalHistoryId !== null,
+  });
+
+  useEffect(() => {
+    if (editingGoalId === null) {
+      return;
+    }
+
+    const stillExists = savingsGoals.some((goal) => goal.id === editingGoalId);
+    if (!stillExists) {
+      setEditingGoalId(null);
+      setGoalEditDraft(null);
+    }
+  }, [editingGoalId, savingsGoals]);
+
   const refreshBudgetArea = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all });
     await queryClient.invalidateQueries({ queryKey: queryKeys.budgetIncome.all });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.savingsGoals.all });
+
+    if (selectedBudgetId) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.budgets.summary(selectedBudgetId) });
+    }
   };
 
   const createBudgetMutation = useMutation({
@@ -191,6 +285,7 @@ export default function BudgetsPage() {
       }),
     onSuccess: async (created) => {
       setErrorMessage(null);
+      setSuccessMessage(null);
       setBudgetName("");
       setIncomeTarget("");
       await refreshBudgetArea();
@@ -216,6 +311,7 @@ export default function BudgetsPage() {
     },
     onSuccess: async () => {
       setErrorMessage(null);
+      setSuccessMessage(null);
       setIncomeTitle("");
       setIncomeAmount("");
       setIncomeDate("");
@@ -230,6 +326,7 @@ export default function BudgetsPage() {
     mutationFn: (incomeId: number) => budgetsApi.deleteIncome(incomeId),
     onSuccess: async () => {
       setErrorMessage(null);
+      setSuccessMessage(null);
       await refreshBudgetArea();
     },
     onError: (error) => {
@@ -255,6 +352,7 @@ export default function BudgetsPage() {
     },
     onSuccess: async () => {
       setErrorMessage(null);
+      setSuccessMessage(null);
       setPoolName("");
       setPoolCategoryId("");
       setPoolTarget("");
@@ -265,6 +363,248 @@ export default function BudgetsPage() {
       setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
     },
   });
+
+  const recalculateBudgetMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedBudget) {
+        throw new Error(t("budgets.errors.noBudgetSelected", { defaultValue: "Select budget first." }));
+      }
+      return budgetsApi.recalculateBudget(selectedBudget.id);
+    },
+    onSuccess: async () => {
+      setErrorMessage(null);
+      setSuccessMessage(t("budgets.actions.recalculated", { defaultValue: "Budget recalculated." }));
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const closeBudgetMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedBudget) {
+        throw new Error(t("budgets.errors.noBudgetSelected", { defaultValue: "Select budget first." }));
+      }
+      return budgetsApi.closeBudgetPeriod(selectedBudget.id);
+    },
+    onSuccess: async (result) => {
+      setErrorMessage(null);
+      setSuccessMessage(
+        t("budgets.actions.budgetClosed", {
+          toBudgetId: result.to_budget_id,
+          defaultValue: "Budget closed. New budget #{{toBudgetId}} created.",
+        })
+      );
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const runDueRolloversMutation = useMutation({
+    mutationFn: () => budgetsApi.runDueRollovers(),
+    onSuccess: async (result) => {
+      setErrorMessage(null);
+      setSuccessMessage(
+        t("budgets.actions.runDueDone", {
+          processedCount: result.processed_budgets_count,
+          createdCount: result.created_budgets_count,
+          defaultValue: "Processed {{processedCount}} budgets, created {{createdCount}} new periods.",
+        })
+      );
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const createGoalMutation = useMutation({
+    mutationFn: () => {
+      const targetValue = parsePositiveNumber(goalTarget);
+      if (!targetValue) {
+        throw new Error("target_amount must be greater than 0");
+      }
+
+      const autoAllocateValue = goalAutoAllocateAmount.trim()
+        ? Number(goalAutoAllocateAmount)
+        : null;
+
+      const payload: ApiSavingsGoalCreate = {
+        name: goalName.trim(),
+        target_amount: targetValue,
+        deadline: goalDeadline || null,
+        budget_pool_id: goalBudgetPoolId === "none" ? null : Number(goalBudgetPoolId),
+        auto_allocate_amount: autoAllocateValue,
+      };
+
+      return savingsGoalsApi.create(payload);
+    },
+    onSuccess: async () => {
+      setErrorMessage(null);
+      setSuccessMessage(t("budgets.goals.created", { defaultValue: "Savings goal created." }));
+      setGoalName("");
+      setGoalTarget("");
+      setGoalDeadline("");
+      setGoalBudgetPoolId("none");
+      setGoalAutoAllocateAmount("");
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const allocateGoalMutation = useMutation({
+    mutationFn: (goalId: number) => {
+      const rawAmount = goalAllocationAmounts[goalId] ?? "";
+      const amount = parsePositiveNumber(rawAmount);
+      if (!amount) {
+        throw new Error("Amount must be greater than 0");
+      }
+
+      return savingsGoalsApi.allocate(goalId, {
+        amount,
+      });
+    },
+    onSuccess: async (_, goalId) => {
+      setErrorMessage(null);
+      setSuccessMessage(t("budgets.goals.allocated", { defaultValue: "Funds allocated to goal." }));
+      setGoalAllocationAmounts((prev) => ({
+        ...prev,
+        [goalId]: "",
+      }));
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const deleteGoalMutation = useMutation({
+    mutationFn: (goalId: number) => savingsGoalsApi.remove(goalId),
+    onSuccess: async () => {
+      setErrorMessage(null);
+      setSuccessMessage(t("budgets.goals.deleted", { defaultValue: "Savings goal deleted." }));
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const autoAllocateGoalsMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedBudget) {
+        throw new Error(t("budgets.errors.noBudgetSelected", { defaultValue: "Select budget first." }));
+      }
+      return savingsGoalsApi.autoAllocateForBudget(selectedBudget.id);
+    },
+    onSuccess: async (result) => {
+      setErrorMessage(null);
+      setSuccessMessage(
+        t("budgets.goals.autoAllocated", {
+          allocatedCount: result.allocated_goals_count,
+          defaultValue: "Auto-allocation done. Updated {{allocatedCount}} goals.",
+        })
+      );
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const updateGoalMutation = useMutation({
+    mutationFn: (goalId: number) => {
+      if (!goalEditDraft) {
+        throw new Error("Savings goal not found");
+      }
+
+      const targetAmount = parsePositiveNumber(goalEditDraft.targetAmount);
+      if (!targetAmount) {
+        throw new Error("target_amount must be greater than 0");
+      }
+
+      const rawAutoAllocate = goalEditDraft.autoAllocateAmount.trim();
+      const autoAllocateAmount = rawAutoAllocate === "" ? null : Number(rawAutoAllocate);
+
+      if (
+        autoAllocateAmount !== null &&
+        (!Number.isFinite(autoAllocateAmount) || autoAllocateAmount < 0)
+      ) {
+        throw new Error("auto_allocate_amount cannot be negative");
+      }
+
+      const payload: ApiSavingsGoalUpdate = {
+        name: goalEditDraft.name.trim(),
+        target_amount: targetAmount,
+        deadline: goalEditDraft.deadline || null,
+        budget_pool_id: goalEditDraft.budgetPoolId === "none" ? null : Number(goalEditDraft.budgetPoolId),
+        auto_allocate_amount: autoAllocateAmount,
+        is_active: goalEditDraft.isActive,
+      };
+
+      return savingsGoalsApi.update(goalId, payload);
+    },
+    onSuccess: async () => {
+      setErrorMessage(null);
+      setSuccessMessage(t("budgets.goals.updated", { defaultValue: "Savings goal updated." }));
+      setEditingGoalId(null);
+      setGoalEditDraft(null);
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const toggleGoalActiveMutation = useMutation({
+    mutationFn: (goal: ApiSavingsGoalResponse) =>
+      savingsGoalsApi.update(goal.id, {
+        is_active: !goal.is_active,
+      }),
+    onSuccess: async (_, goal) => {
+      setErrorMessage(null);
+      setSuccessMessage(
+        goal.is_active
+          ? t("budgets.goals.deactivated", { defaultValue: "Goal deactivated." })
+          : t("budgets.goals.activated", { defaultValue: "Goal activated." })
+      );
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const handleStartGoalEdit = (goal: ApiSavingsGoalResponse) => {
+    setEditingGoalId(goal.id);
+    setGoalEditDraft({
+      name: goal.name,
+      targetAmount: String(goal.target_amount ?? ""),
+      deadline: goal.deadline ?? "",
+      budgetPoolId: goal.budget_pool_id === null ? "none" : String(goal.budget_pool_id),
+      autoAllocateAmount: goal.auto_allocate_amount === null ? "" : String(goal.auto_allocate_amount),
+      isActive: goal.is_active,
+    });
+  };
+
+  const handleCancelGoalEdit = () => {
+    setEditingGoalId(null);
+    setGoalEditDraft(null);
+  };
 
   const isCreateBudgetDisabled =
     !budgetName.trim() ||
@@ -286,6 +626,13 @@ export default function BudgetsPage() {
     !poolTarget ||
     addPoolMutation.isPending;
 
+  const isCreateGoalDisabled =
+    !goalName.trim() ||
+    !parsePositiveNumber(goalTarget) ||
+    createGoalMutation.isPending;
+
+  const selectedBudgetCurrency = selectedBudget?.currency ?? budgetCurrency;
+
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -303,6 +650,12 @@ export default function BudgetsPage() {
         {errorMessage ? (
           <Card className="border-destructive/40 bg-destructive/5">
             <CardContent className="p-3 text-sm text-destructive">{errorMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {successMessage ? (
+          <Card className="border-emerald-500/40 bg-emerald-500/5">
+            <CardContent className="p-3 text-sm text-emerald-700">{successMessage}</CardContent>
           </Card>
         ) : null}
 
@@ -382,49 +735,112 @@ export default function BudgetsPage() {
             <TabsTrigger value="periods">{t("budgets.tabs.periods", { defaultValue: "Periods" })}</TabsTrigger>
             <TabsTrigger value="income">{t("budgets.tabs.income", { defaultValue: "Income" })}</TabsTrigger>
             <TabsTrigger value="pools">{t("budgets.tabs.pools", { defaultValue: "Pools" })}</TabsTrigger>
+            <TabsTrigger value="goals">{t("budgets.tabs.goals", { defaultValue: "Goals" })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="periods">
-            <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-              <CardContent className="space-y-3 p-4">
-                {budgetsLoading ? (
-                  <p className="text-sm text-muted-foreground">{t("budgets.loading", { defaultValue: "Loading..." })}</p>
-                ) : budgets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t("budgets.empty", { defaultValue: "No budgets yet. Create your first period above." })}
-                  </p>
-                ) : (
-                  budgets.map((budget) => (
-                    <div
-                      key={budget.id}
-                      className="flex flex-col gap-2 rounded-md border border-border p-3 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{budget.name}</p>
+            <div className="space-y-4">
+              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {selectedBudget
+                          ? t("budgets.periods.current", { defaultValue: "Selected period" })
+                          : t("budgets.periods.none", { defaultValue: "No period selected" })}
+                      </p>
+                      {selectedBudget ? (
                         <p className="text-xs text-muted-foreground">
-                          {budget.period_start} - {budget.period_end} · {budget.currency}
+                          {selectedBudget.name} · {selectedBudget.period_start} - {selectedBudget.period_end}
                         </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Badge variant={budget.status === "active" ? "default" : "secondary"}>
-                          {getBudgetStatusLabel(budget.status, t)}
-                        </Badge>
-                        <Button
-                          variant={selectedBudgetId === budget.id ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedBudgetId(budget.id)}
-                        >
-                          {selectedBudgetId === budget.id
-                            ? t("budgets.actions.selected", { defaultValue: "Selected" })
-                            : t("budgets.actions.select", { defaultValue: "Select" })}
-                        </Button>
-                      </div>
+                      ) : null}
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => recalculateBudgetMutation.mutate()}
+                        disabled={!selectedBudget || recalculateBudgetMutation.isPending}
+                      >
+                        {recalculateBudgetMutation.isPending
+                          ? t("budgets.actions.recalculating", { defaultValue: "Recalculating..." })
+                          : t("budgets.actions.recalculate", { defaultValue: "Recalculate" })}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => autoAllocateGoalsMutation.mutate()}
+                        disabled={!selectedBudget || autoAllocateGoalsMutation.isPending}
+                      >
+                        {autoAllocateGoalsMutation.isPending
+                          ? t("budgets.actions.autoAllocating", { defaultValue: "Auto-allocating..." })
+                          : t("budgets.actions.autoAllocateGoals", { defaultValue: "Auto-allocate goals" })}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => closeBudgetMutation.mutate()}
+                        disabled={!selectedBudget || closeBudgetMutation.isPending}
+                      >
+                        {closeBudgetMutation.isPending
+                          ? t("budgets.actions.closing", { defaultValue: "Closing..." })
+                          : t("budgets.actions.closePeriod", { defaultValue: "Close period" })}
+                      </Button>
+                      {user?.role === "admin" ? (
+                        <Button
+                          variant="outline"
+                          onClick={() => runDueRolloversMutation.mutate()}
+                          disabled={runDueRolloversMutation.isPending}
+                        >
+                          {runDueRolloversMutation.isPending
+                            ? t("budgets.actions.runningDue", { defaultValue: "Running..." })
+                            : t("budgets.actions.runDueRollovers", { defaultValue: "Run due rollovers" })}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="space-y-3 p-4">
+                  {budgetsLoading ? (
+                    <p className="text-sm text-muted-foreground">{t("budgets.loading", { defaultValue: "Loading..." })}</p>
+                  ) : budgets.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("budgets.empty", { defaultValue: "No budgets yet. Create your first period above." })}
+                    </p>
+                  ) : (
+                    budgets.map((budget) => (
+                      <div
+                        key={budget.id}
+                        className="flex flex-col gap-2 rounded-md border border-border p-3 md:flex-row md:items-center md:justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{budget.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {budget.period_start} - {budget.period_end} · {budget.currency}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Badge variant={budget.status === "active" ? "default" : "secondary"}>
+                            {getBudgetStatusLabel(budget.status, t)}
+                          </Badge>
+                          <Button
+                            variant={selectedBudgetId === budget.id ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedBudgetId(budget.id)}
+                          >
+                            {selectedBudgetId === budget.id
+                              ? t("budgets.actions.selected", { defaultValue: "Selected" })
+                              : t("budgets.actions.select", { defaultValue: "Select" })}
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="income">
@@ -586,6 +1002,12 @@ export default function BudgetsPage() {
                             <p className="text-lg font-semibold">{formatMoney(budgetSummary.saved_total, budgetSummary.currency)}</p>
                           </CardContent>
                         </Card>
+                        <Card>
+                          <CardContent className="p-3">
+                            <p className="text-xs text-muted-foreground">{t("budgets.summary.policy", { defaultValue: "Overspending policy" })}</p>
+                            <p className="text-lg font-semibold uppercase">{budgetSummary.overspending_strategy.replace("_", " ")}</p>
+                          </CardContent>
+                        </Card>
                       </div>
 
                       <div className="space-y-3">
@@ -611,13 +1033,421 @@ export default function BudgetsPage() {
                             </div>
 
                             <p className="text-xs text-muted-foreground">
-                              {formatMoney(pool.spent_amount, budgetSummary.currency)} / {formatMoney(pool.target_amount, budgetSummary.currency)}
+                              {formatMoney(pool.spent_amount, budgetSummary.currency)} / {formatMoney(pool.allocated_amount, budgetSummary.currency)} · {t("budgets.summary.remaining", { defaultValue: "Remaining" })}: {formatMoney(pool.remaining_amount, budgetSummary.currency)}
                               {pool.utilization_percent != null ? ` (${pool.utilization_percent.toFixed(2)}%)` : ""}
                             </p>
                           </div>
                         ))}
                       </div>
                     </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="goals">
+            <div className="space-y-4">
+              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="grid gap-3 p-4 md:grid-cols-6">
+                  <div className="space-y-1 md:col-span-2">
+                    <Label>{t("budgets.goals.name", { defaultValue: "Goal name" })}</Label>
+                    <Input
+                      value={goalName}
+                      onChange={(event) => setGoalName(event.target.value)}
+                      placeholder={t("budgets.goals.namePlaceholder", { defaultValue: "Emergency fund" })}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>{t("budgets.goals.target", { defaultValue: "Target amount" })}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={goalTarget}
+                      onChange={(event) => setGoalTarget(event.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>{t("budgets.goals.deadline", { defaultValue: "Deadline (optional)" })}</Label>
+                    <DatePicker id="goal-deadline" value={goalDeadline} onChange={setGoalDeadline} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>{t("budgets.goals.pool", { defaultValue: "Source pool" })}</Label>
+                    <Select value={goalBudgetPoolId} onValueChange={setGoalBudgetPoolId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("budgets.goals.poolOptional", { defaultValue: "Optional" })} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("budgets.goals.noPool", { defaultValue: "No linked pool" })}</SelectItem>
+                        {(selectedBudget?.pools ?? []).map((pool) => (
+                          <SelectItem key={pool.id} value={String(pool.id)}>
+                            {pool.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>{t("budgets.goals.autoAllocate", { defaultValue: "Auto allocate / period" })}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={goalAutoAllocateAmount}
+                      onChange={(event) => setGoalAutoAllocateAmount(event.target.value)}
+                    />
+                  </div>
+
+                  <div className="md:col-span-6 flex flex-wrap gap-2">
+                    <Button onClick={() => createGoalMutation.mutate()} disabled={isCreateGoalDisabled}>
+                      {createGoalMutation.isPending
+                        ? t("budgets.goals.creating", { defaultValue: "Creating..." })
+                        : t("budgets.goals.create", { defaultValue: "Create goal" })}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      onClick={() => setIncludeInactiveGoals((prev) => !prev)}
+                    >
+                      {includeInactiveGoals
+                        ? t("budgets.goals.hideInactive", { defaultValue: "Hide inactive" })
+                        : t("budgets.goals.showInactive", { defaultValue: "Show inactive" })}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <CardContent className="space-y-4 p-4">
+                  {savingsGoalsLoading ? (
+                    <p className="text-sm text-muted-foreground">{t("budgets.loading", { defaultValue: "Loading..." })}</p>
+                  ) : savingsGoals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("budgets.goals.empty", { defaultValue: "No savings goals yet." })}
+                    </p>
+                  ) : (
+                    savingsGoals.map((goal) => {
+                      const progressPercent = getGoalProgressPercent(goal);
+                      const remainingAmount = getGoalRemainingAmount(goal);
+                      const allocationInput = goalAllocationAmounts[goal.id] ?? "";
+                      const isEditingGoal = editingGoalId === goal.id;
+                      const isHistoryExpanded = expandedGoalHistoryId === goal.id;
+                      const progressForGoal = isHistoryExpanded ? expandedGoalProgress : undefined;
+                      const hasGoalProgressData = progressForGoal?.goal.id === goal.id;
+                      const selectedBudgetPools = selectedBudget?.pools ?? [];
+                      const selectedBudgetHasGoalPool =
+                        goalEditDraft?.budgetPoolId !== "none" &&
+                        selectedBudgetPools.some((pool) => String(pool.id) === goalEditDraft?.budgetPoolId);
+
+                      return (
+                        <div key={goal.id} className="rounded-md border border-border p-3">
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{goal.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("budgets.goals.target", { defaultValue: "Target" })}: {formatMoney(goal.target_amount, selectedBudgetCurrency)}
+                                {goal.deadline ? ` · ${t("budgets.goals.deadline", { defaultValue: "Deadline" })}: ${goal.deadline}` : ""}
+                              </p>
+                            </div>
+                            <Badge variant={goal.is_active ? "outline" : "secondary"}>
+                              {goal.is_active
+                                ? t("budgets.goals.active", { defaultValue: "Active" })
+                                : t("budgets.goals.inactive", { defaultValue: "Inactive" })}
+                            </Badge>
+                          </div>
+
+                          <div className="mb-2 h-2 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full bg-primary" style={{ width: `${Math.min(progressPercent, 100)}%` }} />
+                          </div>
+
+                          <p className="mb-3 text-xs text-muted-foreground">
+                            {formatMoney(goal.current_amount, selectedBudgetCurrency)} / {formatMoney(goal.target_amount, selectedBudgetCurrency)}
+                            {` (${progressPercent.toFixed(2)}%) · ${t("budgets.summary.remaining", { defaultValue: "Remaining" })}: ${formatMoney(remainingAmount, selectedBudgetCurrency)}`}
+                          </p>
+
+                          <div className="flex flex-wrap items-end gap-2">
+                            <div className="space-y-1">
+                              <Label>{t("budgets.goals.allocate", { defaultValue: "Allocate amount" })}</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={allocationInput}
+                                onChange={(event) =>
+                                  setGoalAllocationAmounts((prev) => ({
+                                    ...prev,
+                                    [goal.id]: event.target.value,
+                                  }))
+                                }
+                              />
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              onClick={() => allocateGoalMutation.mutate(goal.id)}
+                              disabled={
+                                allocateGoalMutation.isPending ||
+                                !parsePositiveNumber(allocationInput)
+                              }
+                            >
+                              {allocateGoalMutation.isPending
+                                ? t("budgets.goals.allocating", { defaultValue: "Allocating..." })
+                                : t("budgets.goals.allocateAction", { defaultValue: "Allocate" })}
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={() => toggleGoalActiveMutation.mutate(goal)}
+                              disabled={toggleGoalActiveMutation.isPending}
+                            >
+                              {goal.is_active
+                                ? t("budgets.goals.deactivate", { defaultValue: "Deactivate" })
+                                : t("budgets.goals.activate", { defaultValue: "Activate" })}
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={() => handleStartGoalEdit(goal)}
+                              disabled={updateGoalMutation.isPending}
+                            >
+                              {t("budgets.actions.edit", { defaultValue: "Edit" })}
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                setExpandedGoalHistoryId((prev) => (prev === goal.id ? null : goal.id))
+                              }
+                            >
+                              {isHistoryExpanded
+                                ? t("budgets.goals.hideHistory", { defaultValue: "Hide history" })
+                                : t("budgets.goals.showHistory", { defaultValue: "Show history" })}
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={() => deleteGoalMutation.mutate(goal.id)}
+                              disabled={deleteGoalMutation.isPending}
+                            >
+                              {t("budgets.actions.delete", { defaultValue: "Delete" })}
+                            </Button>
+                          </div>
+
+                          {isEditingGoal && goalEditDraft ? (
+                            <Card className="mt-3 border border-border bg-background/50">
+                              <CardContent className="grid gap-3 p-3 md:grid-cols-3">
+                                <div className="space-y-1 md:col-span-2">
+                                  <Label>{t("budgets.goals.name", { defaultValue: "Goal name" })}</Label>
+                                  <Input
+                                    value={goalEditDraft.name}
+                                    onChange={(event) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              name: event.target.value,
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label>{t("budgets.goals.target", { defaultValue: "Target amount" })}</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={goalEditDraft.targetAmount}
+                                    onChange={(event) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              targetAmount: event.target.value,
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label>{t("budgets.goals.deadline", { defaultValue: "Deadline (optional)" })}</Label>
+                                  <DatePicker
+                                    id={`goal-edit-deadline-${goal.id}`}
+                                    value={goalEditDraft.deadline}
+                                    onChange={(value) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              deadline: value,
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label>{t("budgets.goals.pool", { defaultValue: "Source pool" })}</Label>
+                                  <Select
+                                    value={goalEditDraft.budgetPoolId}
+                                    onValueChange={(value) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              budgetPoolId: value,
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">
+                                        {t("budgets.goals.noPool", { defaultValue: "No linked pool" })}
+                                      </SelectItem>
+                                      {selectedBudgetPools.map((pool) => (
+                                        <SelectItem key={pool.id} value={String(pool.id)}>
+                                          {pool.name}
+                                        </SelectItem>
+                                      ))}
+                                      {!selectedBudgetHasGoalPool && goalEditDraft.budgetPoolId !== "none" ? (
+                                        <SelectItem value={goalEditDraft.budgetPoolId}>
+                                          {t("budgets.goals.currentPool", {
+                                            poolId: goalEditDraft.budgetPoolId,
+                                            defaultValue: "Current pool #{{poolId}}",
+                                          })}
+                                        </SelectItem>
+                                      ) : null}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label>{t("budgets.goals.autoAllocate", { defaultValue: "Auto allocate / period" })}</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={goalEditDraft.autoAllocateAmount}
+                                    onChange={(event) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              autoAllocateAmount: event.target.value,
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label>{t("budgets.goals.status", { defaultValue: "Status" })}</Label>
+                                  <Select
+                                    value={goalEditDraft.isActive ? "active" : "inactive"}
+                                    onValueChange={(value) =>
+                                      setGoalEditDraft((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              isActive: value === "active",
+                                            }
+                                          : prev
+                                      )
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">
+                                        {t("budgets.goals.active", { defaultValue: "Active" })}
+                                      </SelectItem>
+                                      <SelectItem value="inactive">
+                                        {t("budgets.goals.inactive", { defaultValue: "Inactive" })}
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="md:col-span-3 flex flex-wrap gap-2">
+                                  <Button
+                                    onClick={() => updateGoalMutation.mutate(goal.id)}
+                                    disabled={updateGoalMutation.isPending || !goalEditDraft.name.trim() || !parsePositiveNumber(goalEditDraft.targetAmount)}
+                                  >
+                                    {updateGoalMutation.isPending
+                                      ? t("budgets.actions.saving", { defaultValue: "Saving..." })
+                                      : t("budgets.actions.save", { defaultValue: "Save" })}
+                                  </Button>
+                                  <Button variant="outline" onClick={handleCancelGoalEdit}>
+                                    {t("budgets.actions.cancel", { defaultValue: "Cancel" })}
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ) : null}
+
+                          {isHistoryExpanded ? (
+                            <Card className="mt-3 border border-border bg-background/50">
+                              <CardContent className="space-y-3 p-3">
+                                <p className="text-sm font-medium text-foreground">
+                                  {t("budgets.goals.history", { defaultValue: "Allocation history" })}
+                                </p>
+
+                                {expandedGoalProgressLoading ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    {t("budgets.loading", { defaultValue: "Loading..." })}
+                                  </p>
+                                ) : !hasGoalProgressData ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    {t("budgets.goals.historyEmpty", { defaultValue: "No allocation history yet." })}
+                                  </p>
+                                ) : progressForGoal.allocations.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    {t("budgets.goals.historyEmpty", { defaultValue: "No allocation history yet." })}
+                                  </p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {progressForGoal.allocations.map((allocation) => (
+                                      <div key={allocation.id} className="flex items-center justify-between rounded-md border border-border p-2">
+                                        <div>
+                                          <p className="text-xs font-medium text-foreground">
+                                            {allocation.allocation_type === "auto"
+                                              ? t("budgets.goals.autoAllocation", { defaultValue: "Auto allocation" })
+                                              : t("budgets.goals.manualAllocation", { defaultValue: "Manual allocation" })}
+                                          </p>
+                                          <p className="text-[11px] text-muted-foreground">
+                                            {allocation.created_at.slice(0, 10)}
+                                            {allocation.notes ? ` · ${allocation.notes}` : ""}
+                                          </p>
+                                        </div>
+                                        <span className="text-xs font-semibold text-foreground">
+                                          {formatMoney(allocation.amount, selectedBudgetCurrency)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ) : null}
+                        </div>
+                      );
+                    })
                   )}
                 </CardContent>
               </Card>

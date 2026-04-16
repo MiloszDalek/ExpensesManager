@@ -747,10 +747,16 @@ export default function DetailedSummaryPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={trendChartData}
-                      onClick={(state: any) => {
-                        const clicked = state?.activePayload?.[0]?.payload;
+                      onClick={(state) => {
+                        const clicked = (state as {
+                          activePayload?: Array<{
+                            payload?: {
+                              rawDate?: string;
+                            };
+                          }>;
+                        }).activePayload?.[0]?.payload;
                         if (clicked?.rawDate) {
-                          setDrilldownDate(clicked.rawDate as string);
+                          setDrilldownDate(clicked.rawDate);
                         }
                       }}
                     >

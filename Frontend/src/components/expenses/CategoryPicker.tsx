@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
 import { Input } from "@/components/ui/input";
@@ -110,16 +110,16 @@ export default function CategoryPicker({
     return normalizedMessage;
   }
 
-  function getCategoryLabel(category: ApiCategoryResponse): string {
+  const getCategoryLabel = useCallback((category: ApiCategoryResponse): string => {
     if (category.user_id == null) {
       return t(`category.${category.name}`, { defaultValue: formatCategoryNameForDisplay(category.name) });
     }
     return category.name;
-  }
+  }, [t]);
 
-  function getCategoryGroupLabel(group: CategoryGroupId): string {
+  const getCategoryGroupLabel = useCallback((group: CategoryGroupId): string => {
     return t(`categoryGroups.${group}`);
-  }
+  }, [t]);
 
   function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
     if (typeof error === "object" && error !== null && "response" in error) {
@@ -197,7 +197,7 @@ export default function CategoryPicker({
 
     const group = resolveCategoryGroup(selectedCategory);
     return `${getCategoryGroupLabel(group)}: ${categoryLabel}`;
-  }, [selectedCategory, value, t, showSelectedGroupPrefix]);
+  }, [selectedCategory, value, t, showSelectedGroupPrefix, getCategoryGroupLabel, getCategoryLabel]);
 
   const SelectedCategoryIcon = useMemo(() => {
     if (!selectedCategory) {
@@ -251,7 +251,7 @@ export default function CategoryPicker({
 
       return rawName.includes(normalizedSearch) || translatedLabel.includes(normalizedSearch);
     });
-  }, [categories, groupedCategories, recentCategoryIds, selectedGroup, search, t]);
+  }, [categories, groupedCategories, recentCategoryIds, selectedGroup, search, getCategoryLabel]);
 
   useEffect(() => {
     if (!isDialogOpen) {
