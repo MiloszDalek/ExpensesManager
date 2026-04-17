@@ -7,6 +7,8 @@ from app.models import SavingsGoal, SavingsGoalAllocation
 from app.repositories import BudgetRepository, SavingsGoalRepository
 from app.schemas import SavingsGoalAllocateRequest, SavingsGoalCreate, SavingsGoalUpdate
 
+from .budget_service import BudgetService
+
 
 class GoalService:
     def __init__(self, db: Session):
@@ -16,6 +18,50 @@ class GoalService:
     @staticmethod
     def _round_money(value: Decimal | int | float) -> Decimal:
         return Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _to_goal_response(self, goal: SavingsGoal) -> dict:
+        state = goal.state
+
+        current_amount = self._round_money(state.current_amount) if state else self._round_money(goal.current_amount)
+        target_amount = self._round_money(state.target_amount) if state else self._round_money(goal.target_amount)
+
+        if state is not None:
+            if state.status == "ACTIVE":
+                is_active = True
+            elif state.status == "COMPLETED":
+                is_active = False
+            else:
+                is_active = False
+        else:
+            is_active = goal.is_active
+
+        return {
+            "id": goal.id,
+            "user_id": goal.user_id,
+            "name": goal.name,
+            "target_amount": target_amount,
+            "current_amount": current_amount,
+            "deadline": goal.deadline,
+            "budget_pool_id": goal.budget_pool_id,
+            "auto_allocate_amount": (
+                self._round_money(goal.auto_allocate_amount)
+                if goal.auto_allocate_amount is not None
+                else None
+            ),
+            "is_active": is_active,
+            "created_at": goal.created_at,
+            "updated_at": goal.updated_at,
+        }
+
+    def _refresh_budget_engine_state(self, user_id: int, budget_ids: set[int], preferred_budget_id: int | None = None):
+        budget_service = BudgetService(self.goal_repo.db)
+
+        if budget_ids:
+            for budget_id in sorted(budget_ids):
+                budget_service.recalculate_budget_state(budget_id, user_id)
+            return
+
+        budget_service.refresh_goal_state_for_user(user_id, preferred_budget_id=preferred_budget_id, commit=True)
 
     def _assert_goal_access(self, goal_id: int, user_id: int) -> SavingsGoal:
         goal = self.goal_repo.get_goal_by_id_for_user(goal_id, user_id)
@@ -41,8 +87,10 @@ class GoalService:
         if goal_in.auto_allocate_amount is not None and goal_in.auto_allocate_amount < 0:
             raise HTTPException(status_code=400, detail="auto_allocate_amount cannot be negative")
 
+        linked_budget_id = None
         if goal_in.budget_pool_id is not None:
-            self._assert_pool_access(goal_in.budget_pool_id, user_id)
+            linked_pool = self._assert_pool_access(goal_in.budget_pool_id, user_id)
+            linked_budget_id = linked_pool.budget_id
 
         goal = SavingsGoal(
             user_id=user_id,
@@ -61,20 +109,28 @@ class GoalService:
 
         self.goal_repo.create_goal(goal)
         self.goal_repo.save_all()
+        self._refresh_budget_engine_state(
+            user_id=user_id,
+            budget_ids={linked_budget_id} if linked_budget_id is not None else set(),
+            preferred_budget_id=linked_budget_id,
+        )
         self.goal_repo.refresh(goal)
-        return goal
+        return self._to_goal_response(goal)
 
     def list_goals(self, user_id: int, include_inactive: bool = False) -> list[SavingsGoal]:
-        return self.goal_repo.list_goals_by_user(user_id, include_inactive=include_inactive)
+        goals = self.goal_repo.list_goals_by_user(user_id, include_inactive=include_inactive)
+        return [self._to_goal_response(goal) for goal in goals]
 
     def get_goal(self, goal_id: int, user_id: int) -> SavingsGoal:
-        return self._assert_goal_access(goal_id, user_id)
+        goal = self._assert_goal_access(goal_id, user_id)
+        return self._to_goal_response(goal)
 
     def get_goal_progress(self, goal_id: int, user_id: int):
         goal = self._assert_goal_access(goal_id, user_id)
+        goal_payload = self._to_goal_response(goal)
 
-        target_amount = self._round_money(goal.target_amount)
-        current_amount = self._round_money(goal.current_amount)
+        target_amount = self._round_money(goal_payload["target_amount"])
+        current_amount = self._round_money(goal_payload["current_amount"])
         remaining_amount = self._round_money(max(target_amount - current_amount, Decimal("0.00")))
 
         progress_percent = 0.0
@@ -82,7 +138,7 @@ class GoalService:
             progress_percent = float(((current_amount / target_amount) * Decimal("100")).quantize(Decimal("0.01")))
 
         return {
-            "goal": goal,
+            "goal": goal_payload,
             "progress_percent": progress_percent,
             "remaining_amount": remaining_amount,
             "allocations": goal.allocations,
@@ -90,6 +146,7 @@ class GoalService:
 
     def update_goal(self, goal_id: int, goal_in: SavingsGoalUpdate, user_id: int) -> SavingsGoal:
         goal = self._assert_goal_access(goal_id, user_id)
+        old_pool_budget_id = goal.budget_pool.budget_id if goal.budget_pool is not None else None
         update_data = goal_in.model_dump(exclude_unset=True)
 
         if "target_amount" in update_data and update_data["target_amount"] is not None:
@@ -98,9 +155,7 @@ class GoalService:
             update_data["target_amount"] = self._round_money(update_data["target_amount"])
 
         if "current_amount" in update_data and update_data["current_amount"] is not None:
-            if update_data["current_amount"] < 0:
-                raise HTTPException(status_code=400, detail="current_amount cannot be negative")
-            update_data["current_amount"] = self._round_money(update_data["current_amount"])
+            raise HTTPException(status_code=400, detail="current_amount is derived and cannot be updated manually")
 
         if "auto_allocate_amount" in update_data and update_data["auto_allocate_amount"] is not None:
             if update_data["auto_allocate_amount"] < 0:
@@ -113,12 +168,20 @@ class GoalService:
         for field, value in update_data.items():
             setattr(goal, field, value)
 
-        if self._round_money(goal.current_amount) >= self._round_money(goal.target_amount):
-            goal.is_active = False
-
         self.goal_repo.save_all()
         self.goal_repo.refresh(goal)
-        return goal
+
+        new_pool_budget_id = goal.budget_pool.budget_id if goal.budget_pool is not None else None
+        affected_budget_ids = {budget_id for budget_id in [old_pool_budget_id, new_pool_budget_id] if budget_id is not None}
+
+        self._refresh_budget_engine_state(
+            user_id=user_id,
+            budget_ids=affected_budget_ids,
+            preferred_budget_id=new_pool_budget_id or old_pool_budget_id,
+        )
+
+        self.goal_repo.refresh(goal)
+        return self._to_goal_response(goal)
 
     def allocate_to_goal(self, goal_id: int, payload: SavingsGoalAllocateRequest, user_id: int):
         goal = self._assert_goal_access(goal_id, user_id)
@@ -141,10 +204,6 @@ class GoalService:
             pool.remaining_amount = self._round_money(pool_remaining - allocation_amount)
             pool.spent_amount = self._round_money(Decimal(pool.spent_amount) + allocation_amount)
 
-        goal.current_amount = self._round_money(Decimal(goal.current_amount) + allocation_amount)
-        if self._round_money(goal.current_amount) >= self._round_money(goal.target_amount):
-            goal.is_active = False
-
         allocation = SavingsGoalAllocation(
             goal_id=goal.id,
             user_id=user_id,
@@ -157,9 +216,14 @@ class GoalService:
         self.goal_repo.create_allocation(allocation)
 
         self.goal_repo.save_all()
+        self._refresh_budget_engine_state(
+            user_id=user_id,
+            budget_ids={target_budget_id} if target_budget_id is not None else set(),
+            preferred_budget_id=target_budget_id,
+        )
         self.goal_repo.refresh(goal)
         return {
-            "goal": goal,
+            "goal": self._to_goal_response(goal),
             "allocation": allocation,
         }
 
@@ -175,6 +239,7 @@ class GoalService:
         )
 
         goals = self.goal_repo.list_auto_active_goals_by_user(user_id)
+        allocated_totals_by_goal = self.goal_repo.get_allocated_totals_by_goal_ids([goal.id for goal in goals])
 
         allocated_goals_count = 0
         total_allocated_amount = Decimal("0.00")
@@ -193,7 +258,8 @@ class GoalService:
 
             available_amount = self._round_money(source_pool.remaining_amount)
             requested_amount = self._round_money(goal.auto_allocate_amount or Decimal("0.00"))
-            remaining_target = self._round_money(self._round_money(goal.target_amount) - self._round_money(goal.current_amount))
+            current_amount = self._round_money(allocated_totals_by_goal.get(goal.id, Decimal("0.00")))
+            remaining_target = self._round_money(self._round_money(goal.target_amount) - current_amount)
 
             if available_amount <= 0 or requested_amount <= 0 or remaining_target <= 0:
                 continue
@@ -204,10 +270,6 @@ class GoalService:
 
             source_pool.remaining_amount = self._round_money(Decimal(source_pool.remaining_amount) - allocation_amount)
             source_pool.spent_amount = self._round_money(Decimal(source_pool.spent_amount) + allocation_amount)
-
-            goal.current_amount = self._round_money(Decimal(goal.current_amount) + allocation_amount)
-            if self._round_money(goal.current_amount) >= self._round_money(goal.target_amount):
-                goal.is_active = False
 
             self.goal_repo.create_allocation(
                 SavingsGoalAllocation(
@@ -221,11 +283,18 @@ class GoalService:
                 )
             )
 
+            allocated_totals_by_goal[goal.id] = self._round_money(current_amount + allocation_amount)
+
             allocated_goals_count += 1
             total_allocated_amount = self._round_money(total_allocated_amount + allocation_amount)
 
         if commit:
             self.goal_repo.save_all()
+            self._refresh_budget_engine_state(
+                user_id=user_id,
+                budget_ids={budget.id},
+                preferred_budget_id=budget.id,
+            )
 
         return {
             "budget_id": budget.id,
@@ -236,5 +305,11 @@ class GoalService:
 
     def delete_goal(self, goal_id: int, user_id: int):
         goal = self._assert_goal_access(goal_id, user_id)
+        linked_budget_id = goal.budget_pool.budget_id if goal.budget_pool is not None else None
         self.goal_repo.delete_goal(goal)
         self.goal_repo.save_all()
+        self._refresh_budget_engine_state(
+            user_id=user_id,
+            budget_ids={linked_budget_id} if linked_budget_id is not None else set(),
+            preferred_budget_id=linked_budget_id,
+        )

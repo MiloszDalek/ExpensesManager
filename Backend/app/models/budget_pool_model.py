@@ -31,6 +31,7 @@ class BudgetPool(Base):
     budget = relationship("BudgetPlan", back_populates="pools")
     category = relationship("Category", back_populates="budget_pools")
     savings_goals = relationship("SavingsGoal", back_populates="budget_pool")
+    state_rows = relationship("BudgetPoolState", back_populates="pool", cascade="all, delete-orphan", passive_deletes=True)
 
     __table_args__ = (
         Index("idx_budget_pools_budget_id", "budget_id"),

@@ -17,7 +17,7 @@ from app.enums import (
     OverspendingStrategy,
 )
 from app.models import BudgetPlan, BudgetPool, BudgetRollover
-from app.repositories import BudgetRepository, IncomeRepository
+from app.repositories import BudgetRepository, IncomeRepository, SavingsGoalRepository
 from app.schemas import BudgetPlanCreate, BudgetPlanUpdate, BudgetPoolCreate, BudgetPoolUpdate
 
 from .category_service import CategoryService
@@ -30,6 +30,7 @@ class BudgetService:
     def __init__(self, db: Session):
         self.budget_repo = BudgetRepository(db)
         self.income_repo = IncomeRepository(db)
+        self.goal_repo = SavingsGoalRepository(db)
         self.category_service = CategoryService(db)
         self.settings = get_settings()
 
@@ -198,6 +199,161 @@ class BudgetService:
         pool_row["utilization_percent"] = utilization_percent
         pool_row["status"] = status
 
+    def _rebuild_goal_state_for_user(
+        self,
+        user_id: int,
+        preferred_budget_id: int | None,
+        last_recalculated_at: datetime,
+    ):
+        goals = self.goal_repo.list_goals_by_user(user_id, include_inactive=True)
+        goal_ids = [goal.id for goal in goals]
+
+        allocated_totals_by_goal = self.goal_repo.get_allocated_totals_by_goal_ids(goal_ids)
+
+        from app.models import GoalState
+
+        state_rows: list[GoalState] = []
+
+        for goal in goals:
+            current_amount = self._round_money(allocated_totals_by_goal.get(goal.id, Decimal("0.00")))
+            target_amount = self._round_money(goal.target_amount or Decimal("0.00"))
+
+            # Keep compatibility cache fields synchronized from derived computation.
+            goal.current_amount = current_amount
+
+            progress_percentage = Decimal("0.00")
+            if target_amount > 0:
+                progress_percentage = self._round_money(
+                    min((current_amount / target_amount) * Decimal("100"), Decimal("100"))
+                )
+
+            if target_amount > 0 and current_amount >= target_amount:
+                state_status = "COMPLETED"
+                goal.is_active = False
+            elif goal.is_active:
+                state_status = "ACTIVE"
+            else:
+                state_status = "PAUSED"
+
+            state_budget_id = None
+            if goal.budget_pool is not None:
+                state_budget_id = goal.budget_pool.budget_id
+            elif preferred_budget_id is not None:
+                state_budget_id = preferred_budget_id
+
+            state_rows.append(
+                GoalState(
+                    goal_id=goal.id,
+                    budget_id=state_budget_id,
+                    current_amount=current_amount,
+                    target_amount=target_amount,
+                    progress_percentage=progress_percentage,
+                    status=state_status,
+                    last_recalculated_at=last_recalculated_at,
+                )
+            )
+
+        self.goal_repo.replace_goal_states(goal_ids, state_rows)
+
+    def _persist_derived_state(self, budget: BudgetPlan, user_id: int, computed_summary: dict, recalculated_at: datetime):
+        overspend_flag = any(
+            str(pool_row["status"]).lower() == "exceeded" or Decimal(pool_row["remaining_amount"]) < Decimal("0")
+            for pool_row in computed_summary["pools"]
+        )
+
+        self.budget_repo.upsert_budget_period_summary(
+            budget_id=budget.id,
+            total_income=computed_summary["income_total"],
+            total_expenses=computed_summary["spent_total"],
+            total_savings=computed_summary["saved_total"],
+            remaining_budget=computed_summary["saved_total"],
+            overspend_flag=overspend_flag,
+            last_recalculated_at=recalculated_at,
+        )
+        self.budget_repo.replace_budget_pool_states(
+            budget_id=budget.id,
+            pool_rows=computed_summary["pools"],
+            last_recalculated_at=recalculated_at,
+        )
+        self._rebuild_goal_state_for_user(
+            user_id=user_id,
+            preferred_budget_id=budget.id,
+            last_recalculated_at=recalculated_at,
+        )
+
+    def _build_budget_summary_from_derived(self, budget: BudgetPlan):
+        period_summary = self.budget_repo.get_budget_period_summary(budget.id)
+        pool_states = self.budget_repo.list_budget_pool_states(budget.id)
+
+        if period_summary is None:
+            return None
+
+        if budget.pools and len(pool_states) != len(budget.pools):
+            return None
+
+        pool_meta_by_id = {pool.id: pool for pool in budget.pools}
+        pool_rows: list[dict] = []
+
+        for state_row in pool_states:
+            pool = pool_meta_by_id.get(state_row.pool_id)
+            category_name = ""
+            configured_value = Decimal("0.00")
+            pool_name = f"Pool #{state_row.pool_id}"
+            category_id = 0
+            pool_type = BudgetPoolType.FIXED_AMOUNT
+            alert_threshold = Decimal("80.00")
+
+            if pool is not None:
+                pool_name = pool.name
+                category_id = pool.category_id
+                category_name = pool.category.name if pool.category else ""
+                configured_value = self._round_money(pool.target_value)
+                pool_type = pool.pool_type
+                alert_threshold = self._round_money(pool.alert_threshold)
+
+            utilization_percent = None
+            if state_row.usage_percentage is not None:
+                utilization_percent = float(self._round_money(state_row.usage_percentage))
+
+            pool_rows.append(
+                {
+                    "pool_id": state_row.pool_id,
+                    "pool_name": pool_name,
+                    "category_id": category_id,
+                    "category_name": category_name,
+                    "pool_type": pool_type,
+                    "configured_value": configured_value,
+                    "allocated_amount": self._round_money(state_row.allocated_amount),
+                    "target_amount": self._round_money(state_row.allocated_amount),
+                    "spent_amount": self._round_money(state_row.spent_amount),
+                    "remaining_amount": self._round_money(state_row.remaining_amount),
+                    "utilization_percent": utilization_percent,
+                    "alert_threshold": alert_threshold,
+                    "status": str(state_row.status).lower(),
+                }
+            )
+
+        income_total = self._round_money(period_summary.total_income)
+        spent_total = self._round_money(period_summary.total_expenses)
+        saved_total = self._round_money(period_summary.total_savings)
+
+        savings_rate = None
+        if income_total > 0:
+            savings_rate = float(((saved_total / income_total) * Decimal("100")).quantize(Decimal("0.01")))
+
+        return {
+            "budget_id": budget.id,
+            "period_start": budget.period_start,
+            "period_end": budget.period_end,
+            "currency": budget.currency,
+            "income_total": income_total,
+            "spent_total": spent_total,
+            "saved_total": saved_total,
+            "savings_rate": savings_rate,
+            "overspending_strategy": self.settings.BUDGET_OVERSPENDING_STRATEGY,
+            "pools": pool_rows,
+        }
+
     def _compute_budget_state(self, budget: BudgetPlan, user_id: int):
         period_start_dt, period_end_dt = self._to_datetime_range(budget.period_start, budget.period_end)
 
@@ -285,7 +441,7 @@ class BudgetService:
             pool.remaining_amount = pool_row["remaining_amount"]
             pool.last_recalculated_at = now_utc
 
-        return {
+        computed_summary = {
             "budget_id": budget.id,
             "period_start": budget.period_start,
             "period_end": budget.period_end,
@@ -297,6 +453,15 @@ class BudgetService:
             "overspending_strategy": self.settings.BUDGET_OVERSPENDING_STRATEGY,
             "pools": pool_rows,
         }
+
+        self._persist_derived_state(
+            budget=budget,
+            user_id=user_id,
+            computed_summary=computed_summary,
+            recalculated_at=now_utc,
+        )
+
+        return computed_summary
 
     def _enforce_overspending_policy(self, pool_rows: list[dict]):
         strategy = self.settings.BUDGET_OVERSPENDING_STRATEGY
@@ -686,11 +851,32 @@ class BudgetService:
 
         return summary
 
+    def refresh_goal_state_for_user(self, user_id: int, preferred_budget_id: int | None = None, commit: bool = True):
+        self._rebuild_goal_state_for_user(
+            user_id=user_id,
+            preferred_budget_id=preferred_budget_id,
+            last_recalculated_at=datetime.now(timezone.utc),
+        )
+
+        if commit:
+            self.budget_repo.save_all()
+
     def recalculate_budget_state(self, budget_id: int, user_id: int):
         budget = self._assert_budget_access(budget_id, user_id)
-        summary = self._compute_budget_state(budget, user_id)
+        self._compute_budget_state(budget, user_id)
         self.budget_repo.save_all()
-        return summary
+
+        derived_summary = self._build_budget_summary_from_derived(budget)
+        if derived_summary is None:
+            raise HTTPException(status_code=500, detail="Could not load derived budget summary")
+
+        return derived_summary
 
     def get_budget_summary(self, budget_id: int, user_id: int):
+        budget = self._assert_budget_access(budget_id, user_id)
+        derived_summary = self._build_budget_summary_from_derived(budget)
+
+        if derived_summary is not None:
+            return derived_summary
+
         return self.recalculate_budget_state(budget_id, user_id)

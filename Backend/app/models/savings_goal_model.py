@@ -25,6 +25,7 @@ class SavingsGoal(Base):
     user = relationship("User", back_populates="savings_goals")
     budget_pool = relationship("BudgetPool", back_populates="savings_goals")
     allocations = relationship("SavingsGoalAllocation", back_populates="goal", cascade="all, delete-orphan")
+    state = relationship("GoalState", back_populates="goal", uselist=False, cascade="all, delete-orphan", passive_deletes=True)
 
     __table_args__ = (
         CheckConstraint("target_amount > 0", name="check_savings_goal_target_positive"),

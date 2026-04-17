@@ -4,7 +4,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.enums import BudgetStatus, CurrencyEnum
-from app.models import BudgetPlan, BudgetPool, BudgetRollover, Expense, SavingsGoalAllocation
+from app.models import (
+    BudgetPeriodSummary,
+    BudgetPlan,
+    BudgetPool,
+    BudgetPoolState,
+    BudgetRollover,
+    Expense,
+    SavingsGoalAllocation,
+)
 
 
 class BudgetRepository:
@@ -178,6 +186,82 @@ class BudgetRepository:
                 SavingsGoalAllocation.budget_pool_id.isnot(None),
             )
             .group_by(SavingsGoalAllocation.budget_pool_id)
+            .all()
+        )
+
+    def upsert_budget_period_summary(
+        self,
+        budget_id: int,
+        total_income,
+        total_expenses,
+        total_savings,
+        remaining_budget,
+        overspend_flag: bool,
+        last_recalculated_at: datetime,
+    ) -> BudgetPeriodSummary:
+        summary = self.get_budget_period_summary(budget_id)
+        if summary is None:
+            summary = BudgetPeriodSummary(
+                budget_id=budget_id,
+                total_income=total_income,
+                total_expenses=total_expenses,
+                total_savings=total_savings,
+                remaining_budget=remaining_budget,
+                overspend_flag=overspend_flag,
+                last_recalculated_at=last_recalculated_at,
+            )
+            self.db.add(summary)
+            self.db.flush()
+            return summary
+
+        summary.total_income = total_income
+        summary.total_expenses = total_expenses
+        summary.total_savings = total_savings
+        summary.remaining_budget = remaining_budget
+        summary.overspend_flag = overspend_flag
+        summary.last_recalculated_at = last_recalculated_at
+        self.db.flush()
+        return summary
+
+    def replace_budget_pool_states(
+        self,
+        budget_id: int,
+        pool_rows: list[dict],
+        last_recalculated_at: datetime,
+    ):
+        self.db.query(BudgetPoolState).filter(BudgetPoolState.budget_id == budget_id).delete(synchronize_session=False)
+
+        for row in pool_rows:
+            usage_percentage = row.get("utilization_percent")
+            usage_decimal = None if usage_percentage is None else row.get("utilization_percent")
+
+            self.db.add(
+                BudgetPoolState(
+                    budget_id=budget_id,
+                    pool_id=row["pool_id"],
+                    allocated_amount=row["allocated_amount"],
+                    spent_amount=row["spent_amount"],
+                    remaining_amount=row["remaining_amount"],
+                    usage_percentage=usage_decimal,
+                    status=str(row["status"]).upper(),
+                    last_recalculated_at=last_recalculated_at,
+                )
+            )
+
+        self.db.flush()
+
+    def get_budget_period_summary(self, budget_id: int) -> BudgetPeriodSummary | None:
+        return (
+            self.db.query(BudgetPeriodSummary)
+            .filter(BudgetPeriodSummary.budget_id == budget_id)
+            .first()
+        )
+
+    def list_budget_pool_states(self, budget_id: int) -> list[BudgetPoolState]:
+        return (
+            self.db.query(BudgetPoolState)
+            .filter(BudgetPoolState.budget_id == budget_id)
+            .order_by(BudgetPoolState.id.asc())
             .all()
         )
 

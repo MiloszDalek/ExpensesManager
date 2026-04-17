@@ -31,6 +31,19 @@ class BudgetPlan(Base):
 
     user = relationship("User", back_populates="budget_plans")
     pools = relationship("BudgetPool", back_populates="budget", cascade="all, delete-orphan", passive_deletes=True)
+    period_summary = relationship(
+        "BudgetPeriodSummary",
+        back_populates="budget",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    pool_states = relationship(
+        "BudgetPoolState",
+        back_populates="budget",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     __table_args__ = (
         Index("idx_budget_plans_user_status", "user_id", "status"),
