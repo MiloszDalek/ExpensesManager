@@ -157,6 +157,7 @@ export default function BudgetsPage() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [incomeTarget, setIncomeTarget] = useState("");
+  const [includeGroupExpenses, setIncludeGroupExpenses] = useState(false);
 
   const [incomeTitle, setIncomeTitle] = useState("");
   const [incomeAmount, setIncomeAmount] = useState("");
@@ -281,6 +282,7 @@ export default function BudgetsPage() {
         period_start: periodStart,
         period_end: periodEnd,
         income_target: incomeTarget.trim() ? Number(incomeTarget) : null,
+        include_group_expenses: includeGroupExpenses,
         use_template_50_30_20: true,
       }),
     onSuccess: async (created) => {
@@ -288,6 +290,7 @@ export default function BudgetsPage() {
       setSuccessMessage(null);
       setBudgetName("");
       setIncomeTarget("");
+      setIncludeGroupExpenses(false);
       await refreshBudgetArea();
       setSelectedBudgetId(created.id);
     },
@@ -415,6 +418,31 @@ export default function BudgetsPage() {
           createdCount: result.created_budgets_count,
           defaultValue: "Processed {{processedCount}} budgets, created {{createdCount}} new periods.",
         })
+      );
+      await refreshBudgetArea();
+    },
+    onError: (error) => {
+      setSuccessMessage(null);
+      setErrorMessage(localizeBudgetError(getErrorMessage(error), t));
+    },
+  });
+
+  const toggleGroupExpenseModeMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedBudget) {
+        throw new Error(t("budgets.errors.noBudgetSelected", { defaultValue: "Select budget first." }));
+      }
+
+      return budgetsApi.updateBudget(selectedBudget.id, {
+        include_group_expenses: !selectedBudget.include_group_expenses,
+      });
+    },
+    onSuccess: async (updatedBudget) => {
+      setErrorMessage(null);
+      setSuccessMessage(
+        updatedBudget.include_group_expenses
+          ? t("budgets.actions.groupExpensesEnabled", { defaultValue: "Group expense shares are now included." })
+          : t("budgets.actions.groupExpensesDisabled", { defaultValue: "Group expense shares are now excluded." })
       );
       await refreshBudgetArea();
     },
@@ -720,6 +748,21 @@ export default function BudgetsPage() {
               />
             </div>
 
+            <div className="md:col-span-6 flex items-center gap-2 rounded-md border border-border/60 px-3 py-2">
+              <input
+                id="budget-include-group-expenses"
+                type="checkbox"
+                checked={includeGroupExpenses}
+                onChange={(event) => setIncludeGroupExpenses(event.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="budget-include-group-expenses" className="cursor-pointer text-sm">
+                {t("budgets.form.includeGroupExpenses", {
+                  defaultValue: "Include my group expense shares in budget calculations",
+                })}
+              </Label>
+            </div>
+
             <div className="md:col-span-6">
               <Button onClick={() => createBudgetMutation.mutate()} disabled={isCreateBudgetDisabled}>
                 {createBudgetMutation.isPending
@@ -752,6 +795,10 @@ export default function BudgetsPage() {
                       {selectedBudget ? (
                         <p className="text-xs text-muted-foreground">
                           {selectedBudget.name} · {selectedBudget.period_start} - {selectedBudget.period_end}
+                          {" · "}
+                          {selectedBudget.include_group_expenses
+                            ? t("budgets.summary.modeCombined", { defaultValue: "Personal + group shares" })
+                            : t("budgets.summary.modePersonalOnly", { defaultValue: "Personal only" })}
                         </p>
                       ) : null}
                     </div>
@@ -774,6 +821,17 @@ export default function BudgetsPage() {
                         {autoAllocateGoalsMutation.isPending
                           ? t("budgets.actions.autoAllocating", { defaultValue: "Auto-allocating..." })
                           : t("budgets.actions.autoAllocateGoals", { defaultValue: "Auto-allocate goals" })}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => toggleGroupExpenseModeMutation.mutate()}
+                        disabled={!selectedBudget || toggleGroupExpenseModeMutation.isPending}
+                      >
+                        {toggleGroupExpenseModeMutation.isPending
+                          ? t("budgets.actions.switchingMode", { defaultValue: "Switching mode..." })
+                          : selectedBudget?.include_group_expenses
+                            ? t("budgets.actions.disableGroupExpenses", { defaultValue: "Exclude group shares" })
+                            : t("budgets.actions.enableGroupExpenses", { defaultValue: "Include group shares" })}
                       </Button>
                       <Button
                         variant="outline"
@@ -1006,6 +1064,16 @@ export default function BudgetsPage() {
                           <CardContent className="p-3">
                             <p className="text-xs text-muted-foreground">{t("budgets.summary.policy", { defaultValue: "Overspending policy" })}</p>
                             <p className="text-lg font-semibold uppercase">{budgetSummary.overspending_strategy.replace("_", " ")}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-3">
+                            <p className="text-xs text-muted-foreground">{t("budgets.summary.expenseMode", { defaultValue: "Expense scope" })}</p>
+                            <p className="text-lg font-semibold">
+                              {budgetSummary.include_group_expenses
+                                ? t("budgets.summary.modeCombined", { defaultValue: "Personal + group shares" })
+                                : t("budgets.summary.modePersonalOnly", { defaultValue: "Personal only" })}
+                            </p>
                           </CardContent>
                         </Card>
                       </div>

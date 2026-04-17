@@ -90,6 +90,7 @@ export interface ApiBudgetPlanCreate {
   period_start: string;
   period_end: string;
   income_target?: DecimalLike | null;
+  include_group_expenses?: boolean;
   use_template_50_30_20?: boolean;
   pools?: ApiBudgetPoolCreate[];
 }
@@ -98,6 +99,7 @@ export interface ApiBudgetPlanUpdate {
   name?: string | null;
   allocation_strategy?: BudgetAllocationStrategy | null;
   income_target?: DecimalLike | null;
+  include_group_expenses?: boolean | null;
   status?: BudgetStatus | null;
 }
 
@@ -111,6 +113,7 @@ export interface ApiBudgetPlanResponse {
   period_start: string;
   period_end: string;
   income_target: DecimalLike | null;
+  include_group_expenses: boolean;
   status: BudgetStatus;
   template_key: string | null;
   created_at: ISODateTimeString;
@@ -139,6 +142,7 @@ export interface ApiBudgetSummaryResponse {
   period_start: string;
   period_end: string;
   currency: CurrencyEnum;
+  include_group_expenses: boolean;
   income_total: DecimalLike;
   spent_total: DecimalLike;
   saved_total: DecimalLike;

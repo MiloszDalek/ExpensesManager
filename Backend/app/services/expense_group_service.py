@@ -8,6 +8,8 @@ from app.enums import CurrencyEnum, SplitType, GroupMemberRole
 from fastapi import HTTPException
 from decimal import Decimal
 
+from .budget_service import BudgetService
+
 
 class ExpenseGroupService:
     def __init__(self, db: Session):
@@ -15,6 +17,21 @@ class ExpenseGroupService:
         self.share_repo = ExpenseShareRepository(db)
         self.category_service = CategoryService(db)
         self.group_service = GroupService(db)
+        self.budget_service = BudgetService(db)
+
+    def _sync_budget_state_for_users(
+        self,
+        user_ids: set[int],
+        currency: CurrencyEnum,
+        check_date,
+    ):
+        for current_user_id in user_ids:
+            self.budget_service.sync_budget_state_for_date(
+                user_id=current_user_id,
+                currency=currency,
+                check_date=check_date,
+                enforce_overspending=False,
+            )
 
 
     def get_group_expense(self, expense_id: int, group_id: int):
@@ -106,6 +123,13 @@ class ExpenseGroupService:
                 ) 
                 self.share_repo.create(expenseShare)
 
+            affected_user_ids = {share.user_id for share in expense_in.shares}
+            self._sync_budget_state_for_users(
+                user_ids=affected_user_ids,
+                currency=expense.currency,
+                check_date=expense.expense_date.date(),
+            )
+
             self.expense_repo.save_all()
 
             return expense
@@ -135,6 +159,10 @@ class ExpenseGroupService:
         if expense_in.amount and not expense_in.shares:
             raise HTTPException(status_code=400, detail="Updating amount requires expense shares")
 
+        old_expense_date = expense.expense_date.date()
+        old_currency = expense.currency
+        old_share_user_ids = set(self.share_repo.list_user_ids_by_expense_id(expense.id))
+
         try:
             update_data = expense_in.model_dump(exclude_unset=True)
 
@@ -163,6 +191,30 @@ class ExpenseGroupService:
                     )
                     self.share_repo.create(expenseShare)
 
+            new_share_user_ids = set(self.share_repo.list_user_ids_by_expense_id(expense.id))
+            affected_user_ids = old_share_user_ids | new_share_user_ids
+
+            new_expense_date = expense.expense_date.date()
+            new_currency = expense.currency
+
+            if old_currency == new_currency and old_expense_date == new_expense_date:
+                self._sync_budget_state_for_users(
+                    user_ids=affected_user_ids,
+                    currency=new_currency,
+                    check_date=new_expense_date,
+                )
+            else:
+                self._sync_budget_state_for_users(
+                    user_ids=affected_user_ids,
+                    currency=old_currency,
+                    check_date=old_expense_date,
+                )
+                self._sync_budget_state_for_users(
+                    user_ids=affected_user_ids,
+                    currency=new_currency,
+                    check_date=new_expense_date,
+                )
+
             self.expense_repo.save_all()
 
             return expense
@@ -179,8 +231,17 @@ class ExpenseGroupService:
 
         self.validate_edit_permission(group.id, expense, user_id)
 
+        expense_date = expense.expense_date.date()
+        expense_currency = expense.currency
+        affected_user_ids = set(self.share_repo.list_user_ids_by_expense_id(expense.id))
+
         try: 
             self.expense_repo.delete(expense)
+            self._sync_budget_state_for_users(
+                user_ids=affected_user_ids,
+                currency=expense_currency,
+                check_date=expense_date,
+            )
             self.expense_repo.save_all()
 
         except Exception:

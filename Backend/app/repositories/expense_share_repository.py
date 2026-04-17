@@ -16,6 +16,12 @@ class ExpenseShareRepository:
     def delete_by_expense_id(self, expense_id: int):
         self.db.query(ExpenseShare).filter(ExpenseShare.expense_id == expense_id).delete()
 
+    def list_user_ids_by_expense_id(self, expense_id: int) -> list[int]:
+        return [
+            int(row.user_id)
+            for row in self.db.query(ExpenseShare.user_id).filter(ExpenseShare.expense_id == expense_id).all()
+        ]
+
 
     def save_all(self):
         self.db.commit()

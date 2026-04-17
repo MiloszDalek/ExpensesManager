@@ -361,7 +361,8 @@
       "start": "Początek",
       "end": "Koniec",
       "currency": "Waluta",
-      "incomeTarget": "Cel przychodu (opcjonalnie)"
+      "incomeTarget": "Cel przychodu (opcjonalnie)",
+      "includeGroupExpenses": "Uwzględniaj moje udziały w wydatkach grupowych w obliczeniach budżetu"
     },
     "period": {
       "monthly": "Miesięczny",
@@ -397,6 +398,11 @@
       "recalculated": "Budżet został przeliczony.",
       "autoAllocateGoals": "Autoalokuj cele",
       "autoAllocating": "Autoalokowanie...",
+      "enableGroupExpenses": "Włącz udziały grupowe",
+      "disableGroupExpenses": "Wyłącz udziały grupowe",
+      "switchingMode": "Przełączanie trybu...",
+      "groupExpensesEnabled": "Udziały wydatków grupowych są teraz uwzględniane.",
+      "groupExpensesDisabled": "Udziały wydatków grupowych są teraz pomijane.",
       "closePeriod": "Zamknij okres",
       "closing": "Zamykanie...",
       "budgetClosed": "Budżet zamknięty. Utworzono nowy budżet #{{toBudgetId}}.",
@@ -430,7 +436,10 @@
       "spent": "Wydane",
       "saved": "Zaoszczędzone",
       "policy": "Polityka nadwydatków",
-      "remaining": "Pozostało"
+      "remaining": "Pozostało",
+      "expenseMode": "Zakres wydatków",
+      "modeCombined": "Osobiste + udziały grupowe",
+      "modePersonalOnly": "Tylko osobiste"
     },
     "goals": {
       "name": "Nazwa celu",

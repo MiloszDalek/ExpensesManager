@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, DateTime, Enum as SAEnum, ForeignKey, Index, Integer, Numeric, String, CheckConstraint
+from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, Enum as SAEnum, ForeignKey, Index, Integer, Numeric, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -23,6 +23,7 @@ class BudgetPlan(Base):
     period_start = Column(Date, nullable=False)
     period_end = Column(Date, nullable=False)
     income_target = Column(Numeric(12, 2), nullable=True)
+    include_group_expenses = Column(Boolean, nullable=False, default=False)
     status = Column(SAEnum(BudgetStatus, name="budget_status"), default=BudgetStatus.ACTIVE, nullable=False)
     template_key = Column(String(40), nullable=True)
 

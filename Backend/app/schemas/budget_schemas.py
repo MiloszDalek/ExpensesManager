@@ -90,6 +90,7 @@ class BudgetPlanCreate(BaseModel):
     period_start: date
     period_end: date
     income_target: Decimal | None = None
+    include_group_expenses: bool = False
     use_template_50_30_20: bool = False
     pools: list[BudgetPoolCreate] = []
 
@@ -98,6 +99,7 @@ class BudgetPlanUpdate(BaseModel):
     name: str | None = None
     allocation_strategy: BudgetAllocationStrategy | None = None
     income_target: Decimal | None = None
+    include_group_expenses: bool | None = None
     status: BudgetStatus | None = None
 
 
@@ -111,6 +113,7 @@ class BudgetPlanResponse(BaseModel):
     period_start: date
     period_end: date
     income_target: Decimal | None = None
+    include_group_expenses: bool
     status: BudgetStatus
     template_key: str | None = None
     created_at: datetime
@@ -141,6 +144,7 @@ class BudgetSummaryResponse(BaseModel):
     period_start: date
     period_end: date
     currency: CurrencyEnum
+    include_group_expenses: bool
     income_total: Decimal
     spent_total: Decimal
     saved_total: Decimal

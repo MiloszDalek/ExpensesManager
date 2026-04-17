@@ -11,6 +11,7 @@ from app.models import (
     BudgetPoolState,
     BudgetRollover,
     Expense,
+    ExpenseShare,
     SavingsGoalAllocation,
 )
 
@@ -167,6 +168,51 @@ class BudgetRepository:
             .filter(
                 Expense.user_id == user_id,
                 Expense.group_id.is_(None),
+                Expense.currency == currency,
+                Expense.expense_date >= date_from,
+                Expense.expense_date <= date_to,
+            )
+            .group_by(Expense.category_id)
+            .all()
+        )
+
+    def get_group_share_spent_total(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        return (
+            self.db.query(func.coalesce(func.sum(ExpenseShare.share_amount), 0))
+            .join(Expense, Expense.id == ExpenseShare.expense_id)
+            .filter(
+                ExpenseShare.user_id == user_id,
+                Expense.group_id.isnot(None),
+                Expense.currency == currency,
+                Expense.expense_date >= date_from,
+                Expense.expense_date <= date_to,
+            )
+            .scalar()
+            or 0
+        )
+
+    def get_group_share_spent_by_category(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        return (
+            self.db.query(
+                Expense.category_id.label("category_id"),
+                func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("spent_amount"),
+            )
+            .join(Expense, Expense.id == ExpenseShare.expense_id)
+            .filter(
+                ExpenseShare.user_id == user_id,
+                Expense.group_id.isnot(None),
                 Expense.currency == currency,
                 Expense.expense_date >= date_from,
                 Expense.expense_date <= date_to,

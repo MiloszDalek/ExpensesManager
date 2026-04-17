@@ -23,6 +23,7 @@ from app.schemas import (
 )
 
 from .category_service import CategoryService
+from .budget_service import BudgetService
 from .group_service import GroupService
 
 
@@ -35,6 +36,7 @@ class RecurringExpenseService:
         self.recurring_repo = RecurringExpenseRepository(db)
         self.category_service = CategoryService(db)
         self.group_service = GroupService(db)
+        self.budget_service = BudgetService(db)
 
     @staticmethod
     def _round_money(value: Decimal) -> Decimal:
@@ -270,6 +272,15 @@ class RecurringExpenseService:
         user_ids = [participant.user_id for participant in participants]
         return self._build_equal_shares(recurring_expense.amount, user_ids)
 
+    def _sync_budget_for_materialized_expense(self, expense: Expense, affected_user_ids: set[int]):
+        for current_user_id in affected_user_ids:
+            self.budget_service.sync_budget_state_for_date(
+                user_id=current_user_id,
+                currency=expense.currency,
+                check_date=expense.expense_date.date(),
+                enforce_overspending=False,
+            )
+
     def _materialize_occurrence(self, recurring_expense: RecurringExpense, occurrence_date: date):
         expense = Expense(
             group_id=recurring_expense.group_id,
@@ -290,8 +301,10 @@ class RecurringExpenseService:
         self.db.flush()
 
         if recurring_expense.group_id is None:
+            self._sync_budget_for_materialized_expense(expense, {recurring_expense.user_id})
             return
 
+        affected_user_ids: set[int] = set()
         for user_id, share_amount in self._resolve_occurrence_shares(recurring_expense):
             self.db.add(
                 ExpenseShare(
@@ -300,8 +313,10 @@ class RecurringExpenseService:
                     share_amount=self._round_money(share_amount),
                 )
             )
+            affected_user_ids.add(user_id)
 
         self.db.flush()
+        self._sync_budget_for_materialized_expense(expense, affected_user_ids)
 
     def _generate_for_series_until(
         self,

@@ -346,6 +346,7 @@ class BudgetService:
             "period_start": budget.period_start,
             "period_end": budget.period_end,
             "currency": budget.currency,
+            "include_group_expenses": bool(budget.include_group_expenses),
             "income_total": income_total,
             "spent_total": spent_total,
             "saved_total": saved_total,
@@ -366,7 +367,7 @@ class BudgetService:
             )
         )
 
-        spent_total = Decimal(
+        personal_spent_total = Decimal(
             self.budget_repo.get_personal_spent_total(
                 user_id=user_id,
                 date_from=period_start_dt,
@@ -375,7 +376,9 @@ class BudgetService:
             )
         )
 
-        spent_by_category_rows = self.budget_repo.get_personal_spent_by_category(
+        spent_total = self._round_money(personal_spent_total)
+
+        personal_spent_by_category_rows = self.budget_repo.get_personal_spent_by_category(
             user_id=user_id,
             date_from=period_start_dt,
             date_to=period_end_dt,
@@ -383,8 +386,30 @@ class BudgetService:
         )
         spent_by_category = {
             int(row.category_id): Decimal(str(row.spent_amount or 0))
-            for row in spent_by_category_rows
+            for row in personal_spent_by_category_rows
         }
+
+        if budget.include_group_expenses:
+            group_spent_total = Decimal(
+                self.budget_repo.get_group_share_spent_total(
+                    user_id=user_id,
+                    date_from=period_start_dt,
+                    date_to=period_end_dt,
+                    currency=budget.currency,
+                )
+            )
+            spent_total = self._round_money(spent_total + group_spent_total)
+
+            group_spent_by_category_rows = self.budget_repo.get_group_share_spent_by_category(
+                user_id=user_id,
+                date_from=period_start_dt,
+                date_to=period_end_dt,
+                currency=budget.currency,
+            )
+            for row in group_spent_by_category_rows:
+                category_id = int(row.category_id)
+                current_value = spent_by_category.get(category_id, Decimal("0"))
+                spent_by_category[category_id] = self._round_money(current_value + Decimal(str(row.spent_amount or 0)))
 
         goal_allocated_rows = self.budget_repo.get_goal_allocated_by_pool(budget.id)
         goal_allocated_by_pool = {
@@ -446,6 +471,7 @@ class BudgetService:
             "period_start": budget.period_start,
             "period_end": budget.period_end,
             "currency": budget.currency,
+            "include_group_expenses": bool(budget.include_group_expenses),
             "income_total": self._round_money(income_total),
             "spent_total": effective_spent_total,
             "saved_total": saved_total,
@@ -576,6 +602,7 @@ class BudgetService:
                 period_start=budget_in.period_start,
                 period_end=budget_in.period_end,
                 income_target=budget_in.income_target,
+                include_group_expenses=budget_in.include_group_expenses,
                 status=BudgetStatus.ACTIVE,
                 template_key=template_key,
             )
@@ -742,6 +769,7 @@ class BudgetService:
                 period_start=next_period_start,
                 period_end=next_period_end,
                 income_target=budget.income_target,
+                include_group_expenses=budget.include_group_expenses,
                 status=BudgetStatus.ACTIVE,
                 template_key=budget.template_key,
             )

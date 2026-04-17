@@ -10,9 +10,13 @@ from app.enums import (
     BudgetStatus,
     CategorySection,
     CurrencyEnum,
+    GroupMemberRole,
+    GroupMemberStatus,
+    GroupStatus,
+    SplitType,
     SystemUserRole,
 )
-from app.models import BudgetPlan, BudgetPool, Category, Expense, IncomeEntry, User
+from app.models import BudgetPlan, BudgetPool, Category, Expense, ExpenseShare, Group, GroupMember, IncomeEntry, User
 
 
 def _money(value: int | float | Decimal) -> Decimal:
@@ -56,7 +60,7 @@ def _get_or_create_personal_category(db: Session, user_id: int) -> Category:
     return category
 
 
-def create_budget(db: Session) -> BudgetPlan:
+def create_budget(db: Session, include_group_expenses: bool = False) -> BudgetPlan:
     user = _build_test_user(db)
     _get_or_create_personal_category(db, user.id)
 
@@ -69,6 +73,7 @@ def create_budget(db: Session) -> BudgetPlan:
         period_start=datetime(2026, 1, 1).date(),
         period_end=datetime(2026, 1, 31).date(),
         income_target=None,
+        include_group_expenses=include_group_expenses,
         status=BudgetStatus.ACTIVE,
         template_key=None,
     )
@@ -158,3 +163,71 @@ def create_pool(db: Session, budget_id: int, amount: int | float | Decimal) -> B
     db.commit()
     db.refresh(pool)
     return pool
+
+
+def _create_group_for_user(db: Session, user_id: int, currency: CurrencyEnum) -> Group:
+    suffix = db.query(Group).filter(Group.created_by == user_id).count() + 1
+    group = Group(
+        name=f"test_group_{user_id}_{suffix}",
+        description="created by tests",
+        status=GroupStatus.ACTIVE,
+        currency=currency,
+        created_by=user_id,
+    )
+    db.add(group)
+    db.flush()
+
+    db.add(
+        GroupMember(
+            group_id=group.id,
+            user_id=user_id,
+            role=GroupMemberRole.ADMIN,
+            status=GroupMemberStatus.ACTIVE,
+        )
+    )
+    db.flush()
+    return group
+
+
+def add_group_share_expense(db: Session, budget_id: int, share_amount: int | float | Decimal) -> Expense:
+    budget = db.query(BudgetPlan).filter(BudgetPlan.id == budget_id).first()
+    if budget is None:
+        raise ValueError(f"Budget with id={budget_id} was not found")
+
+    first_pool = (
+        db.query(BudgetPool)
+        .filter(BudgetPool.budget_id == budget.id)
+        .order_by(BudgetPool.id.asc())
+        .first()
+    )
+    if first_pool is not None:
+        category_id = first_pool.category_id
+    else:
+        category_id = _get_or_create_personal_category(db, budget.user_id).id
+
+    group = _create_group_for_user(db, budget.user_id, budget.currency)
+
+    expense = Expense(
+        user_id=budget.user_id,
+        group_id=group.id,
+        title="Test group expense",
+        amount=_money(share_amount),
+        currency=budget.currency,
+        split_type=SplitType.EXACT,
+        category_id=category_id,
+        expense_date=datetime.combine(budget.period_start, time(hour=14, minute=0)),
+        notes="created by tests",
+    )
+    db.add(expense)
+    db.flush()
+
+    db.add(
+        ExpenseShare(
+            expense_id=expense.id,
+            user_id=budget.user_id,
+            share_amount=_money(share_amount),
+        )
+    )
+    db.commit()
+    db.refresh(expense)
+    return expense

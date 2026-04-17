@@ -371,7 +371,8 @@
       "start": "Start",
       "end": "End",
       "currency": "Currency",
-      "incomeTarget": "Income target (optional)"
+      "incomeTarget": "Income target (optional)",
+      "includeGroupExpenses": "Include my group expense shares in budget calculations"
     },
     "period": {
       "monthly": "Monthly",
@@ -407,6 +408,11 @@
       "recalculated": "Budget recalculated.",
       "autoAllocateGoals": "Auto-allocate goals",
       "autoAllocating": "Auto-allocating...",
+      "enableGroupExpenses": "Include group shares",
+      "disableGroupExpenses": "Exclude group shares",
+      "switchingMode": "Switching mode...",
+      "groupExpensesEnabled": "Group expense shares are now included.",
+      "groupExpensesDisabled": "Group expense shares are now excluded.",
       "closePeriod": "Close period",
       "closing": "Closing...",
       "budgetClosed": "Budget closed. New budget #{{toBudgetId}} created.",
@@ -440,7 +446,10 @@
       "spent": "Spent",
       "saved": "Saved",
       "policy": "Overspending policy",
-      "remaining": "Remaining"
+      "remaining": "Remaining",
+      "expenseMode": "Expense scope",
+      "modeCombined": "Personal + group shares",
+      "modePersonalOnly": "Personal only"
     },
     "goals": {
       "name": "Goal name",
