@@ -32,6 +32,7 @@ import { balancesApi } from "@/api/balancesApi";
 import { groupsApi } from "@/api/groupsApi";
 import { settlementsApi } from "@/api/settlementsApi";
 import { queryKeys } from "@/api/queryKeys";
+import { paypalConfig } from "@/config/paypal";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
 
@@ -84,7 +85,13 @@ export default function ContactsPage() {
   const [totalSettlementTarget, setTotalSettlementTarget] = useState<TotalSettlementTarget | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [selectedSummaryCurrency, setSelectedSummaryCurrency] = useState<string>("");
-  const isPayPalSdkEnabled = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
+  const isPayPalButtonEnabled = paypalConfig.isPayPalButtonEnabled;
+
+  const getPayPalUnavailableMessage = () => {
+    return paypalConfig.isDisabled
+      ? t("contactsBalancesPage.settlementErrors.paypalDisabled")
+      : t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured");
+  };
 
   const mapTotalSettlementError = (message: string | undefined) => {
     return message === "Cannot settle with yourself"
@@ -119,7 +126,9 @@ export default function ContactsPage() {
   };
 
   const mapPayPalSettlementError = (message: string | undefined) => {
-    return message === "PayPal integration not configured"
+    return message === "PayPal integration disabled"
+      ? t("contactsBalancesPage.settlementErrors.paypalDisabled")
+      : message === "PayPal integration not configured"
       ? t("contactsBalancesPage.settlementErrors.paypalNotConfigured")
       : message === "Could not create PayPal order"
         ? t("contactsBalancesPage.settlementErrors.paypalCreateOrderFailed")
@@ -757,7 +766,7 @@ export default function ContactsPage() {
                 : t("contactsBalancesPage.settleOutsideGroup", { defaultValue: "Outside group" })}
             </Button>
 
-            {isPayPalSdkEnabled ? (
+            {isPayPalButtonEnabled ? (
               <div className="w-[180px]">
                 <PayPalCurrencyButtons
                   currency={totalSettlementOptionsTarget?.currency ?? "PLN"}
@@ -819,7 +828,7 @@ export default function ContactsPage() {
               </div>
             ) : (
               <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+                {getPayPalUnavailableMessage()}
               </p>
             )}
           </div>
@@ -871,7 +880,7 @@ export default function ContactsPage() {
                 : t("contactsBalancesPage.settleOutsideGroup", { defaultValue: "Outside group" })}
             </Button>
 
-            {isPayPalSdkEnabled ? (
+            {isPayPalButtonEnabled ? (
               <div className="w-[170px]">
                 <PayPalCurrencyButtons
                   currency={groupSettlementOptionsTarget?.currency ?? "PLN"}
@@ -940,7 +949,7 @@ export default function ContactsPage() {
               </div>
             ) : (
               <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                {t("contactsBalancesPage.settlementErrors.paypalSdkNotConfigured")}
+                {getPayPalUnavailableMessage()}
               </p>
             )}
           </div>

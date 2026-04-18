@@ -1,6 +1,7 @@
 import base64
 import json
 from decimal import Decimal
+from uuid import uuid4
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -22,9 +23,21 @@ class PayPalService:
             else "https://api-m.sandbox.paypal.com"
         )
 
+    def _is_disabled(self) -> bool:
+        return (not self.settings.PAYPAL_ENABLED) or self.settings.PAYPAL_MODE == "disabled"
+
+    def _is_mock(self) -> bool:
+        return self.settings.PAYPAL_MODE == "mock"
+
+    def ensure_available(self) -> None:
+        self._ensure_configured()
+
     def _ensure_configured(self) -> None:
-        if not self.settings.PAYPAL_ENABLED:
-            raise HTTPException(503, "PayPal integration not configured")
+        if self._is_disabled():
+            raise HTTPException(503, "PayPal integration disabled")
+
+        if self._is_mock():
+            return
 
         if not self.settings.PAYPAL_CLIENT_ID or not self.settings.PAYPAL_CLIENT_SECRET:
             raise HTTPException(503, "PayPal integration not configured")
@@ -74,6 +87,9 @@ class PayPalService:
     def get_access_token(self) -> str:
         self._ensure_configured()
 
+        if self._is_mock():
+            return "mock-access-token"
+
         credentials = f"{self.settings.PAYPAL_CLIENT_ID}:{self.settings.PAYPAL_CLIENT_SECRET}"
         auth = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
 
@@ -95,6 +111,24 @@ class PayPalService:
         return token
 
     def create_order(self, settlement_id: int, amount: Decimal, currency: str, description: str) -> dict:
+        self._ensure_configured()
+
+        if self._is_mock():
+            order_id = f"MOCK-{settlement_id}-{uuid4().hex[:12].upper()}"
+            approve_url = f"{self.settings.FRONTEND_URL}/dashboard?paypal=mock&order_id={order_id}"
+            return {
+                "order_id": order_id,
+                "approve_url": approve_url,
+                "raw": {
+                    "id": order_id,
+                    "status": "CREATED",
+                    "mock": True,
+                    "amount": f"{amount:.2f}",
+                    "currency": currency,
+                    "description": description,
+                },
+            }
+
         token = self.get_access_token()
         return_url = self.settings.PAYPAL_RETURN_URL or f"{self.settings.FRONTEND_URL}/paypal/return"
         cancel_url = self.settings.PAYPAL_CANCEL_URL or f"{self.settings.FRONTEND_URL}/dashboard?paypal=cancelled"
@@ -152,6 +186,24 @@ class PayPalService:
         }
 
     def capture_order(self, order_id: str) -> dict:
+        self._ensure_configured()
+
+        if self._is_mock():
+            return {
+                "status": "COMPLETED",
+                "purchase_units": [
+                    {
+                        "payments": {
+                            "captures": [
+                                {
+                                    "id": f"MOCK-CAP-{uuid4().hex[:14].upper()}",
+                                }
+                            ]
+                        }
+                    }
+                ],
+            }
+
         token = self.get_access_token()
 
         return self._request(
@@ -166,6 +218,11 @@ class PayPalService:
         )
 
     def verify_webhook_event(self, headers: dict[str, str | None], event: dict) -> bool:
+        self._ensure_configured()
+
+        if self._is_mock():
+            return True
+
         token = self.get_access_token()
 
         required_headers = [

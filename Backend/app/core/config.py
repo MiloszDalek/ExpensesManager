@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 from app.enums import OverspendingStrategy
@@ -24,6 +25,18 @@ class Settings(BaseSettings):
     BUDGET_NOTIFICATION_THRESHOLD_PERCENT: float = 80.0
     BUDGET_ROLLOVER_SCHEDULER_ENABLED: bool = True
     BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS: int = 3600
+
+    @field_validator("PAYPAL_MODE", mode="before")
+    @classmethod
+    def validate_paypal_mode(cls, value: str | None) -> str:
+        if value is None:
+            return "sandbox"
+
+        normalized = str(value).strip().lower()
+        allowed_modes = {"disabled", "sandbox", "live", "mock"}
+        if normalized not in allowed_modes:
+            raise ValueError("PAYPAL_MODE must be one of: disabled, sandbox, live, mock")
+        return normalized
 
     class Config:
         env_file = ".env"

@@ -148,6 +148,8 @@ class SettlementService:
         settlement_in: PayPalSettlementInitiateCreate,
         from_user_id: int,
     ) -> PayPalSettlementInitiateResponse:
+        self.paypal_service.ensure_available()
+
         group, amount_to_settle = self._resolve_group_settlement_amount(
             to_user_id=settlement_in.to_user_id,
             group_id=settlement_in.group_id,
@@ -195,6 +197,8 @@ class SettlementService:
         settlement_in: PayPalTotalSettlementInitiateCreate,
         from_user_id: int,
     ) -> PayPalTotalSettlementInitiateResponse:
+        self.paypal_service.ensure_available()
+
         if from_user_id == settlement_in.to_user_id:
             raise HTTPException(400, "Cannot settle with yourself")
 
@@ -363,6 +367,8 @@ class SettlementService:
         )
 
     def finalize_paypal_settlement(self, order_id: str, user_id: int) -> Settlement:
+        self.paypal_service.ensure_available()
+
         settlements = self.settlement_repo.get_all_by_paypal_order_id(order_id)
         if len(settlements) == 0:
             raise HTTPException(404, "Settlement not found for this PayPal order")

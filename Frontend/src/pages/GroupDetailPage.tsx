@@ -44,6 +44,7 @@ import { invitationsApi } from "@/api/invitationsApi";
 import { balancesApi } from "@/api/balancesApi";
 import { settlementsApi } from "@/api/settlementsApi";
 import { queryKeys } from "@/api/queryKeys";
+import { paypalConfig } from "@/config/paypal";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
 
@@ -102,7 +103,13 @@ export default function GroupDetailPage() {
     tone: "success" | "error";
     message: string;
   } | null>(null);
-  const isPayPalSdkEnabled = Boolean(import.meta.env.VITE_PAYPAL_CLIENT_ID);
+  const isPayPalButtonEnabled = paypalConfig.isPayPalButtonEnabled;
+
+  const getPayPalUnavailableMessage = () => {
+    return paypalConfig.isDisabled
+      ? t("groupDetailPage.settlementErrors.paypalDisabled")
+      : t("groupDetailPage.settlementErrors.paypalSdkNotConfigured");
+  };
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
@@ -380,7 +387,9 @@ export default function GroupDetailPage() {
   }
 
   const mapPayPalSettlementError = (message: string | undefined) => {
-    return message === "PayPal integration not configured"
+    return message === "PayPal integration disabled"
+      ? t("groupDetailPage.settlementErrors.paypalDisabled")
+      : message === "PayPal integration not configured"
       ? t("groupDetailPage.settlementErrors.paypalNotConfigured")
       : message === "Could not create PayPal order"
         ? t("groupDetailPage.settlementErrors.paypalCreateOrderFailed")
@@ -1500,7 +1509,7 @@ export default function GroupDetailPage() {
                 : t("groupDetailPage.settleOutsideApp", { defaultValue: "Settle outside app" })}
             </Button>
 
-            {isPayPalSdkEnabled ? (
+            {isPayPalButtonEnabled ? (
               <div className="w-[165px]">
                 <PayPalCurrencyButtons
                   currency={group.currency}
@@ -1559,7 +1568,7 @@ export default function GroupDetailPage() {
               </div>
             ) : (
               <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                {t("groupDetailPage.settlementErrors.paypalSdkNotConfigured")}
+                {getPayPalUnavailableMessage()}
               </p>
             )}
           </div>
