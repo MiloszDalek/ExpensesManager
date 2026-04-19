@@ -21,4 +21,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "start_server.py"]
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
