@@ -41,11 +41,17 @@ settings = get_settings()
 recurring_scheduler = RecurringExpensesScheduler(interval_seconds=300)
 budget_rollover_scheduler = BudgetRolloverScheduler(interval_seconds=settings.BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS)
 
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in settings.FRONTEND_URL.split(",")
+    if origin.strip()
+]
+
 app = FastAPI(title="Expenses Manager API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
