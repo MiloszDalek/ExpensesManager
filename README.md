@@ -70,13 +70,13 @@ Docker image in `Backend/Dockerfile` installs:
 - `tesseract-ocr-eng`
 - `tesseract-ocr-pol`
 
-Startup command inside container:
+Startup command inside container is handled by `Backend/start_server.py`.
+The script reads `PORT` from environment and converts it to integer before launching Uvicorn.
 
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
-```
-
-`PORT` is provided by Railway automatically.
+Important for Railway:
+- for Docker deployment, leave Railway Start Command empty
+- alternatively set Start Command to `python start_server.py`
+- do not use `--port $PORT` directly in Railway Start Command (it may be passed as literal string)
 
 Quick post-deploy check:
 - open backend logs and verify no `TesseractNotFoundError`
