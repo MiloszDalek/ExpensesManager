@@ -54,6 +54,34 @@ Mode behavior:
 
 `*_ENABLED=false` has priority and behaves like `disabled`.
 
+## Backend deployment on Railway with Tesseract OCR
+
+For production OCR with `pytesseract`, the app needs system-level `tesseract` binaries.
+Use Docker deployment for backend so Railway builds a container with required OS packages.
+
+1. In Railway create/open backend service.
+2. Set service Root Directory to `Backend`.
+3. Ensure service uses Dockerfile build (Railway auto-detects `Backend/Dockerfile`).
+4. Add all required backend environment variables in Railway (the same values you normally keep in backend `.env`).
+5. Deploy.
+
+Docker image in `Backend/Dockerfile` installs:
+- `tesseract-ocr`
+- `tesseract-ocr-eng`
+- `tesseract-ocr-pol`
+
+Startup command inside container:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+```
+
+`PORT` is provided by Railway automatically.
+
+Quick post-deploy check:
+- open backend logs and verify no `TesseractNotFoundError`
+- call OCR endpoint and confirm response uses OCR status `done` (for readable receipt image)
+
 
 **command for counting lines of code**
 ```
