@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_REFRESH_SECRET_KEY: str
     ALGORITHM: str
+    ADMIN_EMAIL: str
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
     PAYPAL_ENABLED: bool = False
     PAYPAL_MODE: str = "sandbox"
     PAYPAL_CLIENT_ID: str | None = None

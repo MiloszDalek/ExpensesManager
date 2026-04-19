@@ -60,9 +60,9 @@ class AuthService:
 
         if not admins:
             admin = User(
-                email="admin@gmail.com",
-                username="Admin",            
-                hashed_password=get_password_hash("password"),
+                email=settings.ADMIN_EMAIL,
+                username=settings.ADMIN_USERNAME,            
+                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
                 role=SystemUserRole.ADMIN,
                 is_active=True,
             )
