@@ -5,6 +5,7 @@ import uvicorn
 print(">>> START_SERVER.PY IS RUNNING")
 print("PORT ENV:", os.getenv("PORT"))
 
+raise Exception("ENTRYPOINT TEST")
 
 def _read_port() -> int:
     raw_value = os.getenv("PORT", "8000").strip()
