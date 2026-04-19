@@ -10,7 +10,6 @@ type VendorChunkName =
   | 'vendor-charts'
   | 'vendor-animations'
   | 'vendor-i18n'
-  | 'vendor-misc'
 
 const VENDOR_CHUNK_BY_PACKAGE = new Map<string, VendorChunkName>([
   ['react', 'vendor-react'],
@@ -95,6 +94,29 @@ const getNodeModulePackageName = (id: string): string | null => {
   return parts[0] || null
 }
 
+const getVendorChunkName = (packageName: string): VendorChunkName | undefined => {
+  if (packageName.startsWith('@radix-ui/')) {
+    return 'vendor-ui'
+  }
+
+  if (packageName.startsWith('@floating-ui/')) {
+    return 'vendor-ui'
+  }
+
+  if (
+    packageName === 'aria-hidden' ||
+    packageName === 'react-remove-scroll' ||
+    packageName === 'react-remove-scroll-bar' ||
+    packageName === 'react-style-singleton' ||
+    packageName === 'use-callback-ref' ||
+    packageName === 'use-sidecar'
+  ) {
+    return 'vendor-ui'
+  }
+
+  return VENDOR_CHUNK_BY_PACKAGE.get(packageName)
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -115,7 +137,7 @@ export default defineConfig({
             return undefined
           }
 
-          return VENDOR_CHUNK_BY_PACKAGE.get(packageName) ?? 'vendor-misc'
+          return getVendorChunkName(packageName)
         },
       },
     },
