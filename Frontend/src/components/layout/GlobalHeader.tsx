@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
+import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, MessageSquareText, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,7 @@ export default function GlobalHeader() {
 
   const homePath = user ? "/dashboard" : "/home";
   const logoText = resolvedTheme === "dark" ? logoTextDark : logoTextLight;
+  const feedbackFormUrl = "https://forms.gle/AqRujw7TAzaxNDKY8";
 
   return (
     <>
@@ -195,8 +196,10 @@ export default function GlobalHeader() {
           </div>
 
           {user ? (
-            <div className="hidden h-10 items-center justify-center lg:flex">
-              <nav className="flex items-center gap-1">
+            <div className="hidden h-10 items-center lg:grid lg:grid-cols-[1fr_auto_1fr]">
+              <div aria-hidden="true" />
+
+              <nav className="flex items-center justify-self-center gap-1">
                 {navItems.map((item) => (
                   <NavLink
                     key={item.to}
@@ -218,6 +221,23 @@ export default function GlobalHeader() {
                   </NavLink>
                 ))}
               </nav>
+
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="justify-self-end text-muted-foreground hover:text-foreground"
+              >
+                <a
+                  href={feedbackFormUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("globalHeader.feedback")}
+                >
+                  <MessageSquareText className="h-4 w-4" />
+                  <span>{t("globalHeader.feedback")}</span>
+                </a>
+              </Button>
             </div>
           ) : null}
         </div>
@@ -227,7 +247,7 @@ export default function GlobalHeader() {
         <>
           <div
             className={cn(
-              "fixed inset-0 z-[44] bg-black/35 transition-opacity duration-300 lg:hidden",
+              "fixed inset-0 z-44 bg-black/35 transition-opacity duration-300 lg:hidden",
               isMobileMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
             )}
             aria-hidden="true"
@@ -236,7 +256,7 @@ export default function GlobalHeader() {
           <button
             type="button"
             className={cn(
-              "fixed inset-0 z-[45] bg-transparent lg:hidden",
+              "fixed inset-0 z-45 bg-transparent lg:hidden",
               isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
             )}
             onClick={() => setIsMobileMenuOpen(false)}
@@ -315,6 +335,24 @@ export default function GlobalHeader() {
               >
                 <LogOut className="h-4 w-4" />
                 <span>{t("globalHeader.logout")}</span>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full"
+              >
+                <a
+                  href={feedbackFormUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label={t("globalHeader.feedback")}
+                >
+                  <MessageSquareText className="h-4 w-4" />
+                  <span>{t("globalHeader.feedback")}</span>
+                </a>
               </Button>
             </div>
           </aside>

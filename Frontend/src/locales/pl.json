@@ -97,6 +97,7 @@
     "login": "Zaloguj",
     "register": "Rejestracja",
     "logout": "Wyloguj",
+    "feedback": "Zgłoś błąd lub sugestię",
     "openMenu": "Otwórz menu",
     "closeMenu": "Zamknij menu",
     "loggedAs": "Zalogowany jako {{username}}"
