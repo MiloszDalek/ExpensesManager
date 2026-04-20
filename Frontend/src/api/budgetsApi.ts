@@ -18,7 +18,7 @@ import type { BudgetStatus } from "@/types/enums";
 
 export const budgetsApi = {
   listBudgets: async (status?: BudgetStatus): Promise<ApiBudgetPlanResponse[]> => {
-    const { data } = await client.get<ApiBudgetPlanResponse[]>("/budgets", {
+    const { data } = await client.get<ApiBudgetPlanResponse[]>("/budgets/", {
       params: { status },
     });
     return data;
@@ -30,7 +30,7 @@ export const budgetsApi = {
   },
 
   createBudget: async (payload: ApiBudgetPlanCreate): Promise<ApiBudgetPlanResponse> => {
-    const { data } = await client.post<ApiBudgetPlanResponse>("/budgets", payload);
+    const { data } = await client.post<ApiBudgetPlanResponse>("/budgets/", payload);
     return data;
   },
 
@@ -83,7 +83,7 @@ export const budgetsApi = {
 
   listIncome: async (params: ApiIncomeListParams = {}): Promise<ApiIncomeEntryResponse[]> => {
     const { limit = 20, offset = 0, ...filters } = params;
-    const { data } = await client.get<ApiIncomeEntryResponse[]>("/income", {
+    const { data } = await client.get<ApiIncomeEntryResponse[]>("/income/", {
       params: {
         limit,
         offset,
@@ -94,7 +94,7 @@ export const budgetsApi = {
   },
 
   createIncome: async (payload: ApiIncomeEntryCreate): Promise<ApiIncomeEntryResponse> => {
-    const { data } = await client.post<ApiIncomeEntryResponse>("/income", payload);
+    const { data } = await client.post<ApiIncomeEntryResponse>("/income/", payload);
     return data;
   },
 

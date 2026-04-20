@@ -9,14 +9,14 @@ import type {
 
 export const expensesPersonalApi = {
   create: async (payload: ApiPersonalExpenseCreate): Promise<ApiPersonalExpenseResponse> => {
-    const { data } = await client.post<ApiPersonalExpenseResponse>("/expenses/personal", payload);
+    const { data } = await client.post<ApiPersonalExpenseResponse>("/expenses/personal/", payload);
     return data;
   },
 
   list: async (params: ApiPersonalExpenseListParams = {}): Promise<ApiPersonalExpenseResponse[]> => {
     const { limit = 20, offset = 0, ...filters } = params;
 
-    const { data } = await client.get<ApiPersonalExpenseResponse[]>("/expenses/personal", {
+    const { data } = await client.get<ApiPersonalExpenseResponse[]>("/expenses/personal/", {
       params: {
         limit,
         offset,

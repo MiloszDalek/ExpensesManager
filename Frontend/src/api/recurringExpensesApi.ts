@@ -59,7 +59,7 @@ export const recurringExpensesApi = {
   },
 
   list: async (params: RecurringListParams = {}): Promise<ApiRecurringExpenseResponse[]> => {
-    const { data } = await client.get<ApiRecurringExpenseResponse[]>("/recurring-expenses", { params });
+    const { data } = await client.get<ApiRecurringExpenseResponse[]>("/recurring-expenses/", { params });
     return data;
   },
 
