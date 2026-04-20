@@ -101,12 +101,12 @@ export default function GlobalHeader() {
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-          <div className="flex h-11 items-center justify-between gap-2 border-b border-border/70 sm:h-15">
+          <div className="flex h-13 items-center justify-between gap-2 border-b border-border/70 sm:h-15">
             <Link to={homePath} className="flex items-center">
               <img
                 src={logoText}
                 alt="TallyUp"
-                className="h-9 w-auto shrink-0 object-contain sm:h-10 md:h-14.5"
+                className="h-11 w-auto shrink-0 object-contain sm:h-10 md:h-14.5"
               />
             </Link>
 
