@@ -19,8 +19,12 @@ auth_router = APIRouter(
 settings = get_settings()
 
 
-def _is_https_url(url: str) -> bool:
-    return url.strip().lower().startswith("https://")
+def _parse_frontend_origins(frontend_url: str) -> list[str]:
+    return [origin.strip().rstrip("/") for origin in frontend_url.split(",") if origin.strip()]
+
+
+def _should_use_secure_cookie(frontend_url: str) -> bool:
+    return any(origin.lower().startswith("https://") for origin in _parse_frontend_origins(frontend_url))
 
 @auth_router.post('/token')
 async def login_for_access_token(
@@ -45,7 +49,7 @@ async def login_for_access_token(
     
     access_token_expires = timedelta(minutes=15)
     refresh_token_expires = timedelta(days=7)
-    secure_cookie = _is_https_url(settings.FRONTEND_URL)
+    secure_cookie = _should_use_secure_cookie(settings.FRONTEND_URL)
     same_site_policy = "none" if secure_cookie else "lax"
 
     access_token = auth_service.create_access_token(

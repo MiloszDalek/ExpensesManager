@@ -218,6 +218,8 @@
       "emailPlaceholder": "you@example.com",
       "passwordLabel": "Hasło",
       "passwordPlaceholder": "********",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
       "submit": "Zaloguj",
       "submitLoading": "Logowanie...",
       "noAccount": "Nie masz konta?",
@@ -236,14 +238,22 @@
       "usernamePlaceholder": "Twoje imię",
       "passwordLabel": "Hasło",
       "passwordPlaceholder": "********",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
       "confirmPasswordLabel": "Potwierdź hasło",
       "confirmPasswordPlaceholder": "********",
+      "passwordRules": {
+        "minLength": "Minimum 8 znaków",
+        "letter": "Przynajmniej jedna litera",
+        "digit": "Przynajmniej jedna cyfra"
+      },
       "submit": "Zarejestruj",
       "submitLoading": "Tworzenie konta...",
       "alreadyHaveAccount": "Masz już konto?",
       "logIn": "Zaloguj",
       "errors": {
         "passwordsDoNotMatch": "Hasła nie są takie same",
+        "passwordComplexity": "Hasło musi mieć co najmniej 8 znaków oraz zawierać przynajmniej jedną literę i jedną cyfrę.",
         "registrationFailed": "Rejestracja nie powiodła się"
       }
     }

@@ -228,6 +228,8 @@
       "emailPlaceholder": "you@example.com",
       "passwordLabel": "Password",
       "passwordPlaceholder": "********",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "submit": "Login",
       "submitLoading": "Logging in...",
       "noAccount": "Don't have an account?",
@@ -246,14 +248,22 @@
       "usernamePlaceholder": "Your name",
       "passwordLabel": "Password",
       "passwordPlaceholder": "********",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "confirmPasswordLabel": "Confirm password",
       "confirmPasswordPlaceholder": "********",
+      "passwordRules": {
+        "minLength": "At least 8 characters",
+        "letter": "At least one letter",
+        "digit": "At least one digit"
+      },
       "submit": "Sign up",
       "submitLoading": "Creating account...",
       "alreadyHaveAccount": "Already have an account?",
       "logIn": "Log in",
       "errors": {
         "passwordsDoNotMatch": "Passwords do not match",
+        "passwordComplexity": "Password must be at least 8 characters long and include at least one letter and one digit.",
         "registrationFailed": "Registration failed"
       }
     }

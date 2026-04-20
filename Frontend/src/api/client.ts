@@ -46,8 +46,35 @@ const extractApiErrorMessage = (error: AxiosError): string | null => {
   return null;
 };
 
+const normalizeApiBaseUrl = (apiUrl: string | undefined): string => {
+  const fallbackApiUrl = import.meta.env.DEV ? "http://localhost:8000/api" : "/api";
+  const rawUrl = (apiUrl ?? fallbackApiUrl).trim();
+
+  if (!rawUrl) {
+    return fallbackApiUrl;
+  }
+
+  if (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
+    return rawUrl.replace(/\/+$/, "");
+  }
+
+  if (typeof window !== "undefined" && window.location.protocol === "https:" && rawUrl.startsWith("http://")) {
+    const parsedUrl = new URL(rawUrl);
+    const isLocalhost = parsedUrl.hostname === "localhost" || parsedUrl.hostname === "127.0.0.1";
+
+    if (!isLocalhost) {
+      parsedUrl.protocol = "https:";
+      return parsedUrl.toString().replace(/\/+$/, "");
+    }
+  }
+
+  return rawUrl.replace(/\/+$/, "");
+};
+
+const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL as string | undefined);
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: apiBaseUrl,
   withCredentials: true,
 });
 
@@ -68,7 +95,7 @@ const refreshAccessToken = async (): Promise<string> => {
   if (!refreshPromise) {
     refreshPromise = axios
       .post<RefreshResponse>(
-        import.meta.env.VITE_API_URL + "/auth/refresh",
+        apiBaseUrl + "/auth/refresh",
         {},
         { withCredentials: true }
       )

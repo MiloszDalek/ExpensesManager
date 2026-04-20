@@ -482,7 +482,7 @@ export default function AddGroupRecurringExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg [&_[data-radix-dialog-close]]:cursor-pointer">
+      <DialogContent className="sm:max-w-lg **:data-radix-dialog-close:cursor-pointer">
         <DialogHeader>
           <DialogTitle>
             {t("addGroupRecurringExpenseDialog.title", { defaultValue: "Add recurring group expense" })}

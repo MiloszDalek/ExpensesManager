@@ -124,7 +124,7 @@ export default function CreateGroupDialog({
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             {errorMessage && (
-              <p className="max-w-full overflow-hidden rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive [overflow-wrap:anywhere]">
+              <p className="max-w-full overflow-hidden rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive wrap-anywhere">
                 {errorMessage}
               </p>
             )}
@@ -155,7 +155,7 @@ export default function CreateGroupDialog({
                 id="description"
                 placeholder={t("createGroupDialog.descriptionPlaceholder")}
                 value={formData.description}
-                className="w-full min-w-0 max-w-full overflow-x-hidden whitespace-pre-wrap [field-sizing:fixed] [overflow-wrap:anywhere]"
+                className="w-full min-w-0 max-w-full overflow-x-hidden whitespace-pre-wrap field-sizing-fixed wrap-anywhere"
                 maxLength={GROUP_DESCRIPTION_MAX_LENGTH}
                 onChange={(e) =>
                   setFormData((prev) => ({

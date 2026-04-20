@@ -4,6 +4,26 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+const hasDialogPart = (children: React.ReactNode, part: "title" | "description"): boolean => {
+  return React.Children.toArray(children).some((child) => {
+    if (!React.isValidElement(child)) {
+      return false
+    }
+
+    const matches =
+      part === "title"
+        ? child.type === DialogTitle || child.type === DialogPrimitive.Title
+        : child.type === DialogDescription || child.type === DialogPrimitive.Description
+
+    if (matches) {
+      return true
+    }
+
+    const nestedChildren = (child.props as { children?: React.ReactNode }).children
+    return hasDialogPart(nestedChildren, part)
+  })
+}
+
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -52,6 +72,9 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const hasTitle = hasDialogPart(children, "title")
+  const hasDescription = hasDialogPart(children, "description")
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -63,6 +86,10 @@ function DialogContent({
         )}
         {...props}
       >
+        {!hasTitle ? <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title> : null}
+        {!hasDescription ? (
+          <DialogPrimitive.Description className="sr-only">Dialog content</DialogPrimitive.Description>
+        ) : null}
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close

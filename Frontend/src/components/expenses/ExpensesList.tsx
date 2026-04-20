@@ -126,7 +126,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                       <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
-                    <div className="min-w-0 flex-1 max-w-[9rem] sm:max-w-none">
+                    <div className="min-w-0 flex-1 max-w-36 sm:max-w-none">
                       <p className="truncate text-[12px] font-semibold leading-tight text-foreground sm:text-[13px]">{expense.title}</p>
                       <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden text-[11px] text-muted-foreground">
                         <span className="shrink-0">{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
@@ -225,7 +225,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           </div>
 
                           <p className="text-xs font-medium text-muted-foreground">{t("addExpenseDialog.notes")}</p>
-                          <p className="mt-1 text-sm text-foreground break-words">
+                          <p className="mt-1 text-sm text-foreground wrap-break-word">
                             {hasNotes ? expense.notes : t("expensesList.noNotes")}
                           </p>
                         </div>
