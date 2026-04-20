@@ -10,7 +10,7 @@ import type {
 
 export const savingsGoalsApi = {
   list: async (params?: { include_inactive?: boolean }): Promise<ApiSavingsGoalResponse[]> => {
-    const { data } = await client.get<ApiSavingsGoalResponse[]>("/savings-goals/", { params });
+    const { data } = await client.get<ApiSavingsGoalResponse[]>("/savings-goals", { params });
     return data;
   },
 
@@ -25,7 +25,7 @@ export const savingsGoalsApi = {
   },
 
   create: async (payload: ApiSavingsGoalCreate): Promise<ApiSavingsGoalResponse> => {
-    const { data } = await client.post<ApiSavingsGoalResponse>("/savings-goals/", payload);
+    const { data } = await client.post<ApiSavingsGoalResponse>("/savings-goals", payload);
     return data;
   },
 

@@ -41,6 +41,10 @@ export default function RegisterPage() {
       return t("authPages.register.errors.passwordComplexity");
     }
 
+    if (normalizedMessage === "Network Error") {
+      return t("authPages.register.errors.networkError");
+    }
+
     return normalizedMessage;
   };
 

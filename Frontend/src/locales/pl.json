@@ -227,7 +227,8 @@
       "errors": {
         "loginFailed": "Logowanie nie powiodło się",
         "inactiveUser": "Twoje konto jest nieaktywne. Skontaktuj się z administratorem.",
-        "invalidCredentials": "Nieprawidłowy email lub hasło."
+        "invalidCredentials": "Nieprawidłowy email lub hasło.",
+        "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
       }
     },
     "register": {
@@ -254,7 +255,8 @@
       "errors": {
         "passwordsDoNotMatch": "Hasła nie są takie same",
         "passwordComplexity": "Hasło musi mieć co najmniej 8 znaków oraz zawierać przynajmniej jedną literę i jedną cyfrę.",
-        "registrationFailed": "Rejestracja nie powiodła się"
+        "registrationFailed": "Rejestracja nie powiodła się",
+        "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
       }
     }
   },

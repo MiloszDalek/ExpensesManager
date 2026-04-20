@@ -40,6 +40,10 @@ export default function LoginPage() {
       return t("authPages.login.errors.invalidCredentials");
     }
 
+    if (normalizedMessage === "Network Error") {
+      return t("authPages.login.errors.networkError");
+    }
+
     return normalizedMessage;
   };
 

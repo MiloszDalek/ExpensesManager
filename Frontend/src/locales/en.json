@@ -237,7 +237,8 @@
       "errors": {
         "loginFailed": "Login failed",
         "inactiveUser": "Your account is inactive. Contact the administrator.",
-        "invalidCredentials": "Incorrect email or password."
+        "invalidCredentials": "Incorrect email or password.",
+        "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
       }
     },
     "register": {
@@ -264,7 +265,8 @@
       "errors": {
         "passwordsDoNotMatch": "Passwords do not match",
         "passwordComplexity": "Password must be at least 8 characters long and include at least one letter and one digit.",
-        "registrationFailed": "Registration failed"
+        "registrationFailed": "Registration failed",
+        "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
       }
     }
   },
