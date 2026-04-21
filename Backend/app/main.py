@@ -47,7 +47,7 @@ allowed_origins = [
     if origin.strip()
 ]
 
-app = FastAPI(title="Expenses Manager API")
+app = FastAPI(title="Expenses Manager API", redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
