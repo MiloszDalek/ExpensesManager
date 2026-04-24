@@ -13,4 +13,5 @@ export * from "./settlementsApi";
 export * from "./receiptsApi";
 export * from "./usersApi";
 export * from "./budgetsApi";
+export * from "./savingsGoalsApi";
 export * from "./queryKeys";

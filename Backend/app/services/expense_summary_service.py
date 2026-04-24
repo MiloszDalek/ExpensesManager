@@ -8,12 +8,27 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.enums import CurrencyEnum
-from app.repositories import ExpenseRepository
+from app.repositories import (
+    BudgetRepository,
+    ExpenseRepository,
+    RecurringExpenseRepository,
+    SavingsGoalRepository,
+    SettlementRepository,
+)
 from .group_service import GroupService
 
 SummaryScope = Literal["all", "personal", "group"]
 DrilldownSortBy = Literal["expense_date", "amount", "created_at"]
 SortOrder = Literal["asc", "desc"]
+ExportFormat = Literal["csv", "xlsx", "pdf"]
+ExportSection = Literal[
+    "transactions",
+    "category_summary",
+    "budgets",
+    "goals",
+    "recurring_expenses",
+    "group_settlements",
+]
 
 
 class ExpenseSummaryService:
@@ -79,8 +94,31 @@ class ExpenseSummaryService:
         },
     }
 
+    EXPORT_ALL_SECTIONS: tuple[ExportSection, ...] = (
+        "transactions",
+        "category_summary",
+        "budgets",
+        "goals",
+        "recurring_expenses",
+        "group_settlements",
+    )
+    EXPORT_ALLOWED_SECTIONS: dict[ExportFormat, tuple[ExportSection, ...]] = {
+        "csv": ("transactions", "category_summary", "budgets"),
+        "xlsx": EXPORT_ALL_SECTIONS,
+        "pdf": ("category_summary", "budgets"),
+    }
+    EXPORT_DEFAULT_SECTIONS: dict[ExportFormat, tuple[ExportSection, ...]] = {
+        "csv": ("transactions", "category_summary"),
+        "xlsx": ("transactions", "category_summary", "budgets"),
+        "pdf": ("category_summary", "budgets"),
+    }
+
     def __init__(self, db: Session):
         self.expense_repo = ExpenseRepository(db)
+        self.budget_repo = BudgetRepository(db)
+        self.goal_repo = SavingsGoalRepository(db)
+        self.recurring_repo = RecurringExpenseRepository(db)
+        self.settlement_repo = SettlementRepository(db)
         self.group_service = GroupService(db)
 
     @staticmethod
@@ -799,6 +837,250 @@ class ExpenseSummaryService:
             "items": paginated,
         }
 
+    @staticmethod
+    def _format_enum_value(value) -> str:
+        if hasattr(value, "value"):
+            return str(value.value)
+        return str(value)
+
+    def _parse_requested_export_sections(self, sections: str | None) -> list[ExportSection]:
+        if not sections:
+            return []
+
+        raw_items = [item.strip() for item in sections.split(",") if item.strip()]
+        if not raw_items:
+            return []
+
+        allowed = set(self.EXPORT_ALL_SECTIONS)
+        invalid = [item for item in raw_items if item not in allowed]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid export section(s): {', '.join(invalid)}",
+            )
+
+        unique_items: list[ExportSection] = []
+        for item in raw_items:
+            if item not in unique_items:
+                unique_items.append(item)  # type: ignore[arg-type]
+
+        return unique_items
+
+    def _resolve_export_sections(self, export_format: ExportFormat, sections: str | None) -> list[ExportSection]:
+        requested = self._parse_requested_export_sections(sections)
+        allowed = self.EXPORT_ALLOWED_SECTIONS[export_format]
+
+        filtered = [section for section in requested if section in allowed]
+        if filtered:
+            return filtered
+
+        return list(self.EXPORT_DEFAULT_SECTIONS[export_format])
+
+    def _collect_category_summary_rows(
+        self,
+        user_id: int,
+        date_from: date | None,
+        date_to: date | None,
+        scope: SummaryScope,
+        category_id: int | None,
+        category_ids: list[int] | None,
+        currency: CurrencyEnum | None,
+        group_id: int | None,
+    ) -> list[list[str]]:
+        overview = self.get_overview(
+            user_id=user_id,
+            date_from=date_from,
+            date_to=date_to,
+            scope=scope,
+            category_id=category_id,
+            category_ids=category_ids,
+            currency=currency,
+            group_id=group_id,
+            top_categories_limit=10,
+            top_groups_limit=5,
+            compare_previous=False,
+        )
+
+        rows: list[list[str]] = []
+        for total in overview["totals_by_currency"]:
+            rows.append(
+                [
+                    "total_by_currency",
+                    "all",
+                    self._format_export_currency(total["currency"]),
+                    f"{self._to_decimal(total['total_amount']):.2f}",
+                ]
+            )
+
+        for category_row in overview["top_categories"]:
+            rows.append(
+                [
+                    "top_category",
+                    str(category_row["category_name"]),
+                    self._format_export_currency(currency) if currency is not None else "multi",
+                    f"{self._to_decimal(category_row['total_amount']):.2f}",
+                ]
+            )
+
+        return rows
+
+    def _collect_budget_rows(
+        self,
+        user_id: int,
+        date_from: date | None,
+        date_to: date | None,
+        currency: CurrencyEnum | None,
+    ) -> list[list[str]]:
+        plans = self.budget_repo.list_plans_by_user(user_id=user_id, status=None)
+        rows: list[list[str]] = []
+
+        for plan in plans:
+            if currency is not None and plan.currency != currency:
+                continue
+
+            if date_from is not None and date_to is not None:
+                if plan.period_end < date_from or plan.period_start > date_to:
+                    continue
+
+            period_summary = self.budget_repo.get_budget_period_summary(plan.id)
+            income_total = self._to_decimal(period_summary.total_income if period_summary is not None else 0)
+            expenses_total = self._to_decimal(period_summary.total_expenses if period_summary is not None else 0)
+            savings_total = self._to_decimal(period_summary.total_savings if period_summary is not None else 0)
+            overspend_flag = bool(period_summary.overspend_flag) if period_summary is not None else False
+
+            rows.append(
+                [
+                    str(plan.id),
+                    str(plan.name),
+                    self._format_enum_value(plan.status),
+                    plan.period_start.isoformat(),
+                    plan.period_end.isoformat(),
+                    self._format_export_currency(plan.currency),
+                    f"{income_total:.2f}",
+                    f"{expenses_total:.2f}",
+                    f"{savings_total:.2f}",
+                    "yes" if overspend_flag else "no",
+                ]
+            )
+
+        return rows
+
+    def _collect_goal_rows(self, user_id: int) -> list[list[str]]:
+        goals = self.goal_repo.list_goals_by_user(user_id=user_id, include_inactive=True)
+        rows: list[list[str]] = []
+
+        for goal in goals:
+            target_amount = self._to_decimal(goal.target_amount)
+            current_amount = self._to_decimal(goal.current_amount)
+            progress_percent = Decimal("0")
+            if target_amount > 0:
+                progress_percent = (current_amount / target_amount) * Decimal("100")
+
+            state_status = goal.state.status if goal.state is not None else ("ACTIVE" if goal.is_active else "PAUSED")
+            rows.append(
+                [
+                    str(goal.id),
+                    str(goal.name),
+                    f"{target_amount:.2f}",
+                    f"{current_amount:.2f}",
+                    f"{progress_percent:.2f}",
+                    goal.deadline.isoformat() if goal.deadline is not None else "",
+                    str(state_status),
+                ]
+            )
+
+        return rows
+
+    def _collect_recurring_rows(
+        self,
+        user_id: int,
+        scope: SummaryScope,
+        group_id: int | None,
+        category_id: int | None,
+        category_ids: list[int] | None,
+        currency: CurrencyEnum | None,
+        date_from: date | None,
+        date_to: date | None,
+    ) -> list[list[str]]:
+        resolved_category_ids = self._resolve_category_ids(category_id=category_id, category_ids=category_ids)
+        recurring_rows = self.recurring_repo.list_by_user(
+            user_id=user_id,
+            scope=scope,
+            group_id=group_id,
+            status=None,
+            limit=500,
+            offset=0,
+        )
+
+        rows: list[list[str]] = []
+        for recurring in recurring_rows:
+            if resolved_category_ids and recurring.category_id not in resolved_category_ids:
+                continue
+
+            if currency is not None and recurring.currency != currency:
+                continue
+
+            if date_from is not None and recurring.next_due_on < date_from:
+                continue
+
+            if date_to is not None and recurring.next_due_on > date_to:
+                continue
+
+            rows.append(
+                [
+                    str(recurring.id),
+                    str(recurring.title),
+                    self._format_export_currency(recurring.currency),
+                    f"{self._to_decimal(recurring.amount):.2f}",
+                    self._format_enum_value(recurring.status),
+                    recurring.next_due_on.isoformat(),
+                    str(recurring.group_id) if recurring.group_id is not None else "",
+                ]
+            )
+
+        return rows
+
+    def _collect_settlement_rows(
+        self,
+        user_id: int,
+        group_id: int | None,
+        currency: CurrencyEnum | None,
+        date_from: date | None,
+        date_to: date | None,
+    ) -> list[list[str]]:
+        settlements = self.settlement_repo.get_by_user_id(limit=500, offset=0, user_id=user_id)
+        rows: list[list[str]] = []
+
+        for settlement in settlements:
+            if group_id is not None and settlement.group_id != group_id:
+                continue
+
+            if currency is not None and settlement.currency != currency:
+                continue
+
+            settlement_day = settlement.created_at.date() if settlement.created_at is not None else None
+            if date_from is not None and settlement_day is not None and settlement_day < date_from:
+                continue
+
+            if date_to is not None and settlement_day is not None and settlement_day > date_to:
+                continue
+
+            rows.append(
+                [
+                    str(settlement.id),
+                    str(settlement.from_user_id) if settlement.from_user_id is not None else "",
+                    str(settlement.to_user_id) if settlement.to_user_id is not None else "",
+                    str(settlement.group_id) if settlement.group_id is not None else "",
+                    self._format_export_currency(settlement.currency),
+                    f"{self._to_decimal(settlement.amount):.2f}",
+                    self._format_enum_value(settlement.status),
+                    self._format_enum_value(settlement.payment_method),
+                    settlement.created_at.isoformat() if settlement.created_at is not None else "",
+                ]
+            )
+
+        return rows
+
     def export_csv(
         self,
         user_id: int,
@@ -809,26 +1091,75 @@ class ExpenseSummaryService:
         category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         group_id: int | None = None,
+        sections: str | None = None,
         sort_by: DrilldownSortBy = "expense_date",
         sort_order: SortOrder = "desc",
     ):
-        rows = self._prepare_export_rows(
-            user_id=user_id,
-            date_from=date_from,
-            date_to=date_to,
-            scope=scope,
-            category_id=category_id,
-            category_ids=category_ids,
-            currency=currency,
-            group_id=group_id,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
-
+        resolved_sections = self._resolve_export_sections("csv", sections)
         output = io.StringIO(newline="")
         writer = csv.writer(output)
-        writer.writerow(self.CSV_EXPORT_COLUMNS)
-        writer.writerows(rows)
+
+        for index, section in enumerate(resolved_sections):
+            if index > 0:
+                writer.writerow([])
+
+            if section == "transactions":
+                writer.writerow(["transactions"])
+                writer.writerow(self.CSV_EXPORT_COLUMNS)
+                rows = self._prepare_export_rows(
+                    user_id=user_id,
+                    date_from=date_from,
+                    date_to=date_to,
+                    scope=scope,
+                    category_id=category_id,
+                    category_ids=category_ids,
+                    currency=currency,
+                    group_id=group_id,
+                    sort_by=sort_by,
+                    sort_order=sort_order,
+                )
+                writer.writerows(rows)
+                continue
+
+            if section == "category_summary":
+                writer.writerow(["category_summary"])
+                writer.writerow(["metric", "name", "currency", "amount"])
+                rows = self._collect_category_summary_rows(
+                    user_id=user_id,
+                    date_from=date_from,
+                    date_to=date_to,
+                    scope=scope,
+                    category_id=category_id,
+                    category_ids=category_ids,
+                    currency=currency,
+                    group_id=group_id,
+                )
+                writer.writerows(rows)
+                continue
+
+            if section == "budgets":
+                writer.writerow(["budgets"])
+                writer.writerow(
+                    [
+                        "budget_id",
+                        "name",
+                        "status",
+                        "period_start",
+                        "period_end",
+                        "currency",
+                        "income_total",
+                        "spent_total",
+                        "saved_total",
+                        "overspend_flag",
+                    ]
+                )
+                rows = self._collect_budget_rows(
+                    user_id=user_id,
+                    date_from=date_from,
+                    date_to=date_to,
+                    currency=currency,
+                )
+                writer.writerows(rows)
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         filename = f"expenses-summary-{timestamp}.csv"
@@ -848,6 +1179,7 @@ class ExpenseSummaryService:
         category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         group_id: int | None = None,
+        sections: str | None = None,
         locale: str | None = None,
         sort_by: DrilldownSortBy = "expense_date",
         sort_order: SortOrder = "desc",
@@ -859,42 +1191,149 @@ class ExpenseSummaryService:
         except ImportError as error:
             raise HTTPException(status_code=500, detail="XLSX export dependency is not installed") from error
 
-        locale_code, localization, rows = self._prepare_user_friendly_export_rows(
-            user_id=user_id,
-            date_from=date_from,
-            date_to=date_to,
-            scope=scope,
-            category_id=category_id,
-            category_ids=category_ids,
-            currency=currency,
-            group_id=group_id,
-            locale=locale,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
-
-        columns = [str(column) for column in localization["columns"]]
+        locale_code, localization = self._get_export_localization(locale)
+        resolved_sections = self._resolve_export_sections("xlsx", sections)
 
         workbook = Workbook()
-        worksheet = workbook.active
-        worksheet.title = str(localization["sheet_title"])
+        default_sheet = workbook.active
+        workbook.remove(default_sheet)
 
-        worksheet.append(columns)
-        for row in rows:
-            worksheet.append(row)
-
-        worksheet.freeze_panes = "A2"
         header_fill = PatternFill(fill_type="solid", start_color="0F172A", end_color="0F172A")
         header_font = Font(color="FFFFFF", bold=True)
-        for index, _ in enumerate(columns, start=1):
-            cell = worksheet.cell(row=1, column=index)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        column_widths = [14, 34, 14, 24, 24, 12, 16, 16]
-        for index, width in enumerate(column_widths, start=1):
-            worksheet.column_dimensions[get_column_letter(index)].width = width
+        def add_sheet(title: str, columns: list[str], rows: list[list[str]], column_widths: list[int] | None = None):
+            sheet_title = title[:31] if title else "Sheet"
+            worksheet = workbook.create_sheet(title=sheet_title)
+            worksheet.append(columns)
+            for row in rows:
+                worksheet.append(row)
+
+            worksheet.freeze_panes = "A2"
+            for col_index, _ in enumerate(columns, start=1):
+                cell = worksheet.cell(row=1, column=col_index)
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            if column_widths is None:
+                column_widths = [max(12, len(column) + 2) for column in columns]
+
+            for col_index, width in enumerate(column_widths, start=1):
+                worksheet.column_dimensions[get_column_letter(col_index)].width = width
+
+        if "transactions" in resolved_sections:
+            _, _, transaction_rows = self._prepare_user_friendly_export_rows(
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                scope=scope,
+                category_id=category_id,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+                locale=locale,
+                sort_by=sort_by,
+                sort_order=sort_order,
+            )
+            add_sheet(
+                title=str(localization["sheet_title"]),
+                columns=[str(column) for column in localization["columns"]],
+                rows=transaction_rows,
+                column_widths=[14, 34, 14, 24, 24, 12, 16, 16],
+            )
+
+        if "category_summary" in resolved_sections:
+            category_rows = self._collect_category_summary_rows(
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                scope=scope,
+                category_id=category_id,
+                category_ids=category_ids,
+                currency=currency,
+                group_id=group_id,
+            )
+            add_sheet(
+                title="Categories",
+                columns=["Metric", "Name", "Currency", "Amount"],
+                rows=category_rows,
+            )
+
+        if "budgets" in resolved_sections:
+            budget_rows = self._collect_budget_rows(
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            )
+            add_sheet(
+                title="Budgets",
+                columns=[
+                    "Budget ID",
+                    "Name",
+                    "Status",
+                    "Period start",
+                    "Period end",
+                    "Currency",
+                    "Income",
+                    "Spent",
+                    "Savings",
+                    "Overspend",
+                ],
+                rows=budget_rows,
+            )
+
+        if "goals" in resolved_sections:
+            goals_rows = self._collect_goal_rows(user_id=user_id)
+            add_sheet(
+                title="Goals",
+                columns=["Goal ID", "Name", "Target", "Current", "Progress %", "Deadline", "Status"],
+                rows=goals_rows,
+            )
+
+        if "recurring_expenses" in resolved_sections:
+            recurring_rows = self._collect_recurring_rows(
+                user_id=user_id,
+                scope=scope,
+                group_id=group_id,
+                category_id=category_id,
+                category_ids=category_ids,
+                currency=currency,
+                date_from=date_from,
+                date_to=date_to,
+            )
+            add_sheet(
+                title="Recurring",
+                columns=["Series ID", "Title", "Currency", "Amount", "Status", "Next due on", "Group ID"],
+                rows=recurring_rows,
+            )
+
+        if "group_settlements" in resolved_sections:
+            settlements_rows = self._collect_settlement_rows(
+                user_id=user_id,
+                group_id=group_id,
+                currency=currency,
+                date_from=date_from,
+                date_to=date_to,
+            )
+            add_sheet(
+                title="Settlements",
+                columns=[
+                    "Settlement ID",
+                    "From user",
+                    "To user",
+                    "Group ID",
+                    "Currency",
+                    "Amount",
+                    "Status",
+                    "Method",
+                    "Created at",
+                ],
+                rows=settlements_rows,
+            )
+
+        if len(workbook.sheetnames) == 0:
+            add_sheet(title="Summary", columns=["Info"], rows=[["No sections selected"]])
 
         output = io.BytesIO()
         workbook.save(output)
@@ -918,6 +1357,7 @@ class ExpenseSummaryService:
         category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
         group_id: int | None = None,
+        sections: str | None = None,
         locale: str | None = None,
         sort_by: DrilldownSortBy = "expense_date",
         sort_order: SortOrder = "desc",
@@ -931,7 +1371,9 @@ class ExpenseSummaryService:
         except ImportError as error:
             raise HTTPException(status_code=500, detail="PDF export dependency is not installed") from error
 
-        locale_code, localization, rows = self._prepare_user_friendly_export_rows(
+        resolved_sections = self._resolve_export_sections("pdf", sections)
+        locale_code, localization = self._get_export_localization(locale)
+        overview = self.get_overview(
             user_id=user_id,
             date_from=date_from,
             date_to=date_to,
@@ -940,12 +1382,10 @@ class ExpenseSummaryService:
             category_ids=category_ids,
             currency=currency,
             group_id=group_id,
-            locale=locale,
-            sort_by=sort_by,
-            sort_order=sort_order,
+            top_categories_limit=8,
+            top_groups_limit=5,
+            compare_previous=False,
         )
-
-        columns = [str(column) for column in localization["columns"]]
 
         pdf_output = io.BytesIO()
         document = SimpleDocTemplate(
@@ -957,38 +1397,94 @@ class ExpenseSummaryService:
             bottomMargin=10 * mm,
         )
 
-        table_data = [columns]
-        table_data.extend(rows)
+        styles = getSampleStyleSheet()
+        generated_at = self._format_export_datetime(datetime.now(), locale_code)
+        document_title = str(localization["document_title"])
+        generated_label = str(localization["generated_at"])
 
-        table = Table(
-            table_data,
-            repeatRows=1,
-            colWidths=[25 * mm, 50 * mm, 22 * mm, 35 * mm, 35 * mm, 20 * mm, 30 * mm, 30 * mm],
-        )
-        table.setStyle(
+        story = [
+            Paragraph(document_title, styles["Heading3"]),
+            Paragraph(f"{generated_label}: {generated_at}", styles["Normal"]),
+            Spacer(1, 8),
+        ]
+
+        kpi_rows = [["Metric", "Value"], ["Total transactions", str(overview["total_count"])]]
+        for total_row in overview["totals_by_currency"]:
+            kpi_rows.append(
+                [
+                    f"Total ({self._format_export_currency(total_row['currency'])})",
+                    f"{self._to_decimal(total_row['total_amount']):.2f}",
+                ]
+            )
+
+        kpi_table = Table(kpi_rows, repeatRows=1, colWidths=[90 * mm, 70 * mm])
+        kpi_table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 7),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
                     ("GRID", (0, 0), (-1, -1), 0.25, colors.lightgrey),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ]
             )
         )
+        story.extend([Paragraph("KPI Summary", styles["Heading4"]), kpi_table, Spacer(1, 10)])
 
-        styles = getSampleStyleSheet()
-        generated_at = self._format_export_datetime(datetime.now(), locale_code)
-        document_title = str(localization["document_title"])
-        generated_label = str(localization["generated_at"])
+        if "category_summary" in resolved_sections:
+            category_rows = [["Category", "Amount"]]
+            for category_row in overview["top_categories"]:
+                category_rows.append(
+                    [
+                        str(category_row["category_name"]),
+                        f"{self._to_decimal(category_row['total_amount']):.2f}",
+                    ]
+                )
+
+            category_table = Table(category_rows, repeatRows=1, colWidths=[120 * mm, 40 * mm])
+            category_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("GRID", (0, 0), (-1, -1), 0.25, colors.lightgrey),
+                    ]
+                )
+            )
+            story.extend([Paragraph("Category Breakdown", styles["Heading4"]), category_table, Spacer(1, 10)])
+
+        if "budgets" in resolved_sections:
+            budget_rows = [["Budget", "Period", "Currency", "Spent", "Savings", "Overspend"]]
+            for row in self._collect_budget_rows(
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            ):
+                budget_rows.append([row[1], f"{row[3]} - {row[4]}", row[5], row[7], row[8], row[9]])
+
+            budget_table = Table(
+                budget_rows,
+                repeatRows=1,
+                colWidths=[45 * mm, 52 * mm, 18 * mm, 22 * mm, 22 * mm, 22 * mm],
+            )
+            budget_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 7),
+                        ("GRID", (0, 0), (-1, -1), 0.25, colors.lightgrey),
+                    ]
+                )
+            )
+            story.extend([Paragraph("Budget Summary", styles["Heading4"]), budget_table])
+
         document.build(
-            [
-                Paragraph(document_title, styles["Heading3"]),
-                Paragraph(f"{generated_label}: {generated_at}", styles["Normal"]),
-                Spacer(1, 6),
-                table,
-            ]
+            story
         )
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")

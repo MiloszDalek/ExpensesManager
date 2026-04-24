@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -7,6 +7,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FilterX,
   Layers,
@@ -36,6 +38,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,12 +56,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  balancesApi,
+  budgetsApi,
   categoriesApi,
+  contactsApi,
   expensesSummaryApi,
   groupsApi,
   queryKeys,
+  recurringExpensesApi,
+  savingsGoalsApi,
 } from "@/api";
 import {
+  type ApiContactResponse,
+  type ApiRecurringForecastResponse,
+  type ApiSavingsGoalResponse,
+  type ApiUserBalanceItem,
   type PersonalExpensePeriodPreset,
   type ExpenseSummaryScope,
   type ApiExpenseSummaryDrilldownParams,
@@ -60,6 +79,7 @@ import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
 
 type SummaryFiltersState = {
   scope: ExpenseSummaryScope;
+  budgetId: string;
   groupId: string;
   categoryId: string;
   currency: CurrencyEnum | "all";
@@ -69,6 +89,51 @@ type SummaryFiltersState = {
 };
 
 type ExportFormat = "csv" | "xlsx" | "pdf";
+
+type ExportSection =
+  | "transactions"
+  | "category_summary"
+  | "budgets"
+  | "goals"
+  | "recurring_expenses"
+  | "group_settlements";
+
+type ExportMutationVariables = {
+  format: ExportFormat;
+  sections: ExportSection[];
+};
+
+const EXPORT_SECTION_OPTIONS: Array<{ id: ExportSection; labelKey: string; defaultLabel: string }> = [
+  { id: "transactions", labelKey: "summaryPage.exportSections.transactions", defaultLabel: "Transactions" },
+  { id: "category_summary", labelKey: "summaryPage.exportSections.categorySummary", defaultLabel: "Category summary" },
+  { id: "budgets", labelKey: "summaryPage.exportSections.budgets", defaultLabel: "Budgets" },
+  { id: "goals", labelKey: "summaryPage.exportSections.goals", defaultLabel: "Goals" },
+  { id: "recurring_expenses", labelKey: "summaryPage.exportSections.recurring", defaultLabel: "Recurring expenses" },
+  { id: "group_settlements", labelKey: "summaryPage.exportSections.groupSettlements", defaultLabel: "Group settlements" },
+];
+
+const EXPORT_ALLOWED_SECTIONS: Record<ExportFormat, ExportSection[]> = {
+  csv: ["transactions", "category_summary", "budgets"],
+  xlsx: EXPORT_SECTION_OPTIONS.map((section) => section.id),
+  pdf: ["category_summary", "budgets"],
+};
+
+const EXPORT_DEFAULT_SECTIONS: Record<ExportFormat, ExportSection[]> = {
+  csv: ["transactions", "category_summary"],
+  xlsx: ["transactions", "category_summary", "budgets"],
+  pdf: ["category_summary", "budgets"],
+};
+
+const normalizeExportSections = (format: ExportFormat, sections: ExportSection[]) => {
+  const allowedSet = new Set(EXPORT_ALLOWED_SECTIONS[format]);
+  const filtered = sections.filter((section) => allowedSet.has(section));
+
+  if (filtered.length > 0) {
+    return filtered;
+  }
+
+  return EXPORT_DEFAULT_SECTIONS[format];
+};
 
 const toDateInput = (value: Date) => format(value, "yyyy-MM-dd");
 
@@ -97,6 +162,7 @@ const getInitialFilters = (): SummaryFiltersState => {
 
   return {
     scope: "all",
+    budgetId: "all",
     groupId: "all",
     categoryId: "all",
     currency: "all",
@@ -109,6 +175,7 @@ const getInitialFilters = (): SummaryFiltersState => {
 const areFiltersEqual = (first: SummaryFiltersState, second: SummaryFiltersState) => {
   return (
     first.scope === second.scope &&
+    first.budgetId === second.budgetId &&
     first.groupId === second.groupId &&
     first.categoryId === second.categoryId &&
     first.currency === second.currency &&
@@ -128,12 +195,51 @@ export default function DetailedSummaryPage() {
 
   const [draftFilters, setDraftFilters] = useState<SummaryFiltersState>(getInitialFilters);
   const [appliedFilters, setAppliedFilters] = useState<SummaryFiltersState>(getInitialFilters);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [trendCurrency, setTrendCurrency] = useState<CurrencyEnum | null>(null);
   const [drilldownDate, setDrilldownDate] = useState<string | null>(null);
   const [drilldownCategoryId, setDrilldownCategoryId] = useState<number | null>(null);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
+  const [selectedExportSections, setSelectedExportSections] = useState<ExportSection[]>(
+    EXPORT_DEFAULT_SECTIONS.csv
+  );
   const [pendingExportFormat, setPendingExportFormat] = useState<ExportFormat | null>(null);
 
   const appliedGroupId = appliedFilters.groupId === "all" ? undefined : Number(appliedFilters.groupId);
+
+  const {
+    data: budgets = [],
+    isLoading: budgetsLoading,
+    error: budgetsError,
+  } = useQuery({
+    queryKey: queryKeys.budgets.list("active"),
+    queryFn: () => budgetsApi.listBudgets("active"),
+    enabled: !!user,
+  });
+
+  const activeBudgets = useMemo(
+    () => budgets.filter((budget) => budget.status === "active"),
+    [budgets]
+  );
+
+  const selectedBudgetId = useMemo(() => {
+    if (appliedFilters.budgetId !== "all") {
+      return Number(appliedFilters.budgetId);
+    }
+
+    return activeBudgets[0]?.id ?? null;
+  }, [activeBudgets, appliedFilters.budgetId]);
+
+  const {
+    data: budgetSummary,
+    isLoading: budgetSummaryLoading,
+    error: budgetSummaryError,
+  } = useQuery({
+    queryKey: selectedBudgetId ? queryKeys.budgets.summary(selectedBudgetId) : ["budgets", "summary", "none"],
+    queryFn: () => budgetsApi.getBudgetSummary(selectedBudgetId as number),
+    enabled: !!user && !!selectedBudgetId,
+  });
 
   const {
     data: groups = [],
@@ -253,9 +359,85 @@ export default function DetailedSummaryPage() {
     enabled: !!user,
   });
 
-  const exportMutation = useMutation({
-    mutationFn: (format: ExportFormat) => {
-      const baseParams = {
+  const topExpensesParams = useMemo<ApiExpenseSummaryDrilldownParams>(
+    () => ({
+      limit: 8,
+      offset: 0,
+      scope: appliedFilters.scope,
+      group_id: appliedGroupId,
+      date_from: appliedFilters.dateFrom,
+      date_to: appliedFilters.dateTo,
+      category_id: appliedFilters.categoryId === "all" ? undefined : Number(appliedFilters.categoryId),
+      currency: appliedFilters.currency === "all" ? undefined : appliedFilters.currency,
+      sort_by: "amount",
+      sort_order: "desc",
+    }),
+    [appliedFilters, appliedGroupId]
+  );
+
+  const {
+    data: topExpenses,
+    isLoading: topExpensesLoading,
+    error: topExpensesError,
+  } = useQuery({
+    queryKey: queryKeys.summaries.drilldown(topExpensesParams),
+    queryFn: () => expensesSummaryApi.drilldown(topExpensesParams),
+    enabled: !!user,
+  });
+
+  const recurringForecastParams = useMemo(
+    () => ({
+      date_from: appliedFilters.dateFrom,
+      date_to: appliedFilters.dateTo,
+      scope: appliedFilters.scope,
+      group_id: appliedGroupId,
+    }),
+    [appliedFilters, appliedGroupId]
+  );
+
+  const {
+    data: recurringForecast,
+    isLoading: recurringLoading,
+    error: recurringError,
+  } = useQuery<ApiRecurringForecastResponse>({
+    queryKey: queryKeys.recurringExpenses.forecast(recurringForecastParams),
+    queryFn: () => recurringExpensesApi.forecast(recurringForecastParams),
+    enabled: !!user,
+  });
+
+  const {
+    data: savingsGoals = [],
+    isLoading: goalsLoading,
+    error: goalsError,
+  } = useQuery<ApiSavingsGoalResponse[]>({
+    queryKey: queryKeys.savingsGoals.list({ include_inactive: false }),
+    queryFn: () => savingsGoalsApi.list({ include_inactive: false }),
+    enabled: !!user,
+  });
+
+  const {
+    data: contactBalances = [],
+    isLoading: balancesLoading,
+    error: balancesError,
+  } = useQuery<ApiUserBalanceItem[]>({
+    queryKey: queryKeys.balances.contacts,
+    queryFn: () => balancesApi.getContacts(),
+    enabled: !!user,
+  });
+
+  const {
+    data: contacts = [],
+    isLoading: contactsLoading,
+    error: contactsError,
+  } = useQuery<ApiContactResponse[]>({
+    queryKey: queryKeys.contacts.list({ limit: 200, offset: 0 }),
+    queryFn: () => contactsApi.list({ limit: 200, offset: 0 }),
+    enabled: !!user,
+  });
+
+  const exportMutation = useMutation<{ blob: Blob; filename: string }, Error, ExportMutationVariables>({
+    mutationFn: ({ format, sections }) => {
+      const baseParams: ApiExpenseSummaryDrilldownParams & { sections?: string } = {
         scope: appliedFilters.scope,
         group_id: appliedGroupId,
         date_from: appliedFilters.dateFrom,
@@ -264,7 +446,8 @@ export default function DetailedSummaryPage() {
         currency: appliedFilters.currency === "all" ? undefined : appliedFilters.currency,
         sort_by: "expense_date",
         sort_order: "desc",
-      } as const;
+        sections: normalizeExportSections(format, sections).join(","),
+      };
       const activeLocale = i18n.resolvedLanguage || i18n.language || "en";
 
       if (format === "xlsx") {
@@ -277,7 +460,7 @@ export default function DetailedSummaryPage() {
 
       return expensesSummaryApi.exportCsv(baseParams);
     },
-    onMutate: (format: ExportFormat) => {
+    onMutate: ({ format }) => {
       setPendingExportFormat(format);
     },
     onSuccess: ({ blob, filename }) => {
@@ -294,6 +477,32 @@ export default function DetailedSummaryPage() {
       setPendingExportFormat(null);
     },
   });
+
+  useEffect(() => {
+    if (!isMobileFiltersOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileFiltersOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileFiltersOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const handlePeriodPresetChange = (preset: PersonalExpensePeriodPreset) => {
     if (preset === "custom") {
@@ -432,6 +641,7 @@ export default function DetailedSummaryPage() {
     }
 
     setAppliedFilters(draftFilters);
+    setIsMobileFiltersOpen(false);
     setDrilldownDate(null);
     setDrilldownCategoryId(null);
   };
@@ -441,7 +651,333 @@ export default function DetailedSummaryPage() {
     setDrilldownCategoryId(null);
   };
 
-  if (!user || groupsLoading || categoriesLoading || overviewLoading || trendsLoading || drilldownLoading) {
+  const handleExportFormatChange = (nextFormat: ExportFormat) => {
+    setExportFormat(nextFormat);
+    setSelectedExportSections((previous) => normalizeExportSections(nextFormat, previous));
+  };
+
+  const handleToggleExportSection = (section: ExportSection) => {
+    if (!EXPORT_ALLOWED_SECTIONS[exportFormat].includes(section)) {
+      return;
+    }
+
+    setSelectedExportSections((previous) => {
+      if (previous.includes(section)) {
+        const remaining = previous.filter((current) => current !== section);
+        return normalizeExportSections(exportFormat, remaining);
+      }
+
+      return normalizeExportSections(exportFormat, [...previous, section]);
+    });
+  };
+
+  const handleExportSubmit = () => {
+    const normalizedSections = normalizeExportSections(exportFormat, selectedExportSections);
+    exportMutation.mutate({
+      format: exportFormat,
+      sections: normalizedSections,
+    });
+    setIsExportDialogOpen(false);
+  };
+
+  const budgetKpis = useMemo(() => {
+    const income = toNumber(budgetSummary?.income_total);
+    const expenses = toNumber(budgetSummary?.spent_total);
+    const savings = toNumber(budgetSummary?.saved_total);
+    const remaining = income - expenses;
+    const overspending =
+      (budgetSummary?.pools ?? []).some((pool) => pool.status === "exceeded" || toNumber(pool.remaining_amount) < 0) ||
+      remaining < 0;
+
+    return {
+      income,
+      expenses,
+      savings,
+      remaining,
+      overspending,
+      currency: budgetSummary?.currency,
+    };
+  }, [budgetSummary]);
+
+  const selectedBudget = useMemo(
+    () => (selectedBudgetId ? activeBudgets.find((budget) => budget.id === selectedBudgetId) ?? null : null),
+    [activeBudgets, selectedBudgetId]
+  );
+
+  const selectedBudgetPoolIds = useMemo(
+    () => new Set((selectedBudget?.pools ?? []).map((pool) => pool.id)),
+    [selectedBudget]
+  );
+
+  const budgetPoolRows = useMemo(
+    () =>
+      (budgetSummary?.pools ?? []).map((pool) => {
+        const target = toNumber(pool.target_amount || pool.allocated_amount);
+        const spent = toNumber(pool.spent_amount);
+        const percent = target > 0 ? Math.min(100, (spent / target) * 100) : 0;
+
+        return {
+          ...pool,
+          target,
+          spent,
+          percent,
+        };
+      }),
+    [budgetSummary]
+  );
+
+  const filteredGoals = useMemo(() => {
+    if (appliedFilters.budgetId === "all") {
+      return savingsGoals;
+    }
+
+    return savingsGoals.filter(
+      (goal) => goal.budget_pool_id !== null && selectedBudgetPoolIds.has(goal.budget_pool_id)
+    );
+  }, [appliedFilters.budgetId, savingsGoals, selectedBudgetPoolIds]);
+
+  const recurringUpcoming = useMemo(
+    () => recurringForecast?.items.slice(0, 8) ?? [],
+    [recurringForecast]
+  );
+
+  const contactLabelMap = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const contact of contacts) {
+      map.set(contact.contact_id, contact.username || contact.email);
+    }
+    return map;
+  }, [contacts]);
+
+  const balancesOverview = useMemo(() => {
+    let owedToUser = 0;
+    let owedByUser = 0;
+
+    const ranked = [...contactBalances].sort(
+      (first, second) => Math.abs(toNumber(second.amount)) - Math.abs(toNumber(first.amount))
+    );
+
+    for (const balance of contactBalances) {
+      const amount = toNumber(balance.amount);
+      if (amount >= 0) {
+        owedToUser += amount;
+      } else {
+        owedByUser += Math.abs(amount);
+      }
+    }
+
+    return {
+      owedToUser,
+      owedByUser,
+      net: owedToUser - owedByUser,
+      topItems: ranked.slice(0, 6),
+    };
+  }, [contactBalances]);
+
+  const renderFiltersContent = () => (
+    <>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <div className="space-y-1">
+          <Label>{t("summaryPage.scope")}</Label>
+          <Select value={draftFilters.scope} onValueChange={(value) => handleScopeChange(value as ExpenseSummaryScope)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("summaryPage.scopeAll")}</SelectItem>
+              <SelectItem value="personal">{t("summaryPage.scopePersonal")}</SelectItem>
+              <SelectItem value="group">{t("summaryPage.scopeGroup")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>{t("summaryPage.budget", { defaultValue: "Budget" })}</Label>
+          <Select
+            value={draftFilters.budgetId}
+            onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, budgetId: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("summaryPage.budgetAll", { defaultValue: "All active budgets" })}</SelectItem>
+              {activeBudgets.map((budget) => (
+                <SelectItem key={budget.id} value={String(budget.id)}>
+                  {budget.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>{t("summaryPage.group")}</Label>
+          <Select
+            value={draftFilters.groupId}
+            onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, groupId: value, categoryId: "all" }))}
+            disabled={draftFilters.scope === "personal"}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("summaryPage.groupAll")}</SelectItem>
+              {activeGroups.map((group) => (
+                <SelectItem key={group.id} value={String(group.id)}>
+                  {group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>{t("summaryPage.category")}</Label>
+          <Select
+            value={draftFilters.categoryId}
+            onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, categoryId: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("summaryPage.categoryAll")}</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>{t("expenseFilters.currency")}</Label>
+          <Select
+            value={draftFilters.currency}
+            onValueChange={(value) =>
+              setDraftFilters((previous) => ({
+                ...previous,
+                currency: value as SummaryFiltersState["currency"],
+              }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("expenseFilters.allCurrencies")}</SelectItem>
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <SelectItem key={currency} value={currency}>
+                  {currency}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
+          <Label>{t("expenseFilters.period")}</Label>
+          <Select value={draftFilters.periodPreset} onValueChange={(value) => handlePeriodPresetChange(value as PersonalExpensePeriodPreset)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="this_month">{t("expenseFilters.thisMonth")}</SelectItem>
+              <SelectItem value="previous_month">{t("expenseFilters.previousMonth")}</SelectItem>
+              <SelectItem value="custom">{t("expenseFilters.customRange")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {draftFilters.periodPreset === "custom" ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
+            <DatePicker
+              id="summary-date-from"
+              value={draftFilters.dateFrom}
+              onChange={(value) =>
+                setDraftFilters((previous) => ({
+                  ...previous,
+                  periodPreset: "custom",
+                  dateFrom: value,
+                }))
+              }
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="summary-date-to">{t("expenseFilters.to")}</Label>
+            <DatePicker
+              id="summary-date-to"
+              value={draftFilters.dateTo}
+              onChange={(value) =>
+                setDraftFilters((previous) => ({
+                  ...previous,
+                  periodPreset: "custom",
+                  dateTo: value,
+                }))
+              }
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-muted-foreground">
+          {t("summaryPage.filtersHint")}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={clearDrilldown} disabled={!drilldownDate && !drilldownCategoryId}>
+            <FilterX className="mr-2 h-4 w-4" />
+            {t("summaryPage.clearDrilldown")}
+          </Button>
+          <Button onClick={handleApplyFilters} disabled={!hasPendingFilters || hasInvalidDraftDateRange}>
+            {t("expenseFilters.apply")}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  const jumpToDrilldown = () => {
+    const target = document.getElementById("summary-drilldown");
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleTopExpenseClick = (expenseDate: string, categoryId: number) => {
+    setDrilldownDate(format(parseISO(expenseDate), "yyyy-MM-dd"));
+    setDrilldownCategoryId(categoryId);
+    jumpToDrilldown();
+  };
+
+  const handleBudgetPoolClick = (categoryId: number) => {
+    setDrilldownDate(null);
+    setDrilldownCategoryId(categoryId);
+    jumpToDrilldown();
+  };
+
+  const handleRecurringClick = (occurrenceDate: string, categoryId: number) => {
+    setDrilldownDate(occurrenceDate);
+    setDrilldownCategoryId(categoryId);
+    jumpToDrilldown();
+  };
+
+  if (
+    !user ||
+    groupsLoading ||
+    categoriesLoading ||
+    budgetsLoading ||
+    overviewLoading ||
+    trendsLoading ||
+    drilldownLoading ||
+    (selectedBudgetId !== null && budgetSummaryLoading)
+  ) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -449,7 +985,7 @@ export default function DetailedSummaryPage() {
     );
   }
 
-  if (groupsError || categoriesError || overviewError || trendsError || drilldownError) {
+  if (groupsError || categoriesError || budgetsError || overviewError || trendsError || drilldownError || budgetSummaryError) {
     return (
       <div className="flex h-screen items-center justify-center px-4">
         <div className="text-center text-destructive">
@@ -457,9 +993,11 @@ export default function DetailedSummaryPage() {
           <p className="text-muted-foreground">
             {groupsError?.message ||
               categoriesError?.message ||
+              budgetsError?.message ||
               overviewError?.message ||
               trendsError?.message ||
               drilldownError?.message ||
+              budgetSummaryError?.message ||
               t("common.somethingWentWrong")}
           </p>
         </div>
@@ -484,35 +1022,26 @@ export default function DetailedSummaryPage() {
 
           <div className="flex flex-wrap gap-2">
             <Button
-              onClick={() => exportMutation.mutate("csv")}
+              onClick={() => setIsExportDialogOpen(true)}
               disabled={exportMutation.isPending}
               className="shadow-lg"
             >
               <Download className="mr-2 h-4 w-4" />
-              {pendingExportFormat === "csv" ? t("summaryPage.exporting") : t("summaryPage.exportCsv")}
+              {pendingExportFormat ? t("summaryPage.exporting") : t("summaryPage.export", { defaultValue: "Export" })}
             </Button>
 
             <Button
-              onClick={() => exportMutation.mutate("xlsx")}
-              disabled={exportMutation.isPending}
+              onClick={() => setIsMobileFiltersOpen((previous) => !previous)}
               variant="outline"
+              className="md:hidden"
             >
-              <Download className="mr-2 h-4 w-4" />
-              {pendingExportFormat === "xlsx" ? t("summaryPage.exporting") : t("summaryPage.exportXlsx")}
-            </Button>
-
-            <Button
-              onClick={() => exportMutation.mutate("pdf")}
-              disabled={exportMutation.isPending}
-              variant="outline"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {pendingExportFormat === "pdf" ? t("summaryPage.exporting") : t("summaryPage.exportPdf")}
+              <ListFilter className="mr-2 h-4 w-4" />
+              {t("summaryPage.filtersTitle")}
             </Button>
           </div>
         </motion.div>
 
-        <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+        <Card className="hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm md:block">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ListFilter className="h-5 w-5 text-primary" />
@@ -521,193 +1050,67 @@ export default function DetailedSummaryPage() {
             <CardDescription>{t("summaryPage.filtersSubtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <div className="space-y-1">
-                <Label>{t("summaryPage.scope")}</Label>
-                <Select value={draftFilters.scope} onValueChange={(value) => handleScopeChange(value as ExpenseSummaryScope)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("summaryPage.scopeAll")}</SelectItem>
-                    <SelectItem value="personal">{t("summaryPage.scopePersonal")}</SelectItem>
-                    <SelectItem value="group">{t("summaryPage.scopeGroup")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>{t("summaryPage.group")}</Label>
-                <Select
-                  value={draftFilters.groupId}
-                  onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, groupId: value, categoryId: "all" }))}
-                  disabled={draftFilters.scope === "personal"}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("summaryPage.groupAll")}</SelectItem>
-                    {activeGroups.map((group) => (
-                      <SelectItem key={group.id} value={String(group.id)}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>{t("summaryPage.category")}</Label>
-                <Select
-                  value={draftFilters.categoryId}
-                  onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, categoryId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("summaryPage.categoryAll")}</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>{t("expenseFilters.currency")}</Label>
-                <Select
-                  value={draftFilters.currency}
-                  onValueChange={(value) =>
-                    setDraftFilters((previous) => ({
-                      ...previous,
-                      currency: value as SummaryFiltersState["currency"],
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("expenseFilters.allCurrencies")}</SelectItem>
-                    {SUPPORTED_CURRENCIES.map((currency) => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>{t("expenseFilters.period")}</Label>
-                <Select value={draftFilters.periodPreset} onValueChange={(value) => handlePeriodPresetChange(value as PersonalExpensePeriodPreset)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="this_month">{t("expenseFilters.thisMonth")}</SelectItem>
-                    <SelectItem value="previous_month">{t("expenseFilters.previousMonth")}</SelectItem>
-                    <SelectItem value="custom">{t("expenseFilters.customRange")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {draftFilters.periodPreset === "custom" ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
-                  <DatePicker
-                    id="summary-date-from"
-                    value={draftFilters.dateFrom}
-                    onChange={(value) =>
-                      setDraftFilters((previous) => ({
-                        ...previous,
-                        periodPreset: "custom",
-                        dateFrom: value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="summary-date-to">{t("expenseFilters.to")}</Label>
-                  <DatePicker
-                    id="summary-date-to"
-                    value={draftFilters.dateTo}
-                    onChange={(value) =>
-                      setDraftFilters((previous) => ({
-                        ...previous,
-                        periodPreset: "custom",
-                        dateTo: value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                {t("summaryPage.filtersHint")}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={clearDrilldown} disabled={!drilldownDate && !drilldownCategoryId}>
-                  <FilterX className="mr-2 h-4 w-4" />
-                  {t("summaryPage.clearDrilldown")}
-                </Button>
-                <Button onClick={handleApplyFilters} disabled={!hasPendingFilters || hasInvalidDraftDateRange}>
-                  {t("expenseFilters.apply")}
-                </Button>
-              </div>
-            </div>
+            {renderFiltersContent()}
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("summaryPage.cards.totalCount")}</CardDescription>
-              <CardTitle className="text-3xl">{overview?.total_count ?? 0}</CardTitle>
+              <CardDescription>{t("summaryPage.cards.totalIncome", { defaultValue: "Total income" })}</CardDescription>
+              <CardTitle className="text-3xl text-emerald-600">
+                {formatAmount(budgetKpis.income)} {budgetKpis.currency ?? ""}
+              </CardTitle>
             </CardHeader>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("summaryPage.cards.topCategory")}</CardDescription>
-              <CardTitle>{overview?.top_categories?.[0]?.category_name ?? t("summaryPage.noData")}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>{t("summaryPage.cards.activeCurrency")}</CardDescription>
-              <CardTitle>{activeTrendCurrency ?? t("summaryPage.noData")}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>{t("summaryPage.cards.periodComparison")}</CardDescription>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                {activeComparison ? `${formatAmount(activeComparison.delta_amount)} ${activeComparison.currency}` : t("summaryPage.noData")}
-                {activeComparison?.delta_amount ? (
-                  activeComparison.delta_amount.toString().startsWith("-") ? (
-                    <ArrowDownRight className="h-5 w-5 text-rose-500" />
-                  ) : (
-                    <ArrowUpRight className="h-5 w-5 text-emerald-500" />
-                  )
-                ) : null}
+              <CardDescription>{t("summaryPage.cards.totalExpenses", { defaultValue: "Total expenses" })}</CardDescription>
+              <CardTitle className="text-3xl text-rose-600">
+                {formatAmount(budgetKpis.expenses)} {budgetKpis.currency ?? ""}
               </CardTitle>
               <CardDescription>
-                {activeComparison && activeComparison.delta_percent !== null
-                  ? `${activeComparison.delta_percent.toFixed(2)}%`
+                {activeComparison
+                  ? `${formatAmount(activeComparison.delta_amount)} ${activeComparison.currency}`
                   : t("summaryPage.notAvailable")}
               </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>{t("summaryPage.cards.savings", { defaultValue: "Savings" })}</CardDescription>
+              <CardTitle className="text-3xl text-sky-600">
+                {formatAmount(budgetKpis.savings)} {budgetKpis.currency ?? ""}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>{t("summaryPage.cards.remainingBudget", { defaultValue: "Remaining budget" })}</CardDescription>
+              <CardTitle
+                className={`text-3xl ${budgetKpis.remaining < 0 ? "text-rose-600" : "text-emerald-600"}`}
+              >
+                {formatAmount(budgetKpis.remaining)} {budgetKpis.currency ?? ""}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>{t("summaryPage.cards.overspending", { defaultValue: "Overspending" })}</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                {budgetKpis.overspending
+                  ? t("summaryPage.cards.overspendingYes", { defaultValue: "Warning" })
+                  : t("summaryPage.cards.overspendingNo", { defaultValue: "On track" })}
+                {budgetKpis.overspending ? (
+                  <ArrowDownRight className="h-5 w-5 text-rose-500" />
+                ) : (
+                  <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+                )}
+              </CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -809,6 +1212,112 @@ export default function DetailedSummaryPage() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
             <CardHeader>
+              <CardTitle>{t("summaryPage.budgetVsActualTitle", { defaultValue: "Budget vs actual" })}</CardTitle>
+              <CardDescription>
+                {t("summaryPage.budgetVsActualSubtitle", { defaultValue: "Allocated, spent and remaining per budget pool" })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!selectedBudgetId ? (
+                <p className="py-8 text-center text-muted-foreground">
+                  {t("summaryPage.noActiveBudget", { defaultValue: "No active budget available." })}
+                </p>
+              ) : budgetPoolRows.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+              ) : (
+                <div className="space-y-4">
+                  {budgetPoolRows.map((pool) => {
+                    const statusColor =
+                      pool.status === "exceeded"
+                        ? "bg-rose-500"
+                        : pool.status === "warning"
+                          ? "bg-amber-500"
+                          : "bg-emerald-500";
+
+                    return (
+                      <button
+                        key={pool.pool_id}
+                        type="button"
+                        onClick={() => handleBudgetPoolClick(pool.category_id)}
+                        className="w-full rounded-md border p-3 text-left transition-colors hover:bg-accent/40"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium">{pool.pool_name}</p>
+                          <Badge variant="outline">{pool.status.toUpperCase()}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {pool.category_name || t("summaryPage.noData")}
+                        </p>
+                        <div className="mt-2 h-2 rounded-full bg-muted">
+                          <div
+                            className={`h-2 rounded-full ${statusColor}`}
+                            style={{ width: `${pool.percent}%` }}
+                          />
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {t("summaryPage.allocated", { defaultValue: "Allocated" })}: {formatAmount(pool.target)}
+                          </span>
+                          <span>
+                            {t("summaryPage.spent", { defaultValue: "Spent" })}: {formatAmount(pool.spent)}
+                          </span>
+                          <span>
+                            {t("summaryPage.remaining", { defaultValue: "Remaining" })}: {formatAmount(pool.remaining_amount)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>{t("summaryPage.topExpensesTitle", { defaultValue: "Top expenses" })}</CardTitle>
+              <CardDescription>
+                {t("summaryPage.topExpensesSubtitle", { defaultValue: "Highest expenses for selected range" })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topExpensesLoading ? (
+                <p className="py-8 text-center text-muted-foreground">Loading...</p>
+              ) : topExpensesError ? (
+                <p className="py-8 text-center text-destructive">{topExpensesError.message}</p>
+              ) : !(topExpenses?.items?.length) ? (
+                <p className="py-8 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {topExpenses.items.map((item) => (
+                    <button
+                      key={`top-expense-${item.scope}-${item.expense_id}`}
+                      type="button"
+                      onClick={() => handleTopExpenseClick(item.expense_date, item.category_id)}
+                      className="w-full rounded-md border px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium">{item.title}</p>
+                        <span className="font-semibold">
+                          {formatAmount(item.user_amount)} {item.currency}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{item.category_name}</span>
+                        <span>•</span>
+                        <span>{format(parseISO(item.expense_date), "yyyy-MM-dd")}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardHeader>
               <CardTitle>{t("summaryPage.charts.topCategoriesTitle")}</CardTitle>
               <CardDescription>{t("summaryPage.charts.topCategoriesSubtitle")}</CardDescription>
             </CardHeader>
@@ -874,7 +1383,135 @@ export default function DetailedSummaryPage() {
           </Card>
         </div>
 
-        <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>{t("summaryPage.recurringTitle", { defaultValue: "Recurring expenses" })}</CardTitle>
+              <CardDescription>
+                {t("summaryPage.recurringSubtitle", { defaultValue: "Upcoming scheduled payments" })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recurringLoading ? (
+                <p className="py-8 text-center text-muted-foreground">Loading...</p>
+              ) : recurringError ? (
+                <p className="py-8 text-center text-destructive">{recurringError.message}</p>
+              ) : recurringUpcoming.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {recurringUpcoming.map((item) => (
+                    <button
+                      key={`recurring-${item.recurring_expense_id}-${item.occurrence_date}`}
+                      type="button"
+                      onClick={() => handleRecurringClick(item.occurrence_date, item.category_id)}
+                      className="w-full rounded-md border px-3 py-2 text-left transition-colors hover:bg-accent/40"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium">{item.title}</p>
+                        <span className="font-semibold">
+                          {formatAmount(item.user_amount)} {item.currency}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {item.occurrence_date} • {item.scope === "personal" ? t("summaryPage.scopePersonal") : t("summaryPage.scopeGroup")}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>{t("summaryPage.goalsTitle", { defaultValue: "Savings goals" })}</CardTitle>
+              <CardDescription>
+                {t("summaryPage.goalsSubtitle", { defaultValue: "Progress toward your active goals" })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {goalsLoading ? (
+                <p className="py-8 text-center text-muted-foreground">Loading...</p>
+              ) : goalsError ? (
+                <p className="py-8 text-center text-destructive">{goalsError.message}</p>
+              ) : filteredGoals.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+              ) : (
+                <div className="space-y-4">
+                  {filteredGoals.slice(0, 8).map((goal) => {
+                    const target = toNumber(goal.target_amount);
+                    const current = toNumber(goal.current_amount);
+                    const progress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+                    return (
+                      <div key={goal.id} className="rounded-md border p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium">{goal.name}</p>
+                          <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
+                        </div>
+                        <div className="mt-2 h-2 rounded-full bg-muted">
+                          <div className="h-2 rounded-full bg-sky-500" style={{ width: `${progress}%` }} />
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {formatAmount(current)} / {formatAmount(target)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle>{t("summaryPage.groupBalancesTitle", { defaultValue: "Group balances" })}</CardTitle>
+              <CardDescription>
+                {t("summaryPage.groupBalancesSubtitle", { defaultValue: "Who owes you and what you owe" })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {balancesLoading || contactsLoading ? (
+                <p className="py-8 text-center text-muted-foreground">Loading...</p>
+              ) : balancesError || contactsError ? (
+                <p className="py-8 text-center text-destructive">{balancesError?.message || contactsError?.message}</p>
+              ) : balancesOverview.topItems.length === 0 ? (
+                <p className="py-8 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-md border p-2">
+                      <p className="text-muted-foreground">{t("summaryPage.totalOwedToYou", { defaultValue: "Owed to you" })}</p>
+                      <p className="font-semibold text-emerald-600">{formatAmount(balancesOverview.owedToUser)}</p>
+                    </div>
+                    <div className="rounded-md border p-2">
+                      <p className="text-muted-foreground">{t("summaryPage.totalYouOwe", { defaultValue: "You owe" })}</p>
+                      <p className="font-semibold text-rose-600">{formatAmount(balancesOverview.owedByUser)}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {balancesOverview.topItems.map((entry) => {
+                      const amount = toNumber(entry.amount);
+                      const label = contactLabelMap.get(entry.user_id) || `User #${entry.user_id}`;
+
+                      return (
+                        <div key={entry.user_id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                          <span>{label}</span>
+                          <span className={amount >= 0 ? "font-semibold text-emerald-600" : "font-semibold text-rose-600"}>
+                            {amount >= 0 ? "+" : "-"}{formatAmount(Math.abs(amount))}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card id="summary-drilldown" className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
           <CardHeader>
             <CardTitle>{t("summaryPage.drilldownTitle")}</CardTitle>
             <CardDescription>{t("summaryPage.drilldownSubtitle")}</CardDescription>
@@ -930,6 +1567,121 @@ export default function DetailedSummaryPage() {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("summaryPage.export", { defaultValue: "Export" })}</DialogTitle>
+              <DialogDescription>
+                {t("summaryPage.exportCurrentViewHint", {
+                  defaultValue: "Export always uses the filters from your current view.",
+                })}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t("summaryPage.exportFormatLabel", { defaultValue: "Format" })}</Label>
+                <Select value={exportFormat} onValueChange={(value) => handleExportFormatChange(value as ExportFormat)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="xlsx">Excel (XLSX)</SelectItem>
+                    <SelectItem value="pdf">PDF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("summaryPage.exportSectionsLabel", { defaultValue: "Sections" })}</Label>
+                <div className="space-y-2 rounded-md border p-3">
+                  {EXPORT_SECTION_OPTIONS.map((section) => {
+                    const isAllowed = EXPORT_ALLOWED_SECTIONS[exportFormat].includes(section.id);
+                    const isChecked = selectedExportSections.includes(section.id);
+
+                    return (
+                      <label
+                        key={section.id}
+                        className={`flex items-center gap-3 rounded-sm px-1 py-1 ${
+                          isAllowed ? "text-foreground" : "cursor-not-allowed text-muted-foreground"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isAllowed && isChecked}
+                          disabled={!isAllowed}
+                          onChange={() => handleToggleExportSection(section.id)}
+                          className="h-4 w-4 rounded border-border accent-primary"
+                        />
+                        <span className="text-sm">
+                          {t(section.labelKey, { defaultValue: section.defaultLabel })}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {exportFormat === "pdf" ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("summaryPage.exportPdfHint", {
+                      defaultValue: "PDF includes summary sections only. Raw transaction tables are excluded.",
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={handleExportSubmit} disabled={exportMutation.isPending}>
+                <Download className="mr-2 h-4 w-4" />
+                {pendingExportFormat ? t("summaryPage.exporting") : t("summaryPage.export", { defaultValue: "Export" })}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="md:hidden">
+        <div
+          className={`fixed inset-0 z-[41] bg-black/35 transition-opacity duration-300 ${
+            isMobileFiltersOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          }`}
+          onClick={() => setIsMobileFiltersOpen(false)}
+          aria-hidden="true"
+        />
+
+        <aside
+          className="fixed left-0 top-0 z-[42] h-screen border-r border-border bg-background/95 shadow-xl backdrop-blur-sm transition-transform duration-300 ease-out"
+          style={{
+            width: "min(84vw, 22rem)",
+            transform: isMobileFiltersOpen ? "translateX(0)" : "translateX(-100%)",
+          }}
+          aria-hidden={!isMobileFiltersOpen}
+        >
+          <button
+            type="button"
+            aria-label={
+              isMobileFiltersOpen
+                ? t("summaryPage.closeFilters", { defaultValue: "Close filters" })
+                : t("summaryPage.openFilters", { defaultValue: "Open filters" })
+            }
+            onClick={() => setIsMobileFiltersOpen((previous) => !previous)}
+            className="absolute -right-8 top-[42%] z-[43] flex h-16 w-8 -translate-y-1/2 items-center justify-center rounded-r-full border border-l-0 border-border bg-card/95 text-foreground shadow-md backdrop-blur-sm"
+          >
+            {isMobileFiltersOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+
+          <div className="h-full overflow-y-auto p-4 pt-6">
+            <h2 className="mb-3 text-xl font-semibold text-foreground">
+              {t("summaryPage.filtersTitle")}
+            </h2>
+            <div className="space-y-4">{renderFiltersContent()}</div>
+          </div>
+        </aside>
       </div>
     </div>
   );
