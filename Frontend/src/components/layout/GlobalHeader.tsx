@@ -1,8 +1,9 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, ChevronDown, Globe, LayoutDashboard, LogOut, Menu, MessageSquareText, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
+import { BarChart3, ChevronDown, Globe, Info, LayoutDashboard, LogOut, Menu, MessageSquareText, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ export default function GlobalHeader() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNavInfoOpen, setIsNavInfoOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -92,6 +94,30 @@ export default function GlobalHeader() {
   if (user?.role === "admin") {
     navItems.push({ to: "/admin", label: t("globalHeader.navAdmin"), icon: Shield });
   }
+
+  const navInfoKeyByPath: Record<string, string> = {
+    "/dashboard": "dashboard",
+    "/groups": "groups",
+    "/personal": "personal",
+    "/budgets": "budgets",
+    "/contacts": "contacts",
+    "/summaries": "summaries",
+  };
+
+  const navInfoItems = navItems
+    .map((item) => {
+      const key = navInfoKeyByPath[item.to];
+      if (!key) {
+        return null;
+      }
+
+      return {
+        ...item,
+        infoKey: key,
+        description: t(`help.navInfo.tabs.${key}`),
+      };
+    })
+    .filter((item): item is NavItem & { infoKey: string; description: string } => item !== null);
 
   const homePath = user ? "/dashboard" : "/home";
   const logoText = resolvedTheme === "dark" ? logoTextDark : logoTextLight;
@@ -222,26 +248,61 @@ export default function GlobalHeader() {
                 ))}
               </nav>
 
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="justify-self-end text-muted-foreground hover:text-foreground"
-              >
-                <a
-                  href={feedbackFormUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t("globalHeader.feedback")}
+              <div className="flex items-center justify-self-end gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsNavInfoOpen(true)}
+                  aria-label={t("help.navInfo.buttonLabel")}
                 >
-                  <MessageSquareText className="h-4 w-4" />
-                  <span>{t("globalHeader.feedback")}</span>
-                </a>
-              </Button>
+                  <Info className="h-4 w-4" />
+                  {/* <span>{t("help.navInfo.buttonLabel")}</span> */}
+                </Button>
+
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <a
+                    href={feedbackFormUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("globalHeader.feedback")}
+                  >
+                    <MessageSquareText className="h-4 w-4" />
+                    <span>{t("globalHeader.feedback")}</span>
+                  </a>
+                </Button>
+              </div>
             </div>
           ) : null}
         </div>
       </header>
+
+      <Dialog open={isNavInfoOpen} onOpenChange={setIsNavInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("help.navInfo.dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("help.navInfo.buttonLabel")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {navInfoItems.map((item) => (
+              <div key={item.to} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {user ? (
         <>
@@ -325,9 +386,21 @@ export default function GlobalHeader() {
               </nav>
 
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
-                className="mt-3 w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="mt-3 w-full"
+                onClick={() => setIsNavInfoOpen(true)}
+                aria-label={t("help.navInfo.buttonLabel")}
+              >
+                <Info className="h-4 w-4" />
+                {/* <span>{t("help.navInfo.buttonLabel")}</span> */}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   logout();

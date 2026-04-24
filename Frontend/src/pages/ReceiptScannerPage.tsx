@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
+import PageInfoButton from "@/components/help/PageInfoButton";
 import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -497,7 +498,11 @@ export default function ReceiptScannerPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{t("receiptScannerPage.title")}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold text-foreground">{t("receiptScannerPage.title")}</h1>
+              <PageInfoButton pageKey="receiptScan" variant="icon" className="md:hidden" />
+              <PageInfoButton pageKey="receiptScan" className="hidden md:inline-flex" />
+            </div>
             <p className="mt-2 text-muted-foreground">{t("receiptScannerPage.subtitle")}</p>
           </div>
           <Button asChild variant="outline">

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Plus, Repeat2, ScanSearch } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, startOfMonth, subMonths } from "date-fns";
+import PageInfoButton from "@/components/help/PageInfoButton";
 
 import AddExpenseDialog from "../components/expenses/AddExpenseDialog";
 import AddRecurringExpenseDialog from "../components/expenses/AddRecurringExpenseDialog";
@@ -510,7 +511,11 @@ export default function PersonalExpensesPage() {
           className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-start"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("personalExpensesPage.title")}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("personalExpensesPage.title")}</h1>
+              <PageInfoButton pageKey="personal" variant="icon" className="md:hidden" />
+              <PageInfoButton pageKey="personal" className="hidden md:inline-flex" />
+            </div>
             <p className="text-muted-foreground mt-2">
               {t("personalExpensesPage.trackSpending")}
             </p>

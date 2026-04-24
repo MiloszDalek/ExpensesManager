@@ -261,9 +261,109 @@
     }
   },
   "homePage": {
-    "title": "Witaj w Expenses Manager",
+    "title": "Witaj w TallyUp",
     "subtitle": "Łatwo śledź wydatki osobiste i grupowe",
+    "bullets": {
+      "personal": "Kontroluj wydatki osobiste i buduj nawyki oszczędzania.",
+      "groups": "Dziel wydatki w grupach i szybciej rozliczaj się ze znajomymi.",
+      "budgets": "Planuj budżety i monitoruj cele w czasie.",
+      "summaries": "Analizuj trendy i kategorie, aby podejmować lepsze decyzje."
+    },
+    "ctaRegister": "Załóż konto",
+    "ctaLogin": "Zaloguj się",
     "login": "Zaloguj"
+  },
+  "help": {
+    "pageInfo": {
+      "buttonLabel": "Informacje o tej stronie",
+      "dialogTitle": "Jak korzystać z tej strony?",
+      "pages": {
+        "dashboard": {
+          "title": "Pulpit",
+          "purpose": "Szybki podgląd najważniejszych danych: aktywności, powiadomień i skrótów do najczęstszych akcji.",
+          "actions": [
+            "Przejdź do grup lub wydatków osobistych z kart/skrótów.",
+            "Sprawdź ostatnią aktywność i reaguj na zaproszenia.",
+            "Użyj widżetów, aby szybko ocenić sytuację finansową."
+          ]
+        },
+        "groups": {
+          "title": "Grupy",
+          "purpose": "Zarządzaj grupami do wspólnych wydatków (wyjazdy, mieszkanie, projekty) i kontroluj rozliczenia między członkami.",
+          "actions": [
+            "Utwórz nową grupę lub wyszukaj istniejącą.",
+            "Wejdź w szczegóły grupy, aby dodawać wydatki i rozliczać salda.",
+            "Zarządzaj walutą i podstawowymi informacjami grupy."
+          ]
+        },
+        "groupDetail": {
+          "title": "Szczegóły grupy",
+          "purpose": "Dodawaj wydatki grupowe, zapraszaj członków i rozliczaj salda (gotówka / PayPal).",
+          "actions": [
+            "Dodaj wydatek lub cykliczny wydatek w grupie.",
+            "Przeglądaj salda i zapisuj rozliczenia.",
+            "Zarządzaj członkami oraz zaproszeniami."
+          ]
+        },
+        "personal": {
+          "title": "Wydatki osobiste",
+          "purpose": "Dodawaj i przeglądaj swoje wydatki, filtruj je i analizuj w czasie.",
+          "actions": [
+            "Dodaj wydatek lub wydatek cykliczny.",
+            "Użyj filtrów, aby zawęzić listę (okres, kategoria, waluta).",
+            "Skorzystaj ze skanera paragonów, aby szybciej tworzyć wpisy."
+          ]
+        },
+        "budgets": {
+          "title": "Budżety",
+          "purpose": "Planuj budżety, przypisuj pule i cele oraz kontroluj wydatki w wybranym okresie.",
+          "actions": [
+            "Utwórz okres budżetowy i wybierz walutę.",
+            "Dodaj przychody, pule i cele oszczędnościowe.",
+            "Przelicz budżet i monitoruj status realizacji."
+          ]
+        },
+        "contacts": {
+          "title": "Kontakty",
+          "purpose": "Zarządzaj kontaktami i zaproszeniami, aby szybciej dodawać osoby do grup i rozliczeń.",
+          "actions": [
+            "Dodaj kontakt lub zaproś po emailu.",
+            "Przeglądaj wysłane i otrzymane zaproszenia.",
+            "Przejdź do rozliczeń z kontaktem, jeśli widok jest dostępny."
+          ]
+        },
+        "summaries": {
+          "title": "Podsumowania",
+          "purpose": "Analizuj wydatki osobiste i grupowe na wykresach oraz eksportuj dane.",
+          "actions": [
+            "Ustaw zakres i filtry (okres, waluta, kategorie, grupy).",
+            "Klikaj elementy wykresów, aby zawężać szczegóły (drill-down).",
+            "Eksportuj dane do CSV/XLSX/PDF."
+          ]
+        },
+        "receiptScan": {
+          "title": "Skaner paragonu",
+          "purpose": "Zeskanuj paragon i utwórz wydatki z wykrytych pozycji lub z sumy.",
+          "actions": [
+            "Wgraj zdjęcie paragonu i wybierz tryb OCR.",
+            "Wybierz zakres (osobiste / grupa) i uzupełnij pola.",
+            "Utwórz wydatek z sumy lub z wybranych pozycji."
+          ]
+        }
+      }
+    },
+    "navInfo": {
+      "buttonLabel": "Informacje o nawigacji",
+      "dialogTitle": "Do czego służą zakładki?",
+      "tabs": {
+        "dashboard": "Startowy podgląd najważniejszych informacji i skrótów do działań.",
+        "groups": "Lista grup do wspólnych wydatków oraz przejście do rozliczeń w grupie.",
+        "personal": "Twoje wydatki osobiste: dodawanie, filtrowanie i przegląd.",
+        "budgets": "Planowanie budżetów, pul i celów oraz kontrola realizacji.",
+        "contacts": "Kontakty i zaproszenia ułatwiające dodawanie osób do grup.",
+        "summaries": "Wykresy, analizy i eksport danych z wydatków."
+      }
+    }
   },
   "notFoundPage": {
     "title": "Ups, nic tu nie ma",

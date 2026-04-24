@@ -271,9 +271,109 @@
     }
   },
   "homePage": {
-    "title": "Welcome to Expenses Manager",
+    "title": "Welcome to TallyUp",
     "subtitle": "Track your personal and group expenses easily",
+    "bullets": {
+      "personal": "Track personal spending and build better saving habits.",
+      "groups": "Split group expenses and settle up faster with friends.",
+      "budgets": "Plan budgets and monitor goals over time.",
+      "summaries": "Analyze trends and categories to make better decisions."
+    },
+    "ctaRegister": "Create account",
+    "ctaLogin": "Login",
     "login": "Login"
+  },
+  "help": {
+    "pageInfo": {
+      "buttonLabel": "About this page",
+      "dialogTitle": "How to use this page",
+      "pages": {
+        "dashboard": {
+          "title": "Dashboard",
+          "purpose": "A quick overview of key data: activity, notifications, and shortcuts to common actions.",
+          "actions": [
+            "Open groups or personal expenses from cards/shortcuts.",
+            "Review recent activity and respond to invitations.",
+            "Use widgets to quickly assess your financial status."
+          ]
+        },
+        "groups": {
+          "title": "Groups",
+          "purpose": "Manage groups for shared spending (trips, roommates, projects) and keep track of settlements between members.",
+          "actions": [
+            "Create a new group or search existing ones.",
+            "Open a group to add expenses and settle balances.",
+            "Manage group basics like currency and description."
+          ]
+        },
+        "groupDetail": {
+          "title": "Group details",
+          "purpose": "Add group expenses, invite members, and settle balances (cash / PayPal).",
+          "actions": [
+            "Add a group expense or a recurring group expense.",
+            "Review balances and record settlements.",
+            "Manage members and invitations."
+          ]
+        },
+        "personal": {
+          "title": "Personal expenses",
+          "purpose": "Add and review your expenses, filter them, and analyze over time.",
+          "actions": [
+            "Add an expense or a recurring expense.",
+            "Use filters to narrow down the list (period, category, currency).",
+            "Use the receipt scanner to speed up data entry."
+          ]
+        },
+        "budgets": {
+          "title": "Budgets",
+          "purpose": "Plan budgets, define pools and goals, and keep spending under control for a selected period.",
+          "actions": [
+            "Create a budget period and choose currency.",
+            "Add income, pools, and savings goals.",
+            "Recalculate and monitor progress status."
+          ]
+        },
+        "contacts": {
+          "title": "Contacts",
+          "purpose": "Manage contacts and invitations to add people to groups and settlements faster.",
+          "actions": [
+            "Add a contact or invite by email.",
+            "Review sent and received invitations.",
+            "Open contact settlements if the view is available."
+          ]
+        },
+        "summaries": {
+          "title": "Summaries",
+          "purpose": "Analyze personal and group spending with charts and export your data.",
+          "actions": [
+            "Set scope and filters (period, currency, categories, groups).",
+            "Click chart elements to drill down into details.",
+            "Export data to CSV/XLSX/PDF."
+          ]
+        },
+        "receiptScan": {
+          "title": "Receipt scanner",
+          "purpose": "Scan a receipt and create expenses from detected items or the total.",
+          "actions": [
+            "Upload a receipt image and choose OCR mode.",
+            "Select scope (personal / group) and fill in details.",
+            "Create an expense from total or selected items."
+          ]
+        }
+      }
+    },
+    "navInfo": {
+      "buttonLabel": "Navigation info",
+      "dialogTitle": "What do the tabs do?",
+      "tabs": {
+        "dashboard": "Your starting overview with key info and shortcuts.",
+        "groups": "Your shared-spending groups and group settlements.",
+        "personal": "Your personal spending: add, filter, and review.",
+        "budgets": "Budget planning with pools and goals.",
+        "contacts": "Contacts and invitations to speed up collaboration.",
+        "summaries": "Charts, insights, and exports for your spending."
+      }
+    }
   },
   "notFoundPage": {
     "title": "You took a wrong turn",

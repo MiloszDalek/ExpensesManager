@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Bell, CheckCircle2, Plus, Users, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import PageInfoButton from "@/components/help/PageInfoButton";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationsApi } from "@/api/notificationsApi";
@@ -309,6 +310,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mt-2">{t("dashboardInbox.subtitle")}</p>
           </div>
           <div className="flex gap-3">
+            <PageInfoButton pageKey="dashboard" />
             <Link
               to={createPageUrl("Groups")}
               onMouseEnter={prefetchGroupsPage}

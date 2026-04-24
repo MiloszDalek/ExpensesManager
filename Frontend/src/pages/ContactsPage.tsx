@@ -35,6 +35,7 @@ import { queryKeys } from "@/api/queryKeys";
 import { paypalConfig } from "@/config/paypal";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
+import PageInfoButton from "@/components/help/PageInfoButton";
 
 import type {
   ApiContactBalanceByGroup,
@@ -482,7 +483,11 @@ export default function ContactsPage() {
             </Button>
           </Link>
 
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
+            <PageInfoButton pageKey="contacts" variant="icon" className="md:hidden" />
+            <PageInfoButton pageKey="contacts" className="hidden md:inline-flex" />
+          </div>
           <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
         </div>
 

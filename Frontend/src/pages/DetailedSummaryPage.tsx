@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import PageInfoButton from "@/components/help/PageInfoButton";
 import {
   Card,
   CardContent,
@@ -1014,7 +1015,11 @@ export default function DetailedSummaryPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
+              <PageInfoButton pageKey="summaries" variant="icon" className="md:hidden" />
+              <PageInfoButton pageKey="summaries" className="hidden md:inline-flex" />
+            </div>
             <p className="mt-2 text-muted-foreground">
               {t("summaryPage.subtitle")} · {t("summaryPage.total")}: <span className="font-semibold text-primary">{totalLabel || "0.00"}</span>
             </p>

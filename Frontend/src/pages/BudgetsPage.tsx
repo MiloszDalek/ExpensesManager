@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import PageInfoButton from "@/components/help/PageInfoButton";
 import {
   type ApiBudgetPlanResponse,
   type ApiBudgetPoolCreate,
@@ -664,15 +665,21 @@ export default function BudgetsPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-bold text-foreground md:text-4xl">
-            {t("budgets.title", { defaultValue: "Budget Manager" })}
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            {t("budgets.subtitle", {
-              defaultValue: "Track income, monitor spending, and protect your monthly or weekly pools.",
-            })}
-          </p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-bold text-foreground md:text-4xl">
+                {t("budgets.title", { defaultValue: "Budget Manager" })}
+              </h1>
+              <PageInfoButton pageKey="budgets" variant="icon" className="md:hidden" />
+              <PageInfoButton pageKey="budgets" className="hidden md:inline-flex" />
+            </div>
+            <p className="mt-2 text-muted-foreground">
+              {t("budgets.subtitle", {
+                defaultValue: "Track income, monitor spending, and protect your monthly or weekly pools.",
+              })}
+            </p>
+          </div>
         </motion.div>
 
         {errorMessage ? (

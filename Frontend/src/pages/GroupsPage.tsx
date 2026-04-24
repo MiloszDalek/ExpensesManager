@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PageInfoButton from "@/components/help/PageInfoButton";
 
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
 import GroupCard from "../components/groups/GroupCard";
@@ -108,13 +109,17 @@ export default function GroupsPage() {
               {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>
             </p>
           </div>
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            className="hidden shadow-lg md:inline-flex"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t("groupsPage.createGroup")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <PageInfoButton pageKey="groups" variant="icon" className="md:hidden" />
+            <PageInfoButton pageKey="groups" className="hidden md:inline-flex" />
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="hidden shadow-lg md:inline-flex"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t("groupsPage.createGroup")}
+            </Button>
+          </div>
         </motion.div>
 
         <motion.div
