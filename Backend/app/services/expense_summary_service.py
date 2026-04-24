@@ -18,6 +18,7 @@ from app.repositories import (
 from .group_service import GroupService
 
 SummaryScope = Literal["all", "personal", "group"]
+TrendGranularity = Literal["daily", "weekly", "monthly"]
 DrilldownSortBy = Literal["expense_date", "amount", "created_at"]
 SortOrder = Literal["asc", "desc"]
 ExportFormat = Literal["csv", "xlsx", "pdf"]
@@ -201,6 +202,71 @@ class ExpenseSummaryService:
         if scope not in ("all", "personal", "group"):
             raise HTTPException(status_code=400, detail="scope must be one of: all, personal, group")
         return scope
+
+    @staticmethod
+    def _resolve_trend_granularity(granularity: TrendGranularity) -> TrendGranularity:
+        if granularity not in ("daily", "weekly", "monthly"):
+            raise HTTPException(status_code=400, detail="granularity must be one of: daily, weekly, monthly")
+        return granularity
+
+    @staticmethod
+    def _bucket_start_for_day(current_day: date, granularity: TrendGranularity) -> date:
+        if granularity == "weekly":
+            return current_day - timedelta(days=current_day.weekday())
+
+        if granularity == "monthly":
+            return current_day.replace(day=1)
+
+        return current_day
+
+    def _iter_trend_buckets(self, date_from: date, date_to: date, granularity: TrendGranularity):
+        if granularity == "daily":
+            yield from self._iter_days(date_from, date_to)
+            return
+
+        if granularity == "weekly":
+            current = self._bucket_start_for_day(date_from, "weekly")
+            last = self._bucket_start_for_day(date_to, "weekly")
+            while current <= last:
+                yield current
+                current += timedelta(days=7)
+            return
+
+        # monthly
+        current = self._bucket_start_for_day(date_from, "monthly")
+        last = self._bucket_start_for_day(date_to, "monthly")
+        while current <= last:
+            yield current
+            if current.month == 12:
+                current = date(current.year + 1, 1, 1)
+            else:
+                current = date(current.year, current.month + 1, 1)
+
+    def _aggregate_trend_buckets(
+        self,
+        trend_map: dict[CurrencyEnum, dict[date, dict[str, Decimal]]],
+        period: tuple[date, date],
+        granularity: TrendGranularity,
+    ) -> dict[CurrencyEnum, dict[date, dict[str, Decimal]]]:
+        if granularity == "daily":
+            return trend_map
+
+        aggregated: dict[CurrencyEnum, dict[date, dict[str, Decimal]]] = {}
+        for currency_key, day_map in trend_map.items():
+            currency_bucket = aggregated.setdefault(currency_key, {})
+            for day_key, amounts in day_map.items():
+                if day_key < period[0] or day_key > period[1]:
+                    continue
+
+                bucket_key = self._bucket_start_for_day(day_key, granularity)
+                bucket_amounts = currency_bucket.setdefault(
+                    bucket_key,
+                    {"personal_amount": Decimal("0"), "group_amount": Decimal("0")},
+                )
+                bucket_amounts["personal_amount"] += amounts["personal_amount"]
+                bucket_amounts["group_amount"] += amounts["group_amount"]
+
+        return aggregated
 
     def _resolve_category_ids(
         self,
@@ -619,6 +685,7 @@ class ExpenseSummaryService:
         date_from: date | None = None,
         date_to: date | None = None,
         scope: SummaryScope = "all",
+        granularity: TrendGranularity = "daily",
         category_id: int | None = None,
         category_ids: list[int] | None = None,
         currency: CurrencyEnum | None = None,
@@ -626,6 +693,7 @@ class ExpenseSummaryService:
         compare_previous: bool = True,
     ):
         resolved_scope = self._resolve_scope(scope)
+        resolved_granularity = self._resolve_trend_granularity(granularity)
         self._validate_scope_group_filter(resolved_scope, group_id, user_id)
         resolved_category_ids = self._resolve_category_ids(category_id=category_id, category_ids=category_ids)
 
@@ -655,6 +723,17 @@ class ExpenseSummaryService:
                 group_id=group_id,
             )
 
+        current_map = self._aggregate_trend_buckets(
+            trend_map=current_map,
+            period=current_period,
+            granularity=resolved_granularity,
+        )
+        previous_map = self._aggregate_trend_buckets(
+            trend_map=previous_map,
+            period=previous_period if previous_period is not None else current_period,
+            granularity=resolved_granularity,
+        )
+
         currencies = sorted(
             set(current_map.keys()) | set(previous_map.keys()),
             key=lambda current: current.value,
@@ -662,8 +741,12 @@ class ExpenseSummaryService:
         if not currencies and currency is not None:
             currencies = [currency]
 
-        current_days = list(self._iter_days(current_period[0], current_period[1]))
-        previous_days = list(self._iter_days(previous_period[0], previous_period[1])) if previous_period else []
+        current_days = list(self._iter_trend_buckets(current_period[0], current_period[1], resolved_granularity))
+        previous_days = (
+            list(self._iter_trend_buckets(previous_period[0], previous_period[1], resolved_granularity))
+            if previous_period
+            else []
+        )
 
         currency_series = []
         for currency_key in currencies:

@@ -90,6 +90,7 @@ type SummaryFiltersState = {
 };
 
 type ExportFormat = "csv" | "xlsx" | "pdf";
+type TrendGranularity = "daily" | "weekly" | "monthly";
 
 type ExportSection =
   | "transactions"
@@ -198,6 +199,8 @@ export default function DetailedSummaryPage() {
   const [appliedFilters, setAppliedFilters] = useState<SummaryFiltersState>(getInitialFilters);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [trendCurrency, setTrendCurrency] = useState<CurrencyEnum | null>(null);
+  const [trendGranularity, setTrendGranularity] = useState<TrendGranularity>("daily");
+  const [showIncomeOverlay, setShowIncomeOverlay] = useState(false);
   const [drilldownDate, setDrilldownDate] = useState<string | null>(null);
   const [drilldownCategoryId, setDrilldownCategoryId] = useState<number | null>(null);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -306,7 +309,7 @@ export default function DetailedSummaryPage() {
       category_id: appliedFilters.categoryId === "all" ? undefined : Number(appliedFilters.categoryId),
       currency: appliedFilters.currency === "all" ? undefined : appliedFilters.currency,
       compare_previous: true,
-      top_categories_limit: 6,
+      top_categories_limit: 20,
       top_groups_limit: 6,
     }),
     [appliedFilters, appliedGroupId]
@@ -327,8 +330,27 @@ export default function DetailedSummaryPage() {
     isLoading: trendsLoading,
     error: trendsError,
   } = useQuery({
-    queryKey: queryKeys.summaries.trends(summaryParams),
-    queryFn: () => expensesSummaryApi.trends(summaryParams),
+    queryKey: queryKeys.summaries.trends({
+      date_from: appliedFilters.dateFrom,
+      date_to: appliedFilters.dateTo,
+      scope: appliedFilters.scope,
+      granularity: trendGranularity,
+      category_id: appliedFilters.categoryId === "all" ? undefined : Number(appliedFilters.categoryId),
+      currency: appliedFilters.currency === "all" ? undefined : appliedFilters.currency,
+      group_id: appliedGroupId,
+      compare_previous: true,
+    }),
+    queryFn: () =>
+      expensesSummaryApi.trends({
+        date_from: appliedFilters.dateFrom,
+        date_to: appliedFilters.dateTo,
+        scope: appliedFilters.scope,
+        granularity: trendGranularity,
+        category_id: appliedFilters.categoryId === "all" ? undefined : Number(appliedFilters.categoryId),
+        currency: appliedFilters.currency === "all" ? undefined : appliedFilters.currency,
+        group_id: appliedGroupId,
+        compare_previous: true,
+      }),
     enabled: !!user,
   });
 
@@ -570,25 +592,39 @@ export default function DetailedSummaryPage() {
     [activeTrendCurrency, trends]
   );
 
+  const incomeOverlayTotal = toNumber(budgetSummary?.income_total);
+
   const trendChartData = useMemo(() => {
     if (!activeTrendSeries) {
       return [];
     }
 
+    const incomeTargetPerBucket =
+      showIncomeOverlay && activeTrendSeries.current.length > 0
+        ? incomeOverlayTotal / activeTrendSeries.current.length
+        : 0;
+
     return activeTrendSeries.current.map((point, index) => {
-      const previousPoint = activeTrendSeries.previous[index];
       const parsedDate = parseISO(point.date);
+      const previousPoint = activeTrendSeries.previous[index];
+      const label =
+        trendGranularity === "monthly"
+          ? format(parsedDate, "MMM yyyy")
+          : trendGranularity === "weekly"
+            ? `Wk ${format(parsedDate, "dd MMM")}`
+            : format(parsedDate, "dd MMM");
 
       return {
-        label: format(parsedDate, "dd MMM"),
+        label,
         rawDate: point.date,
         personal: toNumber(point.personal_amount),
         group: toNumber(point.group_amount),
         total: toNumber(point.total_amount),
         previousTotal: toNumber(previousPoint?.total_amount ?? 0),
+        incomeTarget: incomeTargetPerBucket,
       };
     });
-  }, [activeTrendSeries]);
+  }, [activeTrendSeries, incomeOverlayTotal, showIncomeOverlay, trendGranularity]);
 
   const ownVsGroupChartData = useMemo(
     () =>
@@ -600,15 +636,31 @@ export default function DetailedSummaryPage() {
     [overview]
   );
 
-  const topCategoriesData = useMemo(
-    () =>
-      (overview?.top_categories ?? []).map((category) => ({
-        categoryId: category.category_id,
-        categoryName: category.category_name,
-        amount: toNumber(category.total_amount),
-      })),
-    [overview]
-  );
+  const topCategoriesData = useMemo(() => {
+    const raw = (overview?.top_categories ?? []).map((category) => ({
+      categoryId: category.category_id,
+      categoryName: category.category_name,
+      amount: toNumber(category.total_amount),
+      isOther: false,
+    }));
+
+    if (raw.length <= 5) {
+      return raw;
+    }
+
+    const topFive = raw.slice(0, 5);
+    const otherAmount = raw.slice(5).reduce((sum, item) => sum + item.amount, 0);
+
+    return [
+      ...topFive,
+      {
+        categoryId: -1,
+        categoryName: t("summaryPage.otherCategory", { defaultValue: "Other" }),
+        amount: otherAmount,
+        isOther: true,
+      },
+    ];
+  }, [overview, t]);
 
   const topGroupsData = useMemo(
     () =>
@@ -1130,22 +1182,47 @@ export default function DetailedSummaryPage() {
                 </CardTitle>
                 <CardDescription>{t("summaryPage.charts.trendSubtitle")}</CardDescription>
               </div>
-              <Select
-                value={activeTrendCurrency || undefined}
-                onValueChange={(value) => setTrendCurrency(value as CurrencyEnum)}
-                disabled={!availableTrendCurrencies.length}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue placeholder={t("summaryPage.currency")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTrendCurrencies.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <Select
+                  value={activeTrendCurrency || undefined}
+                  onValueChange={(value) => setTrendCurrency(value as CurrencyEnum)}
+                  disabled={!availableTrendCurrencies.length}
+                >
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder={t("summaryPage.currency")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTrendCurrencies.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={trendGranularity}
+                  onValueChange={(value) => setTrendGranularity(value as TrendGranularity)}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">{t("summaryPage.charts.granularityDaily", { defaultValue: "Daily" })}</SelectItem>
+                    <SelectItem value="weekly">{t("summaryPage.charts.granularityWeekly", { defaultValue: "Weekly" })}</SelectItem>
+                    <SelectItem value="monthly">{t("summaryPage.charts.granularityMonthly", { defaultValue: "Monthly" })}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant={showIncomeOverlay ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowIncomeOverlay((previous) => !previous)}
+                  disabled={incomeOverlayTotal <= 0}
+                >
+                  {t("summaryPage.charts.incomeOverlay", { defaultValue: "Income overlay" })}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {trendChartData.length === 0 ? (
@@ -1163,7 +1240,7 @@ export default function DetailedSummaryPage() {
                             };
                           }>;
                         }).activePayload?.[0]?.payload;
-                        if (clicked?.rawDate) {
+                        if (trendGranularity === "daily" && clicked?.rawDate) {
                           setDrilldownDate(clicked.rawDate);
                         }
                       }}
@@ -1177,6 +1254,17 @@ export default function DetailedSummaryPage() {
                       <Line type="monotone" dataKey="personal" name={t("summaryPage.charts.personal")} stroke="#2563eb" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="group" name={t("summaryPage.charts.group")} stroke="#ea580c" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="previousTotal" name={t("summaryPage.charts.previous")} stroke="#6b7280" strokeDasharray="6 4" strokeWidth={2} dot={false} />
+                      {showIncomeOverlay ? (
+                        <Line
+                          type="monotone"
+                          dataKey="incomeTarget"
+                          name={t("summaryPage.charts.incomeOverlay")}
+                          stroke="#16a34a"
+                          strokeDasharray="4 4"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      ) : null}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1345,14 +1433,20 @@ export default function DetailedSummaryPage() {
 
                   <div className="mt-2 flex flex-wrap gap-2">
                     {topCategoriesData.map((category) => (
-                      <Button
-                        key={category.categoryId}
-                        variant={drilldownCategoryId === category.categoryId ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setDrilldownCategoryId(category.categoryId)}
-                      >
-                        {category.categoryName}
-                      </Button>
+                      category.isOther ? (
+                        <Badge key={category.categoryId} variant="outline" className="h-9 px-3">
+                          {category.categoryName}
+                        </Badge>
+                      ) : (
+                        <Button
+                          key={category.categoryId}
+                          variant={drilldownCategoryId === category.categoryId ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setDrilldownCategoryId(category.categoryId)}
+                        >
+                          {category.categoryName}
+                        </Button>
+                      )
                     ))}
                   </div>
                 </>
