@@ -29,6 +29,7 @@ import {
 } from "recharts";
 
 import { useAuth } from "@/contexts/AuthContext";
+import CategoryPicker from "@/components/expenses/CategoryPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import PageInfoButton from "@/components/help/PageInfoButton";
@@ -828,12 +829,12 @@ export default function DetailedSummaryPage() {
   }, [contactBalances]);
 
   const renderFiltersContent = () => (
-    <>
+    <div className="rounded-xl border border-border bg-card/80 p-4 text-card-foreground backdrop-blur-sm">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
         <div className="space-y-1">
           <Label>{t("summaryPage.scope")}</Label>
           <Select value={draftFilters.scope} onValueChange={(value) => handleScopeChange(value as ExpenseSummaryScope)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -850,7 +851,7 @@ export default function DetailedSummaryPage() {
             value={draftFilters.budgetId}
             onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, budgetId: value }))}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -871,7 +872,7 @@ export default function DetailedSummaryPage() {
             onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, groupId: value, categoryId: "all" }))}
             disabled={draftFilters.scope === "personal"}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -887,22 +888,15 @@ export default function DetailedSummaryPage() {
 
         <div className="space-y-1">
           <Label>{t("summaryPage.category")}</Label>
-          <Select
+          <CategoryPicker
             value={draftFilters.categoryId}
             onValueChange={(value) => setDraftFilters((previous) => ({ ...previous, categoryId: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("summaryPage.categoryAll")}</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={String(category.id)}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            categories={categories}
+            allowAllSelection
+            trigger="button"
+            mobileInset
+            showLabel={false}
+          />
         </div>
 
         <div className="space-y-1">
@@ -916,7 +910,7 @@ export default function DetailedSummaryPage() {
               }))
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -933,7 +927,7 @@ export default function DetailedSummaryPage() {
         <div className="space-y-1">
           <Label>{t("expenseFilters.period")}</Label>
           <Select value={draftFilters.periodPreset} onValueChange={(value) => handlePeriodPresetChange(value as PersonalExpensePeriodPreset)}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -946,7 +940,7 @@ export default function DetailedSummaryPage() {
       </div>
 
       {draftFilters.periodPreset === "custom" ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
             <DatePicker
@@ -979,7 +973,7 @@ export default function DetailedSummaryPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">
           {t("summaryPage.filtersHint")}
         </div>
@@ -993,7 +987,7 @@ export default function DetailedSummaryPage() {
           </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 
   const jumpToDrilldown = () => {
@@ -1098,18 +1092,13 @@ export default function DetailedSummaryPage() {
           </div>
         </motion.div>
 
-        <Card className="hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm md:block">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ListFilter className="h-5 w-5 text-primary" />
-              {t("summaryPage.filtersTitle")}
-            </CardTitle>
-            <CardDescription>{t("summaryPage.filtersSubtitle")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {renderFiltersContent()}
-          </CardContent>
-        </Card>
+        <div className="hidden md:block">
+          <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold text-foreground">
+            <ListFilter className="h-5 w-5 text-primary" />
+            {t("summaryPage.filtersTitle")}
+          </h2>
+          {renderFiltersContent()}
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Card>
@@ -1778,7 +1767,7 @@ export default function DetailedSummaryPage() {
             <h2 className="mb-3 text-xl font-semibold text-foreground">
               {t("summaryPage.filtersTitle")}
             </h2>
-            <div className="space-y-4">{renderFiltersContent()}</div>
+            {renderFiltersContent()}
           </div>
         </aside>
       </div>
