@@ -191,6 +191,7 @@ const areFiltersEqual = (first: SummaryFiltersState, second: SummaryFiltersState
 const toNumber = (value: number | string | null | undefined) => Number(value ?? 0);
 
 const formatAmount = (value: number | string | null | undefined) => toNumber(value).toFixed(2);
+const CONTACTS_LIMIT = 100;
 
 export default function DetailedSummaryPage() {
   const { t, i18n } = useTranslation();
@@ -454,8 +455,8 @@ export default function DetailedSummaryPage() {
     isLoading: contactsLoading,
     error: contactsError,
   } = useQuery<ApiContactResponse[]>({
-    queryKey: queryKeys.contacts.list({ limit: 200, offset: 0 }),
-    queryFn: () => contactsApi.list({ limit: 200, offset: 0 }),
+    queryKey: queryKeys.contacts.list({ limit: CONTACTS_LIMIT, offset: 0 }),
+    queryFn: () => contactsApi.list({ limit: CONTACTS_LIMIT, offset: 0 }),
     enabled: !!user,
   });
 
