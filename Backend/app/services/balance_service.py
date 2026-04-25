@@ -27,9 +27,6 @@ class BalanceService:
         paid_to_others = self.expense_repo.get_paid_to_others(group_id, user_id)
         owed_by_others = self.expense_repo.get_owed_by_others(group_id, user_id)
 
-        logger.info("Paid to others: %s", paid_to_others)
-        logger.info("Owed by others: %s", owed_by_others)
-
         for row in paid_to_others:
             other_user_id = row[0]
             amount = row[1] or Decimal("0.00")
