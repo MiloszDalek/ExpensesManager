@@ -37,25 +37,25 @@ export function KPICards({ data, isLoading, currency = "USD" }: KPICardsProps) {
   const cards = [
     {
       title: t("dashboard.kpi.totalIncome"),
-      value: toFiniteNumber((data as unknown as Record<string, unknown>).total_income),
+      value: data.total_income,
       icon: DollarSign,
       iconColor: "text-green-600 dark:text-green-400",
     },
     {
       title: t("dashboard.kpi.totalExpenses"),
-      value: toFiniteNumber((data as unknown as Record<string, unknown>).total_expenses),
+      value: data.total_expenses,
       icon: TrendingDown,
       iconColor: "text-red-600 dark:text-red-400",
     },
     {
       title: t("dashboard.kpi.totalSavings"),
-      value: toFiniteNumber((data as unknown as Record<string, unknown>).total_savings),
+      value: data.total_savings,
       icon: PiggyBank,
       iconColor: "text-blue-600 dark:text-blue-400",
     },
     {
       title: t("dashboard.kpi.remainingBudget"),
-      value: toFiniteNumber((data as unknown as Record<string, unknown>).remaining_budget),
+      value: data.remaining_budget,
       icon: TrendingUp,
       iconColor: data.overspend_flag
         ? "text-destructive"
@@ -73,7 +73,7 @@ export function KPICards({ data, isLoading, currency = "USD" }: KPICardsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(card.value, currency as any)}
+              {formatCurrency(toFiniteNumber(card.value), currency as any)}
             </div>
             {card.title === t("dashboard.kpi.remainingBudget") && data.overspend_flag && (
               <p className="text-xs text-destructive mt-1">{t("dashboard.kpi.overspendingDetected")}</p>

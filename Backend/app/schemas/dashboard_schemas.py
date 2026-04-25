@@ -50,6 +50,8 @@ class TrendDataResponse(BaseModel):
     period_type: AggregationPeriod
     data_points: List[TrendDataPoint]
     totals_by_currency: dict[str, Decimal]  # Total amount per currency
+    total: Decimal  # Total amount for selected currency
+    average: Decimal  # Average amount per period
     currency: Optional[str] = None  # Deprecated: use totals_by_currency instead
 
 
@@ -68,6 +70,7 @@ class CategoryBreakdownResponse(BaseModel):
     """Complete category breakdown."""
     items: List[CategoryBreakdownItem]
     totals_by_currency: dict[str, Decimal]  # Total amount per currency
+    total: Decimal  # Total amount for selected currency
     currency: Optional[str] = None  # Deprecated: use totals_by_currency instead
 
 
@@ -102,4 +105,7 @@ class SettlementSnapshotResponse(BaseModel):
     i_owe_by_currency: dict[str, Decimal]  # Amounts user owes by currency
     net_balance_by_currency: dict[str, Decimal]  # Net balance by currency
     pending_settlements_count: int
+    total_owed_to_me: Decimal  # Total owed to user (primary currency)
+    total_i_owe: Decimal  # Total user owes (primary currency)
+    net_balance: Decimal  # Net balance (primary currency)
     currency: Optional[str] = None  # Deprecated: use currency-specific fields instead

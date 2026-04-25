@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import type { CategoryBreakdown } from "@/types/dashboard";
 import { formatCurrency } from "@/utils/currency";
-import { toFixedSafe } from "@/utils/toFiniteNumber";
+import { toFiniteNumber, toFixedSafe } from "@/utils/toFiniteNumber";
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown | undefined;
@@ -106,7 +106,7 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
           {/* Total */}
           <div className="flex items-center justify-between pb-2 border-b">
             <span className="font-semibold">{t("dashboard.categoryBreakdown.total")}</span>
-            <span className="font-bold text-lg">{formatCurrency(data.total, currency as any)}</span>
+            <span className="font-bold text-lg">{formatCurrency(toFiniteNumber(data.total), currency as any)}</span>
           </div>
 
           {/* Recharts Pie Chart */}

@@ -73,7 +73,7 @@ export function SettlementSnapshot({ snapshot, isLoading, currency = "USD" }: Se
                     ? "text-green-600 dark:text-green-400"
                     : "text-destructive"
               )}>
-                {isPositive ? "+" : ""}{formatCurrency(toFiniteNumber((snapshot as unknown as Record<string, unknown>).net_balance), currency as any)}
+                {isPositive ? "+" : ""}{formatCurrency(toFiniteNumber(snapshot.net_balance), currency as any)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {isNeutral
@@ -93,7 +93,7 @@ export function SettlementSnapshot({ snapshot, isLoading, currency = "USD" }: Se
                 <span className="text-sm font-medium">{t("dashboard.settlements.owedToMe")}</span>
               </div>
               <span className="font-semibold text-green-600 dark:text-green-400">
-                {formatCurrency(toFiniteNumber((snapshot as unknown as Record<string, unknown>).total_owed_to_me), currency as any)}
+                {formatCurrency(toFiniteNumber(snapshot.total_owed_to_me), currency as any)}
               </span>
             </div>
 
@@ -103,7 +103,7 @@ export function SettlementSnapshot({ snapshot, isLoading, currency = "USD" }: Se
                 <span className="text-sm font-medium">{t("dashboard.settlements.iOwe")}</span>
               </div>
               <span className="font-semibold text-destructive">
-                {formatCurrency(toFiniteNumber((snapshot as unknown as Record<string, unknown>).total_i_owe), currency as any)}
+                {formatCurrency(toFiniteNumber(snapshot.total_i_owe), currency as any)}
               </span>
             </div>
           </div>

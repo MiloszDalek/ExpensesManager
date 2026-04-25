@@ -38,7 +38,7 @@ export function SpendingTrendChart({ data, isLoading, currency = "USD" }: Spendi
   // Prepare data for Recharts
   const chartData = data.data_points.map(point => ({
     name: point.label || point.period,
-    amount: toFiniteNumber((point as unknown as Record<string, unknown>).amount),
+    amount: toFiniteNumber(point.amount),
   }));
 
   return (
@@ -55,11 +55,11 @@ export function SpendingTrendChart({ data, isLoading, currency = "USD" }: Spendi
         {/* Summary stats */}
         <div className="flex items-center justify-between text-sm mb-6">
           <span className="text-muted-foreground">{t("dashboard.spendingTrend.total")}</span>
-          <span className="font-semibold">{formatCurrency(toFiniteNumber((data as unknown as Record<string, unknown>).total), currency as any)}</span>
+          <span className="font-semibold">{formatCurrency(toFiniteNumber(data.total), currency as any)}</span>
         </div>
         <div className="flex items-center justify-between text-sm mb-6">
           <span className="text-muted-foreground">{t("dashboard.spendingTrend.average")}</span>
-          <span className="font-semibold">{formatCurrency(toFiniteNumber((data as unknown as Record<string, unknown>).average), currency as any)}</span>
+          <span className="font-semibold">{formatCurrency(toFiniteNumber(data.average), currency as any)}</span>
         </div>
 
         {/* Recharts Area Chart */}

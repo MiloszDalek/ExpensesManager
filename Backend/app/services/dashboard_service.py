@@ -268,10 +268,17 @@ class DashboardService:
                 currency=currency
             ))
 
+        # Calculate total and average for the primary currency
+        primary_currency = list(totals_by_currency.keys())[0] if totals_by_currency else "PLN"
+        total = totals_by_currency.get(primary_currency, Decimal("0"))
+        average = total / len(data_points) if data_points else Decimal("0")
+
         return TrendDataResponse(
             period_type=period,
             data_points=data_points,
-            totals_by_currency=totals_by_currency
+            totals_by_currency=totals_by_currency,
+            total=total,
+            average=average
         )
 
     def get_category_breakdown(
@@ -336,9 +343,14 @@ class DashboardService:
                     currency=currency
                 ))
 
+        # Calculate total for the primary currency
+        primary_currency = list(totals_by_currency.keys())[0] if totals_by_currency else "PLN"
+        total = totals_by_currency.get(primary_currency, Decimal("0"))
+
         return CategoryBreakdownResponse(
             items=items,
-            totals_by_currency=totals_by_currency
+            totals_by_currency=totals_by_currency,
+            total=total
         )
 
     def get_budget_status(
@@ -393,19 +405,28 @@ class DashboardService:
     def get_settlement_snapshot(self, user_id: int) -> SettlementSnapshotResponse:
         """Get settlement balance snapshot by currency."""
         snapshot = self.settlement_repo.get_snapshot_for_user(user_id)
-        
+
         # Calculate net balance for each currency
         net_balance_by_currency = {}
         all_currencies = snapshot.get("all_currencies", set())
-        
+
         for currency in all_currencies:
             owed_to_me = snapshot["owed_to_me_by_currency"].get(currency, Decimal("0"))
             i_owe = snapshot["i_owe_by_currency"].get(currency, Decimal("0"))
             net_balance_by_currency[currency] = owed_to_me - i_owe
 
+        # Calculate totals for primary currency (for frontend compatibility)
+        primary_currency = list(all_currencies)[0] if all_currencies else "PLN"
+        total_owed_to_me = snapshot["owed_to_me_by_currency"].get(primary_currency, Decimal("0"))
+        total_i_owe = snapshot["i_owe_by_currency"].get(primary_currency, Decimal("0"))
+        net_balance = net_balance_by_currency.get(primary_currency, Decimal("0"))
+
         return SettlementSnapshotResponse(
             owed_to_me_by_currency=snapshot["owed_to_me_by_currency"],
             i_owe_by_currency=snapshot["i_owe_by_currency"],
             net_balance_by_currency=net_balance_by_currency,
-            pending_settlements_count=snapshot["pending_settlements_count"]
+            pending_settlements_count=snapshot["pending_settlements_count"],
+            total_owed_to_me=total_owed_to_me,
+            total_i_owe=total_i_owe,
+            net_balance=net_balance
         )

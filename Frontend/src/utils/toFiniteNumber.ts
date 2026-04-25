@@ -5,7 +5,7 @@ export const toFiniteNumber = (value: unknown): number => {
       : typeof value === "string"
         ? Number(value)
         : NaN;
-  return Number.isFinite(n) ? n : NaN;
+  return Number.isFinite(n) ? n : 0;
 };
 
 /**
@@ -13,9 +13,5 @@ export const toFiniteNumber = (value: unknown): number => {
  * Handles numbers, strings, and invalid values gracefully.
  */
 export const toFixedSafe = (value: unknown, decimals: number = 2): string => {
-  const num = toFiniteNumber(value);
-  if (Number.isNaN(num)) {
-    return "0.00";
-  }
-  return num.toFixed(decimals);
+  return toFiniteNumber(value).toFixed(decimals);
 };
