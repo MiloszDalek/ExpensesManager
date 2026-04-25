@@ -91,3 +91,82 @@ class SettlementRepository:
 
     def rollback(self):
         self.db.rollback()
+
+    def get_pending_by_user(self, user_id: int) -> list[Settlement]:
+        """Get all pending settlements for a user (as debtor)."""
+        return (
+            self.db.query(Settlement)
+            .filter(
+                Settlement.from_user_id == user_id,
+                Settlement.status == SettlementStatus.PENDING
+            )
+            .all()
+        )
+
+    def get_all_pending(self) -> list[Settlement]:
+        """Get all pending settlements."""
+        return (
+            self.db.query(Settlement)
+            .filter(Settlement.status == SettlementStatus.PENDING)
+            .all()
+        )
+
+    def get_snapshot_for_user(self, user_id: int):
+        """Get settlement balance snapshot for a user by currency."""
+        from decimal import Decimal
+        from sqlalchemy import or_
+
+        # Total owed to me (I'm the creditor) by currency
+        owed_to_me_by_currency = (
+            self.db.query(
+                Settlement.currency.label('currency'),
+                func.sum(Settlement.amount).label('total')
+            )
+            .filter(
+                Settlement.to_user_id == user_id,
+                Settlement.status == SettlementStatus.PENDING
+            )
+            .group_by(Settlement.currency)
+            .all()
+        )
+
+        # Total I owe (I'm the debtor) by currency
+        i_owe_by_currency = (
+            self.db.query(
+                Settlement.currency.label('currency'),
+                func.sum(Settlement.amount).label('total')
+            )
+            .filter(
+                Settlement.from_user_id == user_id,
+                Settlement.status == SettlementStatus.PENDING
+            )
+            .group_by(Settlement.currency)
+            .all()
+        )
+
+        # Count pending settlements
+        pending_count = (
+            self.db.query(func.count(Settlement.id))
+            .filter(
+                or_(
+                    Settlement.to_user_id == user_id,
+                    Settlement.from_user_id == user_id
+                ),
+                Settlement.status == SettlementStatus.PENDING
+            )
+            .scalar() or 0
+        )
+
+        # Convert to dictionaries
+        owed_to_me_dict = {row.currency: Decimal(row.total or 0) for row in owed_to_me_by_currency}
+        i_owe_dict = {row.currency: Decimal(row.total or 0) for row in i_owe_by_currency}
+
+        # Get all unique currencies
+        all_currencies = set(owed_to_me_dict.keys()) | set(i_owe_dict.keys())
+
+        return {
+            "owed_to_me_by_currency": owed_to_me_dict,
+            "i_owe_by_currency": i_owe_dict,
+            "all_currencies": all_currencies,
+            "pending_settlements_count": pending_count
+        }

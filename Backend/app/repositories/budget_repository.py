@@ -311,5 +311,15 @@ class BudgetRepository:
             .all()
         )
 
+    def list_all_active_plans(self) -> list[BudgetPlan]:
+        """Get all active budget plans across all users."""
+        return (
+            self.db.query(BudgetPlan)
+            .options(selectinload(BudgetPlan.pools).selectinload(BudgetPool.category))
+            .filter(BudgetPlan.status == BudgetStatus.ACTIVE)
+            .order_by(BudgetPlan.period_start.desc(), BudgetPlan.id.desc())
+            .all()
+        )
+
     def save_all(self):
         self.db.commit()

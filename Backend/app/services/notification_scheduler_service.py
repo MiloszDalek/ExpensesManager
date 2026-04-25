@@ -78,7 +78,6 @@ class NotificationScheduler:
         """Check budget pool states and send alerts for warnings/exceeded budgets."""
         from app.services.notification_service import NotificationService
         from app.repositories.budget_repository import BudgetRepository
-        from app.enums import BudgetStatus
 
         notification_service = NotificationService(db)
         budget_repo = BudgetRepository(db)
@@ -87,12 +86,7 @@ class NotificationScheduler:
 
         try:
             # Get all active budget plans
-            from app.models import BudgetPlan
-            active_budgets = (
-                db.query(BudgetPlan)
-                .filter(BudgetPlan.status == BudgetStatus.ACTIVE)
-                .all()
-            )
+            active_budgets = budget_repo.list_all_active_plans()
 
             for budget in active_budgets:
                 pool_states = budget_repo.list_budget_pool_states(budget.id)
@@ -142,25 +136,26 @@ class NotificationScheduler:
     def _check_recurring_alerts(self, db) -> int:
         """Check for upcoming recurring expenses and send notifications."""
         from app.services.notification_service import NotificationService
-        from app.models import RecurringExpense
-        from app.enums import RecurringExpenseStatus
+        from app.repositories.recurring_expense_repository import RecurringExpenseRepository
 
         notification_service = NotificationService(db)
+        recurring_repo = RecurringExpenseRepository(db)
         notifications_sent = 0
 
         try:
             # Look ahead 3 days for upcoming recurring expenses
             lookahead_date = date.today() + timedelta(days=3)
             
-            recurring_expenses = (
-                db.query(RecurringExpense)
-                .filter(
-                    RecurringExpense.status == RecurringExpenseStatus.ACTIVE,
-                    RecurringExpense.next_due_on <= lookahead_date,
-                    RecurringExpense.next_due_on >= date.today()
-                )
-                .all()
+            recurring_expenses = recurring_repo.get_due_series(
+                due_on=lookahead_date,
+                limit=1000
             )
+            
+            # Filter to only include those due today or in the next 3 days
+            recurring_expenses = [
+                r for r in recurring_expenses 
+                if r.next_due_on >= date.today()
+            ]
 
             for recurring in recurring_expenses:
                 days_until = (recurring.next_due_on - date.today()).days
@@ -184,32 +179,31 @@ class NotificationScheduler:
     def _check_settlement_alerts(self, db) -> int:
         """Check for pending settlements and send reminders."""
         from app.services.notification_service import NotificationService
-        from app.models import Settlement, User
-        from app.enums import SettlementStatus
+        from app.repositories.settlement_repository import SettlementRepository
+        from app.repositories.user_repository import UserRepository
+        from app.enums import NotificationType
 
         notification_service = NotificationService(db)
+        settlement_repo = SettlementRepository(db)
+        user_repo = UserRepository(db)
         notifications_sent = 0
 
         try:
             # Get pending settlements
-            pending_settlements = (
-                db.query(Settlement)
-                .filter(Settlement.status == SettlementStatus.PENDING)
-                .all()
-            )
+            pending_settlements = settlement_repo.get_all_pending()
 
             for settlement in pending_settlements:
                 # Check if notification was already sent recently (last 7 days)
                 if notification_service.notification_recently_sent(
                     user_id=settlement.from_user_id,
-                    notification_type=notification_service.create_notification.__self__.notification_repo.db.query(Settlement).first().type if hasattr(settlement, 'type') else None,
+                    notification_type=NotificationType.SETTLEMENT_PENDING,
                     reference_id=settlement.id,
                     hours=168  # 7 days
                 ):
                     continue
 
                 # Get creditor name
-                creditor = db.query(User).filter(User.id == settlement.to_user_id).first()
+                creditor = user_repo.get_by_id(settlement.to_user_id)
                 creditor_name = creditor.username if creditor else f"User {settlement.to_user_id}"
 
                 result = notification_service.notify_settlement_pending(

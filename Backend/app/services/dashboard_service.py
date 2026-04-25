@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Optional, List
@@ -9,7 +8,9 @@ from app.repositories import (
     BudgetRepository,
     ExpenseRepository,
     SettlementRepository,
-    NotificationRepository
+    NotificationRepository,
+    RecurringExpenseRepository,
+    UserRepository
 )
 from app.schemas.dashboard_schemas import (
     KPISummaryResponse,
@@ -40,6 +41,8 @@ class DashboardService:
         self.expense_repo = ExpenseRepository(db)
         self.settlement_repo = SettlementRepository(db)
         self.notification_repo = NotificationRepository(db)
+        self.recurring_repo = RecurringExpenseRepository(db)
+        self.user_repo = UserRepository(db)
 
     def get_kpi_summary(
         self, 
@@ -147,17 +150,9 @@ class DashboardService:
                         ))
 
         # 3. Check for upcoming recurring expenses (next 7 days)
-        from app.models import RecurringExpense
-        lookahead_date = date.today() + timedelta(days=7)
-        upcoming_recurring = (
-            self.db.query(RecurringExpense)
-            .filter(
-                RecurringExpense.user_id == user_id,
-                RecurringExpense.status == RecurringExpenseStatus.ACTIVE,
-                RecurringExpense.next_due_on <= lookahead_date,
-                RecurringExpense.next_due_on >= date.today()
-            )
-            .all()
+        upcoming_recurring = self.recurring_repo.get_upcoming_for_user(
+            user_id=user_id,
+            days_ahead=7
         )
 
         for recurring in upcoming_recurring:
@@ -174,15 +169,7 @@ class DashboardService:
             ))
 
         # 4. Check for pending settlements
-        from app.models import Settlement
-        pending_settlements = (
-            self.db.query(Settlement)
-            .filter(
-                Settlement.from_user_id == user_id,
-                Settlement.status == SettlementStatus.PENDING
-            )
-            .all()
-        )
+        pending_settlements = self.settlement_repo.get_pending_by_user(user_id)
 
         for settlement in pending_settlements:
             items.append(AttentionItem(
@@ -230,7 +217,6 @@ class DashboardService:
         date_to: Optional[date] = None,
     ) -> TrendDataResponse:
         """Get spending trend data aggregated by period."""
-        from app.models import Expense
 
         # Default date range if not specified
         if date_from is None or date_to is None:
@@ -244,44 +230,27 @@ class DashboardService:
                 date_to = date.today()
                 date_from = date_to - timedelta(days=30)
 
-        # Build query
-        query = self.db.query(
-            func.date(Expense.expense_date).label('date'),
-            func.sum(Expense.amount).label('total')
-        ).filter(
-            Expense.user_id == user_id,
-            Expense.group_id.is_(None),  # Personal expenses only
-            Expense.expense_date >= datetime.combine(date_from, datetime.min.time()),
-            Expense.expense_date <= datetime.combine(date_to, datetime.max.time())
+        # Get spending trend data from repository
+        period_str = period.value if hasattr(period, 'value') else str(period)
+        results = self.expense_repo.get_spending_trend(
+            user_id=user_id,
+            date_from=datetime.combine(date_from, datetime.min.time()),
+            date_to=datetime.combine(date_to, datetime.max.time()),
+            period=period_str
         )
 
-        # Group by period
-        if period == AggregationPeriod.DAILY:
-            group_expr = func.date(Expense.expense_date)
-        elif period == AggregationPeriod.WEEKLY:
-            group_expr = func.date_trunc('week', Expense.expense_date)
-        elif period == AggregationPeriod.MONTHLY:
-            group_expr = func.date_trunc('month', Expense.expense_date)
-
-        query = self.db.query(
-            group_expr.label('date'),
-            func.sum(Expense.amount).label('total')
-        ).filter(
-            Expense.user_id == user_id,
-            Expense.group_id.is_(None),
-            Expense.expense_date >= datetime.combine(date_from, datetime.min.time()),
-            Expense.expense_date <= datetime.combine(date_to, datetime.max.time())
-        ).group_by(group_expr).order_by(group_expr)
-
-        results = query.all()
-
-        # Format data points
+        # Format data points grouped by period and currency
         data_points = []
-        total = Decimal("0")
+        totals_by_currency = {}
         
         for row in results:
             amount = Decimal(row.total or 0)
-            total += amount
+            currency = row.currency if hasattr(row, 'currency') else "PLN"
+            
+            # Update totals by currency
+            if currency not in totals_by_currency:
+                totals_by_currency[currency] = Decimal("0")
+            totals_by_currency[currency] += amount
             
             row_date = row.date.date() if hasattr(row.date, 'date') else row.date
             
@@ -295,17 +264,14 @@ class DashboardService:
             data_points.append(TrendDataPoint(
                 period=row_date.isoformat(),
                 amount=amount,
-                label=label
+                label=label,
+                currency=currency
             ))
-
-        average = total / len(data_points) if data_points else Decimal("0")
 
         return TrendDataResponse(
             period_type=period,
             data_points=data_points,
-            total=total,
-            average=average,
-            currency="PLN"  # TODO: Get from user preferences
+            totals_by_currency=totals_by_currency
         )
 
     def get_category_breakdown(
@@ -316,7 +282,6 @@ class DashboardService:
         date_to: Optional[date] = None,
     ) -> CategoryBreakdownResponse:
         """Get category spending breakdown with percentages."""
-        from app.models import Expense, Category
 
         # Default date range
         if date_from is None or date_to is None:
@@ -330,44 +295,50 @@ class DashboardService:
                 date_to = date.today()
                 date_from = date_to - timedelta(days=30)
 
-        # Query category totals
-        results = (
-            self.db.query(
-                Expense.category_id,
-                Category.name.label('category_name'),
-                func.sum(Expense.amount).label('total')
-            )
-            .join(Category, Expense.category_id == Category.id)
-            .filter(
-                Expense.user_id == user_id,
-                Expense.group_id.is_(None),
-                Expense.expense_date >= datetime.combine(date_from, datetime.min.time()),
-                Expense.expense_date <= datetime.combine(date_to, datetime.max.time())
-            )
-            .group_by(Expense.category_id, Category.name)
-            .order_by(func.sum(Expense.amount).desc())
-            .all()
+        # Query category totals from repository
+        results = self.expense_repo.get_category_breakdown(
+            user_id=user_id,
+            date_from=datetime.combine(date_from, datetime.min.time()),
+            date_to=datetime.combine(date_to, datetime.max.time())
         )
 
-        # Calculate total and percentages
-        total = sum(Decimal(row.total or 0) for row in results)
+        # Group by currency and calculate totals
+        totals_by_currency = {}
+        items_by_currency = {}
         
-        items = []
         for row in results:
             amount = Decimal(row.total or 0)
-            percentage = (amount / total * 100) if total > 0 else Decimal("0")
+            currency = row.currency if hasattr(row, 'currency') else "USD"
             
-            items.append(CategoryBreakdownItem(
-                category_id=row.category_id,
-                category_name=row.category_name,
-                amount=amount,
-                percentage=percentage
-            ))
+            # Update totals by currency
+            if currency not in totals_by_currency:
+                totals_by_currency[currency] = Decimal("0")
+                items_by_currency[currency] = []
+            totals_by_currency[currency] += amount
+            
+            items_by_currency[currency].append({
+                'category_id': row.category_id,
+                'category_name': row.category_name,
+                'amount': amount
+            })
+        
+        # Calculate percentages within each currency
+        items = []
+        for currency, currency_items in items_by_currency.items():
+            currency_total = totals_by_currency[currency]
+            for item in currency_items:
+                percentage = (item['amount'] / currency_total * 100) if currency_total > 0 else Decimal("0")
+                items.append(CategoryBreakdownItem(
+                    category_id=item['category_id'],
+                    category_name=item['category_name'],
+                    amount=item['amount'],
+                    percentage=percentage,
+                    currency=currency
+                ))
 
         return CategoryBreakdownResponse(
             items=items,
-            total=total,
-            currency="USD"
+            totals_by_currency=totals_by_currency
         )
 
     def get_budget_status(
@@ -420,48 +391,21 @@ class DashboardService:
         return response_list
 
     def get_settlement_snapshot(self, user_id: int) -> SettlementSnapshotResponse:
-        """Get settlement balance snapshot."""
-        from app.models import Settlement
-
-        # Total owed to me (I'm the creditor)
-        owed_to_me = (
-            self.db.query(func.sum(Settlement.amount))
-            .filter(
-                Settlement.to_user_id == user_id,
-                Settlement.status == SettlementStatus.PENDING
-            )
-            .scalar() or Decimal("0")
-        )
-
-        # Total I owe (I'm the debtor)
-        i_owe = (
-            self.db.query(func.sum(Settlement.amount))
-            .filter(
-                Settlement.from_user_id == user_id,
-                Settlement.status == SettlementStatus.PENDING
-            )
-            .scalar() or Decimal("0")
-        )
-
-        # Count pending settlements
-        pending_count = (
-            self.db.query(func.count(Settlement.id))
-            .filter(
-                or_(
-                    Settlement.to_user_id == user_id,
-                    Settlement.from_user_id == user_id
-                ),
-                Settlement.status == SettlementStatus.PENDING
-            )
-            .scalar() or 0
-        )
-
-        net_balance = Decimal(owed_to_me) - Decimal(i_owe)
+        """Get settlement balance snapshot by currency."""
+        snapshot = self.settlement_repo.get_snapshot_for_user(user_id)
+        
+        # Calculate net balance for each currency
+        net_balance_by_currency = {}
+        all_currencies = snapshot.get("all_currencies", set())
+        
+        for currency in all_currencies:
+            owed_to_me = snapshot["owed_to_me_by_currency"].get(currency, Decimal("0"))
+            i_owe = snapshot["i_owe_by_currency"].get(currency, Decimal("0"))
+            net_balance_by_currency[currency] = owed_to_me - i_owe
 
         return SettlementSnapshotResponse(
-            total_owed_to_me=Decimal(owed_to_me),
-            total_i_owe=Decimal(i_owe),
-            net_balance=net_balance,
-            pending_settlements_count=pending_count,
-            currency="USD"
+            owed_to_me_by_currency=snapshot["owed_to_me_by_currency"],
+            i_owe_by_currency=snapshot["i_owe_by_currency"],
+            net_balance_by_currency=net_balance_by_currency,
+            pending_settlements_count=snapshot["pending_settlements_count"]
         )

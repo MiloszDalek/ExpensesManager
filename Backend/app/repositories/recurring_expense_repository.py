@@ -99,3 +99,27 @@ class RecurringExpenseRepository:
 
     def refresh(self, recurring_expense: RecurringExpense):
         self.db.refresh(recurring_expense)
+
+    def get_upcoming_for_user(
+        self,
+        user_id: int,
+        days_ahead: int = 7,
+    ) -> list[RecurringExpense]:
+        """Get upcoming recurring expenses for a user within specified days."""
+        from datetime import date, timedelta
+        from app.enums import RecurringExpenseStatus
+
+        lookahead_date = date.today() + timedelta(days=days_ahead)
+
+        return (
+            self.db.query(RecurringExpense)
+            .options(selectinload(RecurringExpense.participants))
+            .filter(
+                RecurringExpense.user_id == user_id,
+                RecurringExpense.status == RecurringExpenseStatus.ACTIVE,
+                RecurringExpense.next_due_on <= lookahead_date,
+                RecurringExpense.next_due_on >= date.today()
+            )
+            .order_by(RecurringExpense.next_due_on.asc())
+            .all()
+        )

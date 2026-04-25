@@ -626,3 +626,71 @@ class ExpenseRepository:
 
     def save_all(self):
         self.db.commit()
+
+
+    def get_spending_trend(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        period: Literal["daily", "weekly", "monthly"] = "daily",
+    ):
+        """Get spending trend data aggregated by period and currency."""
+        from datetime import date
+
+        # Group by period
+        if period == "daily":
+            group_expr = func.date(Expense.expense_date)
+        elif period == "weekly":
+            group_expr = func.date_trunc('week', Expense.expense_date)
+        elif period == "monthly":
+            group_expr = func.date_trunc('month', Expense.expense_date)
+        else:
+            group_expr = func.date(Expense.expense_date)
+
+        query = (
+            self.db.query(
+                group_expr.label('date'),
+                Expense.currency.label('currency'),
+                func.sum(Expense.amount).label('total')
+            )
+            .filter(
+                Expense.user_id == user_id,
+                Expense.group_id.is_(None),
+                Expense.expense_date >= date_from,
+                Expense.expense_date <= date_to
+            )
+            .group_by(group_expr, Expense.currency)
+            .order_by(group_expr, Expense.currency)
+        )
+
+        return query.all()
+
+
+    def get_category_breakdown(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+    ):
+        """Get category spending breakdown with percentages by currency."""
+        results = (
+            self.db.query(
+                Expense.category_id,
+                Category.name.label('category_name'),
+                Expense.currency.label('currency'),
+                func.sum(Expense.amount).label('total')
+            )
+            .join(Category, Expense.category_id == Category.id)
+            .filter(
+                Expense.user_id == user_id,
+                Expense.group_id.is_(None),
+                Expense.expense_date >= date_from,
+                Expense.expense_date <= date_to
+            )
+            .group_by(Expense.category_id, Category.name, Expense.currency)
+            .order_by(Expense.currency, func.sum(Expense.amount).desc())
+            .all()
+        )
+
+        return results

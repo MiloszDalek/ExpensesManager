@@ -42,15 +42,15 @@ class TrendDataPoint(BaseModel):
     period: str  # ISO date or period label
     amount: Decimal
     label: Optional[str] = None  # Human-readable label
+    currency: str  # Currency code for this data point
 
 
 class TrendDataResponse(BaseModel):
     """Spending trend data over time."""
     period_type: AggregationPeriod
     data_points: List[TrendDataPoint]
-    total: Decimal
-    average: Decimal
-    currency: str
+    totals_by_currency: dict[str, Decimal]  # Total amount per currency
+    currency: Optional[str] = None  # Deprecated: use totals_by_currency instead
 
 
 class CategoryBreakdownItem(BaseModel):
@@ -59,6 +59,7 @@ class CategoryBreakdownItem(BaseModel):
     category_name: str
     amount: Decimal
     percentage: Decimal
+    currency: str  # Currency code for this item
     budget_allocated: Optional[Decimal] = None
     budget_remaining: Optional[Decimal] = None
 
@@ -66,8 +67,8 @@ class CategoryBreakdownItem(BaseModel):
 class CategoryBreakdownResponse(BaseModel):
     """Complete category breakdown."""
     items: List[CategoryBreakdownItem]
-    total: Decimal
-    currency: str
+    totals_by_currency: dict[str, Decimal]  # Total amount per currency
+    currency: Optional[str] = None  # Deprecated: use totals_by_currency instead
 
 
 class BudgetPoolStatusResponse(BaseModel):
@@ -97,8 +98,8 @@ class BudgetStatusResponse(BaseModel):
 
 class SettlementSnapshotResponse(BaseModel):
     """Settlement balance snapshot."""
-    total_owed_to_me: Decimal
-    total_i_owe: Decimal
-    net_balance: Decimal
+    owed_to_me_by_currency: dict[str, Decimal]  # Amounts owed to user by currency
+    i_owe_by_currency: dict[str, Decimal]  # Amounts user owes by currency
+    net_balance_by_currency: dict[str, Decimal]  # Net balance by currency
     pending_settlements_count: int
-    currency: str
+    currency: Optional[str] = None  # Deprecated: use currency-specific fields instead
