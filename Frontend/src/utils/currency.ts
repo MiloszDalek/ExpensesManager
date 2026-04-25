@@ -3,6 +3,56 @@ import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
 const RECENT_CURRENCIES_STORAGE_KEY = "expensesManager.recentCurrencies";
 const RECENT_CURRENCIES_LIMIT = 5;
 
+// Currency symbols mapping
+export const CURRENCY_SYMBOLS: Record<CurrencyEnum, string> = {
+  "AED": "د.إ",
+  "AUD": "A$",
+  "CAD": "C$",
+  "CHF": "CHF",
+  "CNY": "¥",
+  "CZK": "Kč",
+  "DKK": "kr",
+  "PLN": "zł",
+  "EUR": "€",
+  "GBP": "£",
+  "HKD": "HK$",
+  "HUF": "Ft",
+  "ILS": "₪",
+  "JPY": "¥",
+  "NOK": "kr",
+  "NZD": "NZ$",
+  "RON": "lei",
+  "SEK": "kr",
+  "SGD": "S$",
+  "TRY": "₺",
+  "USD": "$",
+  "ZAR": "R",
+};
+
+// Format currency with symbol
+export const formatCurrency = (amount: number, currency: CurrencyEnum): string => {
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const formattedAmount = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  
+  // For most currencies, symbol goes before amount
+  // For some European currencies like EUR, symbol goes after amount
+  const symbolAfter = ["EUR", "PLN", "CZK", "HUF", "RON", "SEK", "DKK", "NOK"].includes(currency);
+  
+  if (symbolAfter) {
+    return `${formattedAmount} ${symbol}`;
+  }
+  
+  return `${symbol}${formattedAmount}`;
+};
+
+// Get currency symbol only
+export const getCurrencySymbol = (currency: CurrencyEnum): string => {
+  return CURRENCY_SYMBOLS[currency];
+};
+
 const isSupportedCurrency = (value: string): value is CurrencyEnum => {
   return (SUPPORTED_CURRENCIES as readonly string[]).includes(value);
 };

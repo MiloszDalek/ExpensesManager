@@ -16,6 +16,7 @@ dist
 dist-ssr
 *.local
 uploads
+plans
 
 # Editor directories and files
 .vscode/*

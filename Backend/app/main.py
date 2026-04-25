@@ -22,7 +22,7 @@ from app.routers import (
         budget_router,
         savings_goal_router,
     )
-from app.services import AuthService, BudgetRolloverScheduler, RecurringExpensesScheduler
+from app.services import AuthService, BudgetRolloverScheduler, RecurringExpensesScheduler, NotificationScheduler
 from app.utils import seed_default_categories, reset_database
 from app import models
 import logging
@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 recurring_scheduler = RecurringExpensesScheduler(interval_seconds=300)
 budget_rollover_scheduler = BudgetRolloverScheduler(interval_seconds=settings.BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS)
+notification_scheduler = NotificationScheduler(interval_seconds=3600)  # Check every hour
 
 allowed_origins = [
     origin.strip().rstrip("/")
@@ -90,12 +91,14 @@ async def startup_event():
     await recurring_scheduler.start()
     if settings.BUDGET_ROLLOVER_SCHEDULER_ENABLED:
         await budget_rollover_scheduler.start()
+    await notification_scheduler.start()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await recurring_scheduler.stop()
     await budget_rollover_scheduler.stop()
+    await notification_scheduler.stop()
 
 @app.get("/")
 def root():

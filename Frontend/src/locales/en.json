@@ -83,6 +83,65 @@
     "errorLoadingData": "Error Loading Data",
     "somethingWentWrong": "Something went wrong"
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Your financial overview at a glance",
+    "kpi": {
+      "totalIncome": "Total Income",
+      "totalExpenses": "Total Expenses",
+      "totalSavings": "Total Savings",
+      "remainingBudget": "Remaining Budget",
+      "overspendingDetected": "Overspending detected"
+    },
+    "attention": {
+      "title": "Needs Your Attention",
+      "description": "Action items that need review",
+      "priorityDescription": "Priority-ranked action items",
+      "noItems": "Everything looks good! No action items at the moment."
+    },
+    "spendingTrend": {
+      "title": "Spending Trend",
+      "description": "Your spending over time",
+      "overview": "{{period}} overview",
+      "total": "Total",
+      "average": "Average",
+      "amount": "Amount",
+      "showingLimited": "Showing 10 of {{count}} periods",
+      "chartNote": "Install Recharts for advanced chart visualization"
+    },
+    "categoryBreakdown": {
+      "title": "Category Breakdown",
+      "description": "Spending by category",
+      "topCategories": "Top spending categories",
+      "noData": "No spending data for this period",
+      "total": "Total",
+      "budget": "Budget",
+      "remaining": "Remaining",
+      "chartNote": "Install Recharts for pie/donut chart visualization"
+    },
+    "budgetStatus": {
+      "title": "Budget Status",
+      "description": "Track your budget pools",
+      "noBudgets": "No active budgets found",
+      "used": "{{percentage}}% used",
+      "over": "Over",
+      "remaining": "Remaining",
+      "showingLimited": "Showing 1 of {{count}} active budgets"
+    },
+    "settlements": {
+      "title": "Settlements",
+      "description": "Balance with friends & groups",
+      "pendingSettlements": "{{count}} pending settlement{{plural}}",
+      "allSettled": "All settled up",
+      "netBalance": "Net Balance",
+      "youreEven": "You're even",
+      "youreOwed": "You're owed",
+      "youOwe": "You owe",
+      "owedToMe": "Owed to me",
+      "iOwe": "I owe",
+      "manageSettlements": "Visit Groups page to manage settlements"
+    }
+  },
   "datePicker": {
     "selectDate": "Select date",
     "close": "Close",

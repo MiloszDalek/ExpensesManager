@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
@@ -138,9 +139,14 @@ export default function GlobalHeader() {
 
             <div className="flex items-center gap-2">
               {user ? (
-                <div className="hidden lg:flex">
-                  <ThemeToggle />
-                </div>
+                <>
+                  <div className="hidden lg:block">
+                    <NotificationBell />
+                  </div>                
+                  <div className="hidden lg:flex">
+                    <ThemeToggle />
+                  </div>
+                </>
               ) : null}
 
               <LanguageSwitcher

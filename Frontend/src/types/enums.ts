@@ -35,10 +35,49 @@ export type InvitationStatus = "pending" | "accepted" | "rejected" | "cancelled"
 export type InvitationType = "contact" | "group";
 
 export type NotificationType =
-	| "invitation"
+	// Invitations
+	| "invitation_received"
+	| "invitation_accepted"
+	| "invitation_rejected"
+	// Budget alerts
 	| "budget_near_limit"
+	| "budget_exceeded"
+	| "budget_reset"
+	// Expenses
+	| "new_expense_added"
+	| "expense_updated"
+	| "expense_deleted"
+	// Recurring expenses
+	| "recurring_due_soon"
+	| "recurring_executed"
+	| "recurring_failed"
+	// Settlements
+	| "settlement_pending"
+	| "settlement_completed"
+	| "settlement_failed"
+	// Goals
+	| "goal_progress"
+	| "goal_completed"
+	// Insights
+	| "unusual_spending"
+	| "high_spending_category"
+	// Legacy support
+	| "invitation"
 	| "budget_overspending"
 	| "upcoming_recurring_expense";
+
+export type NotificationStatus = "unread" | "read" | "archived";
+
+export type NotificationContextType =
+	| "budget"
+	| "expense"
+	| "group"
+	| "settlement"
+	| "goal"
+	| "recurring"
+	| "invitation";
+
+export type NotificationSeverity = "info" | "warning" | "urgent";
 
 export type PaymentMethod = "cash" | "paypal" | "offset_applied" | "offset_forgiven";
 export type SettlementStatus = "pending" | "pending_paypal" | "completed" | "failed";

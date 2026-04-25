@@ -10,6 +10,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv(".env.supabase")
+# load_dotenv(".env")
 
 print("DB URL:", os.getenv("DATABASE_URL"))
 print("TABLES:", Base.metadata.tables.keys())

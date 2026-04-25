@@ -73,6 +73,65 @@
     "errorLoadingData": "Błąd ładowania danych",
     "somethingWentWrong": "Coś poszło nie tak"
   },
+  "dashboard": {
+    "title": "Pulpit",
+    "subtitle": "Twój przegląd finansowy w jednym miejscu",
+    "kpi": {
+      "totalIncome": "Całkowite przychody",
+      "totalExpenses": "Całkowite wydatki",
+      "totalSavings": "Całkowite oszczędności",
+      "remainingBudget": "Pozostały budżet",
+      "overspendingDetected": "Wykryto przekroczenie budżetu"
+    },
+    "attention": {
+      "title": "Wymaga Twojej uwagi",
+      "description": "Elementy wymagające przeglądu",
+      "priorityDescription": "Elementy wymagające działania według priorytetu",
+      "noItems": "Wszystko wygląda dobrze! Brak elementów wymagających działania."
+    },
+    "spendingTrend": {
+      "title": "Trend wydatków",
+      "description": "Twoje wydatki w czasie",
+      "overview": "Przegląd {{period}}",
+      "total": "Suma",
+      "average": "Średnia",
+      "amount": "Kwota",
+      "showingLimited": "Pokazywanie 10 z {{count}} okresów",
+      "chartNote": "Zainstaluj Recharts dla zaawansowanej wizualizacji wykresów"
+    },
+    "categoryBreakdown": {
+      "title": "Podział według kategorii",
+      "description": "Wydatki według kategorii",
+      "topCategories": "Największe kategorie wydatków",
+      "noData": "Brak danych wydatków dla tego okresu",
+      "total": "Suma",
+      "budget": "Budżet",
+      "remaining": "Pozostało",
+      "chartNote": "Zainstaluj Recharts dla wizualizacji wykresów kołowych/donutowych"
+    },
+    "budgetStatus": {
+      "title": "Status budżetu",
+      "description": "Śledź swoje pule budżetowe",
+      "noBudgets": "Nie znaleziono aktywnych budżetów",
+      "used": "Wykorzystano {{percentage}}%",
+      "over": "Przekroczenie",
+      "remaining": "Pozostało",
+      "showingLimited": "Pokazywanie 1 z {{count}} aktywnych budżetów"
+    },
+    "settlements": {
+      "title": "Rozliczenia",
+      "description": "Salda z przyjaciółmi i grupami",
+      "pendingSettlements": "{{count}} oczekujące rozliczenie{{plural}}",
+      "allSettled": "Wszystko rozliczone",
+      "netBalance": "Saldo netto",
+      "youreEven": "Jesteś na zero",
+      "youreOwed": "Jesteś winni",
+      "youOwe": "Jesteś winien",
+      "owedToMe": "Należne mi",
+      "iOwe": "Moje długi",
+      "manageSettlements": "Odwiedź stronę Grupy, aby zarządzać rozliczeniami"
+    }
+  },
   "datePicker": {
     "selectDate": "Wybierz datę",
     "close": "Zamknij",
