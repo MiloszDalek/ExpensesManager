@@ -110,8 +110,8 @@ export default function GroupsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <PageInfoButton pageKey="groups" variant="icon" className="md:hidden" />
-            <PageInfoButton pageKey="groups" className="hidden md:inline-flex" />
+            <PageInfoButton pageKey="groups" variant="icon" className="md:hidden" autoOpen={true} />
+            <PageInfoButton pageKey="groups" className="hidden md:inline-flex" autoOpen={true} />
             <Button
               onClick={() => setShowCreateDialog(true)}
               className="hidden shadow-lg md:inline-flex"

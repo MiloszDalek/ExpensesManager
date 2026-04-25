@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePageVisitTracker } from "@/hooks/usePageVisitTracker";
 
 type PageInfoButtonProps = {
   pageKey:
@@ -23,11 +24,25 @@ type PageInfoButtonProps = {
     | "receiptScan";
   variant?: "full" | "icon";
   className?: string;
+  autoOpen?: boolean;
 };
 
-export default function PageInfoButton({ pageKey, variant = "full", className }: PageInfoButtonProps) {
+export default function PageInfoButton({ pageKey, variant = "full", className, autoOpen = false }: PageInfoButtonProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const { shouldShowDialog, isInitialized, markAsVisited } = usePageVisitTracker(pageKey);
+
+  useEffect(() => {
+    if (autoOpen && isInitialized && shouldShowDialog) {
+      // Double-check localStorage to prevent double-opening in React Strict Mode
+      const storageKey = `page_visited_${pageKey}`;
+      const hasVisited = localStorage.getItem(storageKey);
+      if (!hasVisited) {
+        setOpen(true);
+        markAsVisited();
+      }
+    }
+  }, [autoOpen, isInitialized, shouldShowDialog, markAsVisited, pageKey]);
 
   const title = t(`help.pageInfo.pages.${pageKey}.title`);
   const purpose = t(`help.pageInfo.pages.${pageKey}.purpose`);

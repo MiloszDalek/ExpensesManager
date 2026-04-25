@@ -500,8 +500,8 @@ export default function ReceiptScannerPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-bold text-foreground">{t("receiptScannerPage.title")}</h1>
-              <PageInfoButton pageKey="receiptScan" variant="icon" className="md:hidden" />
-              <PageInfoButton pageKey="receiptScan" className="hidden md:inline-flex" />
+              <PageInfoButton pageKey="receiptScan" variant="icon" className="md:hidden" autoOpen={true} />
+              <PageInfoButton pageKey="receiptScan" className="hidden md:inline-flex" autoOpen={true} />
             </div>
             <p className="mt-2 text-muted-foreground">{t("receiptScannerPage.subtitle")}</p>
           </div>

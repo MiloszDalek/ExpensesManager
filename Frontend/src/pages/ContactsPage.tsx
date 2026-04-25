@@ -485,8 +485,8 @@ export default function ContactsPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
-            <PageInfoButton pageKey="contacts" variant="icon" className="md:hidden" />
-            <PageInfoButton pageKey="contacts" className="hidden md:inline-flex" />
+            <PageInfoButton pageKey="contacts" variant="icon" className="md:hidden" autoOpen={true} />
+            <PageInfoButton pageKey="contacts" className="hidden md:inline-flex" autoOpen={true} />
           </div>
           <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
         </div>

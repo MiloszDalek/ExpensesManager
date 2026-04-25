@@ -94,7 +94,7 @@ export default function DashboardPage() {
               onCurrencyChange={setSelectedCurrency}
               className="w-40"
             />
-            <PageInfoButton pageKey="dashboard" />
+            <PageInfoButton pageKey="dashboard" autoOpen={true} />
           </div>
         </div>
 

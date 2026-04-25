@@ -930,8 +930,8 @@ export default function GroupDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-start justify-start gap-2 lg:col-span-4 lg:justify-end">
-            <PageInfoButton pageKey="groupDetail" variant="icon" className="sm:hidden" />
-            <PageInfoButton pageKey="groupDetail" className="hidden sm:inline-flex" />
+            <PageInfoButton pageKey="groupDetail" variant="icon" className="sm:hidden" autoOpen={true} />
+            <PageInfoButton pageKey="groupDetail" className="hidden sm:inline-flex" autoOpen={true} />
             <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex">
               <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
                 <ScanSearch className="mr-2 h-4 w-4" />

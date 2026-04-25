@@ -671,8 +671,8 @@ export default function BudgetsPage() {
               <h1 className="text-3xl font-bold text-foreground md:text-4xl">
                 {t("budgets.title", { defaultValue: "Budget Manager" })}
               </h1>
-              <PageInfoButton pageKey="budgets" variant="icon" className="md:hidden" />
-              <PageInfoButton pageKey="budgets" className="hidden md:inline-flex" />
+              <PageInfoButton pageKey="budgets" variant="icon" className="md:hidden" autoOpen={true} />
+              <PageInfoButton pageKey="budgets" className="hidden md:inline-flex" autoOpen={true} />
             </div>
             <p className="mt-2 text-muted-foreground">
               {t("budgets.subtitle", {

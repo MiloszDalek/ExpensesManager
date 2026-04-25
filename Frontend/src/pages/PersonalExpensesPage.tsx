@@ -513,8 +513,8 @@ export default function PersonalExpensesPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("personalExpensesPage.title")}</h1>
-              <PageInfoButton pageKey="personal" variant="icon" className="md:hidden" />
-              <PageInfoButton pageKey="personal" className="hidden md:inline-flex" />
+              <PageInfoButton pageKey="personal" variant="icon" className="md:hidden" autoOpen={true} />
+              <PageInfoButton pageKey="personal" className="hidden md:inline-flex" autoOpen={true} />
             </div>
             <p className="text-muted-foreground mt-2">
               {t("personalExpensesPage.trackSpending")}
