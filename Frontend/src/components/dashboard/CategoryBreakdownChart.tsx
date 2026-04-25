@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import type { CategoryBreakdown } from "@/types/dashboard";
 import { formatCurrency } from "@/utils/currency";
+import { toFixedSafe } from "@/utils/toFiniteNumber";
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown | undefined;
@@ -82,7 +83,7 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="font-medium">{data.name}</p>
           <p className="text-sm">{formatCurrency(data.value, currency as any)}</p>
-          <p className="text-sm text-muted-foreground">{data.percentage.toFixed(1)}%</p>
+          <p className="text-sm text-muted-foreground">{toFixedSafe(data.percentage, 1)}%</p>
           {data.budget !== null && (
             <p className="text-xs text-muted-foreground">
               {t("dashboard.categoryBreakdown.budget")}: {formatCurrency(data.budget, currency as any)}
@@ -132,7 +133,7 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
                   layout="vertical"
                   formatter={(value: string, entry: any) => (
                     <span className="text-sm">
-                      {value} ({entry.payload.percentage.toFixed(1)}%)
+                      {value} ({toFixedSafe(entry.payload.percentage, 1)}%)
                     </span>
                   )}
                 />

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { TrendingUp } from "lucide-react";
+import { toFixedSafe } from "@/utils/toFiniteNumber";
 
 const COLORS = ['#8B5CF6', '#14B8A6', '#EC4899', '#F59E0B', '#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#6366F1'];
 
@@ -21,7 +22,7 @@ export default function SpendingChart({ expenses }: SpendingChartProps) {
   const chartData = Object.entries(categoryData)
     .map(([category, amount]) => ({
       category: category.charAt(0).toUpperCase() + category.slice(1),
-      amount: parseFloat(amount.toFixed(2)),
+      amount: parseFloat(toFixedSafe(amount, 2)),
     }))
     .sort((a, b) => b.amount - a.amount);
 

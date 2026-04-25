@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { BudgetStatus } from "@/types/dashboard";
 import { formatCurrency } from "@/utils/currency";
 import { cn } from "@/lib/utils";
+import { toFixedSafe } from "@/utils/toFiniteNumber";
 
 interface BudgetStatusListProps {
   budgets: BudgetStatus[] | undefined;
@@ -90,8 +91,8 @@ export function BudgetStatusList({ budgets, isLoading, currency = "USD" }: Budge
                   <span className="font-medium text-sm">{pool.category_name}</span>
                 </div>
                 <div className="text-sm">
-                  <span className="font-semibold">${pool.spent.toFixed(2)}</span>
-                  <span className="text-muted-foreground"> / ${pool.allocated.toFixed(2)}</span>
+                  <span className="font-semibold">${toFixedSafe(pool.spent)}</span>
+                  <span className="text-muted-foreground"> / ${toFixedSafe(pool.allocated)}</span>
                 </div>
               </div>
 
@@ -104,7 +105,7 @@ export function BudgetStatusList({ budgets, isLoading, currency = "USD" }: Budge
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
-                    {t("dashboard.budgetStatus.used", { percentage: pool.usage_percentage?.toFixed(1) || "0" })}
+                    {t("dashboard.budgetStatus.used", { percentage: toFixedSafe(pool.usage_percentage, 1) || "0" })}
                   </span>
                   <span className={cn(
                     "font-medium",

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 import { format } from "date-fns";
+import { toFixedSafe } from "@/utils/toFiniteNumber";
 
 import type { User } from "@/types";
 
@@ -46,7 +47,7 @@ export default function RecentActivity({ expenses }: RecentActivityProps) {
                   </p>
                 </div>
                 <p className="font-semibold text-gray-900">
-                  {expense.amount.toFixed(2)} {expense.currency}
+                  {toFixedSafe(expense.amount, 2)} {expense.currency}
                 </p>
               </div>
             ))}
