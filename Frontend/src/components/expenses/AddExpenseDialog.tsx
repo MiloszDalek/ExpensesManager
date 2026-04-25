@@ -27,12 +27,10 @@ import { X } from "lucide-react";
 import { format } from "date-fns";
 import type { ApiPersonalExpenseCreate } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
-import { receiptsApi } from "@/api/receiptsApi";
 import {
   SUPPORTED_CURRENCIES,
   type CurrencyEnum,
 } from "@/types/enums";
-import type { ApiReceiptLineItem } from "@/types";
 import {
   getCurrenciesWithRecentFirst,
   getRecentCurrencies,
@@ -63,18 +61,6 @@ type FormData = {
   expense_date: string;
   notes: string;
 };
-
-const extractErrorMessage = (error: unknown): string => {
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.trim().length > 0) {
-      return message;
-    }
-  }
-
-  return "";
-};
-
 
 export default function AddExpenseDialog({
   open,
@@ -129,15 +115,6 @@ export default function AddExpenseDialog({
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     notes: '',
   });
-  const [receiptText, setReceiptText] = useState<string | null>(null);
-  const [receiptItems, setReceiptItems] = useState<ApiReceiptLineItem[]>([]);
-  const [parsedReceiptVendor, setParsedReceiptVendor] = useState<string | null>(null);
-  const [parsedReceiptDate, setParsedReceiptDate] = useState<string | null>(null);
-  const [parsedReceiptTotal, setParsedReceiptTotal] = useState<string | null>(null);
-  const [receiptOcrStatus, setReceiptOcrStatus] = useState<string | null>(null);
-  const [receiptUploadError, setReceiptUploadError] = useState<string | null>(null);
-  const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
-  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
 
   // Helper to handle currency change and update recent currencies
   const handleCurrencyChange = (value: string) => {
@@ -160,7 +137,7 @@ export default function AddExpenseDialog({
         expense_date: formData.expense_date,
         notes: formData.notes || null,
         receipt_image_url: null,
-        receipt_text: receiptText,
+        receipt_text: null,
         is_recurring: false,
         recurrence_frequency: null,
         recurrence_interval: null,
@@ -175,95 +152,7 @@ export default function AddExpenseDialog({
         expense_date: format(new Date(), 'yyyy-MM-dd'),
         notes: '',
       });
-      setReceiptText(null);
-      setReceiptItems([]);
-      setParsedReceiptVendor(null);
-      setParsedReceiptDate(null);
-      setParsedReceiptTotal(null);
-      setReceiptOcrStatus(null);
-      setReceiptUploadError(null);
-      setReceiptFileName(null);
     }
-  };
-
-  const handleReceiptFileUpload = async (file: File) => {
-    setReceiptUploadError(null);
-    setIsUploadingReceipt(true);
-
-    try {
-      const uploadResult = await receiptsApi.upload(file);
-      const parsedTotal = uploadResult.parsed_total ?? uploadResult.detected_amount ?? null;
-      const parsedDate = uploadResult.parsed_date ?? null;
-      const parsedVendor = uploadResult.parsed_vendor ?? null;
-
-      setReceiptFileName(file.name);
-      setReceiptText(uploadResult.receipt_text ?? null);
-      setReceiptItems(uploadResult.parsed_items ?? uploadResult.detected_items ?? []);
-      setParsedReceiptTotal(parsedTotal);
-      setParsedReceiptDate(parsedDate);
-      setParsedReceiptVendor(parsedVendor);
-      setReceiptOcrStatus(uploadResult.ocr_status);
-
-      if (parsedTotal && (!formData.amount || Number(formData.amount) <= 0)) {
-        setFormData((previous) => ({
-          ...previous,
-          amount: parsedTotal,
-        }));
-      }
-
-      if (parsedVendor && !formData.title.trim()) {
-        setFormData((previous) => ({
-          ...previous,
-          title: parsedVendor,
-        }));
-      }
-
-      const today = format(new Date(), "yyyy-MM-dd");
-      if (parsedDate && formData.expense_date === today) {
-        setFormData((previous) => ({
-          ...previous,
-          expense_date: parsedDate,
-        }));
-      }
-    } catch (error) {
-      const message = extractErrorMessage(error);
-      setReceiptUploadError(message || t("addExpenseDialog.errors.receiptUploadFailed"));
-    } finally {
-      setIsUploadingReceipt(false);
-    }
-  };
-
-  const handleApplyDetectedAmount = () => {
-    if (!parsedReceiptTotal) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      amount: parsedReceiptTotal,
-    }));
-  };
-
-  const handleApplyDetectedVendor = () => {
-    if (!parsedReceiptVendor) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      title: parsedReceiptVendor,
-    }));
-  };
-
-  const handleApplyDetectedDate = () => {
-    if (!parsedReceiptDate) {
-      return;
-    }
-
-    setFormData((previous) => ({
-      ...previous,
-      expense_date: parsedReceiptDate,
-    }));
   };
 
   const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
@@ -396,115 +285,6 @@ export default function AddExpenseDialog({
               rows={2}
             />
           </div>
-
-          <div className="space-y-2 rounded-md border border-border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="personal-expense-receipt">{t("addExpenseDialog.receiptImage")}</Label>
-            </div>
-
-            <Input
-              id="personal-expense-receipt"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={isUploadingReceipt || isLoading}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) {
-                  return;
-                }
-
-                void handleReceiptFileUpload(file);
-                event.target.value = "";
-              }}
-            />
-
-            {isUploadingReceipt ? (
-              <p className="text-xs text-muted-foreground">{t("addExpenseDialog.receiptUploading")}</p>
-            ) : null}
-
-            {receiptFileName ? (
-              <p className="text-xs text-muted-foreground">
-                {t("addExpenseDialog.receiptUploadedFile", { fileName: receiptFileName })}
-              </p>
-            ) : null}
-
-            {receiptOcrStatus ? (
-              <p className="text-xs text-muted-foreground">
-                {receiptOcrStatus === "done"
-                  ? t("addExpenseDialog.ocrDone")
-                  : receiptOcrStatus === "unavailable"
-                    ? t("addExpenseDialog.ocrUnavailable")
-                    : t("addExpenseDialog.ocrFailed")}
-              </p>
-            ) : null}
-
-            {parsedReceiptTotal ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addExpenseDialog.detectedAmount", {
-                    amount: parsedReceiptTotal,
-                    currency: formData.currency,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedAmount}>
-                  {t("addExpenseDialog.useDetectedAmount")}
-                </Button>
-              </div>
-            ) : null}
-
-            {parsedReceiptVendor ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addExpenseDialog.detectedVendor", {
-                    vendor: parsedReceiptVendor,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedVendor}>
-                  {t("addExpenseDialog.useDetectedVendor")}
-                </Button>
-              </div>
-            ) : null}
-
-            {parsedReceiptDate ? (
-              <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                <p className="text-xs text-foreground">
-                  {t("addExpenseDialog.detectedDate", {
-                    date: parsedReceiptDate,
-                  })}
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={handleApplyDetectedDate}>
-                  {t("addExpenseDialog.useDetectedDate")}
-                </Button>
-              </div>
-            ) : null}
-
-            {receiptItems.length > 0 ? (
-              <div className="space-y-1 rounded-md bg-muted/50 px-2 py-2">
-                <p className="text-xs font-medium text-foreground">{t("addExpenseDialog.detectedItemsLabel")}</p>
-                <div className="space-y-1">
-                  {receiptItems.slice(0, 6).map((item, index) => (
-                    <p key={`${item.name}-${item.amount}-${index}`} className="text-xs text-muted-foreground">
-                      {item.name} - {item.amount} {formData.currency}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {receiptText ? (
-              <div className="space-y-1">
-                <Label htmlFor="personal-expense-ocr-text">{t("addExpenseDialog.ocrText")}</Label>
-                <Textarea
-                  id="personal-expense-ocr-text"
-                  rows={4}
-                  value={receiptText}
-                  onChange={(event) => setReceiptText(event.target.value)}
-                />
-              </div>
-            ) : null}
-
-            {receiptUploadError ? <p className="text-xs text-destructive">{receiptUploadError}</p> : null}
-          </div>
         </div>
 
         <DialogFooter>
@@ -513,7 +293,7 @@ export default function AddExpenseDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!formData.title || !formData.amount || isLoading || isUploadingReceipt}
+            disabled={!formData.title || !formData.amount || isLoading}
           >
             {t("addExpenseDialog.submit")}
           </Button>
