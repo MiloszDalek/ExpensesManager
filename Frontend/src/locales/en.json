@@ -795,6 +795,8 @@
     "backToPersonal": "Back to personal expenses",
     "backToGroup": "Back to group",
     "uploadLabel": "Receipt image",
+    "takePhoto": "Take photo",
+    "chooseFromGallery": "Choose from gallery",
     "ocrModeLabel": "OCR mode",
     "ocrModeFast": "Fast (Tesseract)",
     "ocrModeAccurate": "Accurate (PaddleOCR)",

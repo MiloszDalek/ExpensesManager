@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Camera, ImageIcon } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import PageInfoButton from "@/components/help/PageInfoButton";
 import DatePicker from "@/components/ui/date-picker";
@@ -95,6 +97,37 @@ const buildEqualShares = (totalCents: number, participantIds: number[]): ApiExpe
   });
 };
 
+function useHasCamera() {
+  const [hasCamera, setHasCamera] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      setHasCamera(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        if (cancelled) return;
+        const videoInputs = devices.filter((d) => d.kind === "videoinput");
+        setHasCamera(videoInputs.length > 0);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setHasCamera(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return hasCamera;
+}
+
 export default function ReceiptScannerPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -106,6 +139,8 @@ export default function ReceiptScannerPage() {
   const normalizedGroupIdFromUrl = Number.isInteger(Number(groupIdParam)) && Number(groupIdParam) > 0
     ? Number(groupIdParam)
     : 0;
+
+  const hasCamera = useHasCamera();
 
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
@@ -546,21 +581,62 @@ export default function ReceiptScannerPage() {
               </div>
             </div>
 
-            <Input
-              id="receipt-scan-file"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) {
-                  return;
-                }
+            <div className={cn("grid grid-cols-1 gap-2", hasCamera && "sm:grid-cols-2")}>
+              {hasCamera ? (
+                <>
+                  <input
+                    id="receipt-scan-camera"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    capture="environment"
+                    className="hidden"
+                    disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) {
+                        return;
+                      }
+                      void handleUpload(file);
+                      event.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                    onClick={() => document.getElementById("receipt-scan-camera")?.click()}
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    {t("receiptScannerPage.takePhoto")}
+                  </Button>
+                </>
+              ) : null}
 
-                void handleUpload(file);
-                event.target.value = "";
-              }}
-            />
+              <input
+                id="receipt-scan-gallery"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) {
+                    return;
+                  }
+                  void handleUpload(file);
+                  event.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUploading || createExpenseMutation.isPending || createGroupExpenseMutation.isPending}
+                onClick={() => document.getElementById("receipt-scan-gallery")?.click()}
+              >
+                <ImageIcon className="mr-2 h-4 w-4" />
+                {t("receiptScannerPage.chooseFromGallery")}
+              </Button>
+            </div>
 
             {isUploading ? <p className="text-xs text-muted-foreground">{t("receiptScannerPage.uploading")}</p> : null}
             {receiptFileName ? (

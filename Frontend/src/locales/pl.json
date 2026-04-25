@@ -785,6 +785,8 @@
     "backToPersonal": "Powrót do wydatków osobistych",
     "backToGroup": "Powrót do grupy",
     "uploadLabel": "Zdjęcie paragonu",
+    "takePhoto": "Zrób zdjęcie",
+    "chooseFromGallery": "Wybierz z galerii",
     "ocrModeLabel": "Tryb OCR",
     "ocrModeFast": "Szybki (Tesseract)",
     "ocrModeAccurate": "Dokładny (PaddleOCR)",
