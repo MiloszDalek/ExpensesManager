@@ -283,6 +283,9 @@
       "submitLoading": "Logowanie...",
       "noAccount": "Nie masz konta?",
       "signUp": "Zarejestruj się",
+      "success": {
+        "registered": "Konto zostało utworzone. Możesz się teraz zalogować."
+      },
       "errors": {
         "loginFailed": "Logowanie nie powiodło się",
         "inactiveUser": "Twoje konto jest nieaktywne. Skontaktuj się z administratorem.",

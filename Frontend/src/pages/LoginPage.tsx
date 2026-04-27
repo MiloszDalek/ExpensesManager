@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { login } = useAuth();
+
+  const [searchParams] = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,6 +77,9 @@ export default function LoginPage() {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-card-foreground shadow-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">{t("authPages.login.title")}</h1>
+        {justRegistered && (
+          <p className="text-emerald-600 text-sm mb-4 text-center">{t("authPages.login.success.registered")}</p>
+        )}
         {error && (
           <p className="text-destructive text-sm mb-4 text-center">{error}</p>
         )}

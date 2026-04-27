@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
     try {
       await register(email, username, password);
-      navigate("/login");
+      navigate("/login?registered=true");
     } catch (err: unknown) {
       const apiDetail =
         typeof err === "object" && err !== null

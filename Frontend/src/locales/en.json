@@ -293,6 +293,9 @@
       "submitLoading": "Logging in...",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
+      "success": {
+        "registered": "Account created successfully. You can now log in."
+      },
       "errors": {
         "loginFailed": "Login failed",
         "inactiveUser": "Your account is inactive. Contact the administrator.",
