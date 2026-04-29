@@ -44,6 +44,7 @@ export default function DatePicker({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
+  const [panelPosition, setPanelPosition] = useState<'left' | 'right' | 'center'>('center');
   const [monthCursor, setMonthCursor] = useState(() => {
     const parsedValue = value ? parseISO(value) : null;
     return parsedValue && !Number.isNaN(parsedValue.getTime()) ? parsedValue : new Date();
@@ -59,10 +60,25 @@ export default function DatePicker({
     }
 
     const updatePanelWidth = () => {
-      const triggerWidth = triggerRef.current?.offsetWidth ?? 0;
-      const viewportMax = Math.max(window.innerWidth - 24, 260);
-      const preferredWidth = Math.max(triggerWidth, 280);
-      setPanelWidth(Math.min(preferredWidth, viewportMax));
+      const viewportMax = Math.max(window.innerWidth - 24, 240);
+      const fixedWidth = 240;
+      setPanelWidth(Math.min(fixedWidth, viewportMax));
+
+      // Calculate smart positioning to prevent off-screen overflow
+      const triggerRect = triggerRef.current?.getBoundingClientRect();
+      if (triggerRect) {
+        const panelWidth = Math.min(fixedWidth, viewportMax);
+        const spaceOnLeft = triggerRect.left;
+        const spaceOnRight = window.innerWidth - triggerRect.right;
+        
+        if (spaceOnRight < panelWidth / 2 && spaceOnLeft > panelWidth / 2) {
+          setPanelPosition('left');
+        } else if (spaceOnLeft < panelWidth / 2 && spaceOnRight > panelWidth / 2) {
+          setPanelPosition('right');
+        } else {
+          setPanelPosition('center');
+        }
+      }
     };
 
     updatePanelWidth();
@@ -166,43 +182,48 @@ export default function DatePicker({
           ref={panelRef}
           role="dialog"
           aria-modal="false"
-          className="absolute left-1/2 top-[calc(100%+0.5rem)] z-[220] -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+          className={cn(
+            "absolute top-[calc(100%+0.5rem)] z-[220] overflow-hidden rounded-lg border border-border bg-card shadow-xl",
+            panelPosition === 'center' && "left-1/2 -translate-x-1/2",
+            panelPosition === 'left' && "left-0",
+            panelPosition === 'right' && "right-0"
+          )}
           style={{ width: panelWidth ? `${panelWidth}px` : undefined, maxWidth: "calc(100vw - 1rem)" }}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
               onClick={() => setMonthCursor((previous) => subMonths(previous, 1))}
               aria-label={t("datePicker.previousMonth")}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
             </button>
 
             <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">{format(monthCursor, "MMMM yyyy", { locale: dateLocale })}</p>
+              <p className="text-xs font-semibold text-foreground">{format(monthCursor, "MMMM yyyy", { locale: dateLocale })}</p>
             </div>
 
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
               onClick={() => setMonthCursor((previous) => addMonths(previous, 1))}
               aria-label={t("datePicker.nextMonth")}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
-            <div className="mb-2 grid grid-cols-7 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="px-2 py-2">
+            <div className="mb-1.5 grid grid-cols-7 text-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               {weekdayLabels.map((label) => (
-                <div key={label} className="py-1">
+                <div key={label} className="py-0.5">
                   {label}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((day) => {
                 const isCurrentMonth = isSameMonth(day, monthCursor);
                 const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
@@ -214,7 +235,7 @@ export default function DatePicker({
                     type="button"
                     onClick={() => handleSelectDate(day)}
                     className={cn(
-                      "flex h-9 items-center justify-center rounded-md text-sm transition-colors sm:h-10",
+                      "flex h-8 items-center justify-center rounded text-xs transition-colors",
                       isCurrentMonth ? "text-foreground hover:bg-accent" : "text-muted-foreground/60 hover:bg-accent/60",
                       isSelected && "bg-primary text-primary-foreground hover:bg-primary/90",
                       currentDay && !isSelected && "ring-1 ring-primary/40"
@@ -226,16 +247,16 @@ export default function DatePicker({
               })}
             </div>
 
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
               <button
                 type="button"
-                className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                 onClick={() => setOpen(false)}
               >
                 {t("datePicker.close")}
               </button>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
                 <span>{selectedDate ? format(selectedDate, "PPP", { locale: dateLocale }) : placeholderText}</span>
               </div>
             </div>
