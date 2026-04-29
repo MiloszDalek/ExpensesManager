@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 import type { ApiCategoryResponse } from "@/types/category";
 import type {
@@ -140,9 +141,12 @@ export default function EditRecurringExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>
-            {t("recurringExpenses.editDialogTitle", { defaultValue: "Edit recurring series" })}
-          </DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>
+              {t("recurringExpenses.editDialogTitle", { defaultValue: "Edit recurring series" })}
+            </DialogTitle>
+            <DialogInfoButton dialogKey="editRecurringExpense" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">

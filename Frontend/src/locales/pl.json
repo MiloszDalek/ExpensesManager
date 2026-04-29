@@ -425,6 +425,49 @@
         "contacts": "Kontakty i zaproszenia ułatwiające dodawanie osób do grup.",
         "summaries": "Wykresy, analizy i eksport danych z wydatków."
       }
+    },
+    "dialogInfo": {
+      "buttonLabel": "Informacje o tym dialogu",
+      "dialogTitle": "Jak korzystać z tego dialogu?",
+      "dialogs": {
+        "addExpense": {
+          "title": "Dodawanie wydatku",
+          "purpose": "Dodaj jednorazowy wydatek osobisty z tytułem, kwotą, walutą, kategorią, datą i opcjonalnymi notatkami.",
+          "actions": [
+            "Wypełnij wymagane pola (tytuł, kwota).",
+            "Wybierz walutę i kategorię.",
+            "Wybierz datę wydatku.",
+            "Opcjonalnie dodaj notatki."
+          ]
+        },
+        "addRecurringExpense": {
+          "title": "Dodawanie wydatku cyklicznego",
+          "purpose": "Utwórz serię cyklicznych wydatków, które będą generowane automatycznie na podstawie częstotliwości i interwału.",
+          "actions": [
+            "Ustaw tytuł, kwotę, walutę i kategorię.",
+            "Wybierz częstotliwość (dziennie/tygodniowo/miesięcznie/kwartalnie/rocznie).",
+            "Ustaw interwał (co ile okresów).",
+            "Zdefiniuj datę początku i opcjonalną datę końca."
+          ]
+        },
+        "editExpense": {
+          "title": "Edycja wydatku",
+          "purpose": "Modyfikuj szczegóły istniejącego wydatku, w tym tytuł, kwotę, walutę, kategorię, datę i notatki.",
+          "actions": [
+            "Zaktualizuj dowolne pola według potrzeb.",
+            "Zmiany zostaną zastosowane do wydatku po zapisaniu."
+          ]
+        },
+        "editRecurringExpense": {
+          "title": "Edycja serii cyklicznej",
+          "purpose": "Edytuj ustawienia serii cyklicznej i zarządzaj serią (generuj teraz, wstrzymaj, wznów, archiwizuj, usuń).",
+          "actions": [
+            "Modyfikuj parametry serii.",
+            "Używaj akcji serii do kontrolowania generacji i statusu.",
+            "Zmiany dotyczą tylko przyszłych wystąpień."
+          ]
+        }
+      }
     }
   },
   "notFoundPage": {

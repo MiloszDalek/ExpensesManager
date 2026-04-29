@@ -40,6 +40,7 @@ import {
 import { getDefaultCategoryId } from "@/utils/category";
 import CategoryPicker from "./CategoryPicker";
 import type { CategorySection } from "@/types/enums";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 type EditExpenseDialogProps = {
   open: boolean;
@@ -138,7 +139,10 @@ export default function EditExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>{t("expensesList.editExpenseTitle", { defaultValue: "Edit expense" })}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{t("expensesList.editExpenseTitle", { defaultValue: "Edit expense" })}</DialogTitle>
+            <DialogInfoButton dialogKey="editExpense" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">

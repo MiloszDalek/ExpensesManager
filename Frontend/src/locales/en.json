@@ -435,6 +435,49 @@
         "contacts": "Contacts and invitations to speed up collaboration.",
         "summaries": "Charts, insights, and exports for your spending."
       }
+    },
+    "dialogInfo": {
+      "buttonLabel": "About this dialog",
+      "dialogTitle": "How to use this dialog",
+      "dialogs": {
+        "addExpense": {
+          "title": "Add expense",
+          "purpose": "Add a one-time personal expense with title, amount, currency, category, date, and optional notes.",
+          "actions": [
+            "Fill in required fields (title, amount).",
+            "Select currency and category.",
+            "Choose the expense date.",
+            "Optionally add notes."
+          ]
+        },
+        "addRecurringExpense": {
+          "title": "Add recurring expense",
+          "purpose": "Create a recurring expense series that generates expenses automatically based on frequency and interval.",
+          "actions": [
+            "Set title, amount, currency, and category.",
+            "Choose frequency (daily/weekly/monthly/quarterly/yearly).",
+            "Set interval count (how many periods).",
+            "Define start date and optional end date."
+          ]
+        },
+        "editExpense": {
+          "title": "Edit expense",
+          "purpose": "Modify an existing expense's details including title, amount, currency, category, date, and notes.",
+          "actions": [
+            "Update any fields as needed.",
+            "Changes apply to the expense immediately upon saving."
+          ]
+        },
+        "editRecurringExpense": {
+          "title": "Edit recurring series",
+          "purpose": "Edit recurring series settings and manage the series (generate now, pause, resume, archive, delete).",
+          "actions": [
+            "Modify series parameters.",
+            "Use series actions to control generation and status.",
+            "Changes affect future occurrences only."
+          ]
+        }
+      }
     }
   },
   "notFoundPage": {

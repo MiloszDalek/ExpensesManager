@@ -40,6 +40,7 @@ import {
 import { getDefaultCategoryId } from "@/utils/category";
 import CategoryPicker from "./CategoryPicker";
 import type { CategorySection } from "@/types/enums";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 // TODO: Po dodaniu icon_key w API, umożliwić wybór ikony przy tworzeniu kategorii
 
@@ -163,7 +164,10 @@ export default function AddExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="dialog-scrollbar sm:max-w-md max-h-[calc(100vh-2rem)] p-4 sm:p-6 [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>{t("addExpenseDialog.title")}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{t("addExpenseDialog.title")}</DialogTitle>
+            <DialogInfoButton dialogKey="addExpense" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">

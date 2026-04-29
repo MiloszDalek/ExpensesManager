@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
 import { getDefaultCategoryId } from "@/utils/category";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 import type { ApiCategoryResponse } from "@/types/category";
 import type { ApiRecurringPersonalExpenseCreate } from "@/types/expense";
@@ -131,9 +132,12 @@ export default function AddRecurringExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>
-            {t("addRecurringExpenseDialog.title", { defaultValue: "Add recurring expense" })}
-          </DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>
+              {t("addRecurringExpenseDialog.title", { defaultValue: "Add recurring expense" })}
+            </DialogTitle>
+            <DialogInfoButton dialogKey="addRecurringExpense" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
