@@ -143,12 +143,16 @@ export default function EditExpenseDialog({
 
         <div className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="edit-title">{t("addExpenseDialog.titleLabel")}</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="edit-title">{t("addExpenseDialog.titleLabel")}</Label>
+              <span className="text-xs text-muted-foreground">{formData.title.length}/100</span>
+            </div>
             <Input
               id="edit-title"
               placeholder={t("addExpenseDialog.titlePlaceholder")}
               value={formData.title}
               onChange={(event) => setFormData((prev) => ({ ...prev, title: event.target.value }))}
+              maxLength={100}
             />
           </div>
 
@@ -260,13 +264,17 @@ export default function EditExpenseDialog({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="edit-notes">{t("addExpenseDialog.notes")}</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="edit-notes">{t("addExpenseDialog.notes")}</Label>
+              <span className="text-xs text-muted-foreground">{formData.notes.length}/500</span>
+            </div>
             <Textarea
               id="edit-notes"
               placeholder={t("addExpenseDialog.notesPlaceholder")}
               value={formData.notes}
               onChange={(event) => setFormData((prev) => ({ ...prev, notes: event.target.value }))}
               rows={2}
+              maxLength={500}
             />
           </div>
         </div>

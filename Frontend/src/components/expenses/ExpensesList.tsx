@@ -86,7 +86,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 w-full min-w-0">
       <AnimatePresence>
         {expenses.map((expense, index) => {
           const category = getCategory(expense.category_id);
@@ -105,9 +105,10 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ delay: index * 0.05 }}
+              className="min-w-0 max-w-full"
             >
-              <Card className="group overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-                <CardContent className="px-2.5 py-1.5 sm:px-3 sm:py-2">
+              <Card className="group w-full max-w-full overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md" style={{ maxWidth: '100%', width: '100%' }}>
+                <CardContent className="overflow-hidden w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2" style={{ maxWidth: '100%' }}>
                   <div
                     role="button"
                     tabIndex={0}
@@ -181,8 +182,8 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>{t("expensesList.cancel")}</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(expense.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          <AlertDialogCancel onClick={(event) => event.stopPropagation()}>{t("expensesList.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction onClick={(event) => { event.stopPropagation(); onDelete(expense.id); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             {t("expensesList.delete")}
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -198,11 +199,12 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="overflow-hidden"
+                        className="overflow-hidden w-full min-w-0 max-w-[100%]"
+                        style={{ width: '100%' }}
                       >
-                        <div className="mt-2.5 border-t border-border pt-2.5">
-                          <div className="mb-2 flex items-start justify-between gap-2">
-                            <div className="grid gap-1 text-xs text-muted-foreground">
+                        <div className="mt-2.5 w-full min-w-0 max-w-full border-t border-border pt-2.5" style={{ maxWidth: '100%', width: '100%' }}>
+                          <div className="mb-2 flex items-start justify-between gap-2 w-full min-w-0">
+                            <div className="grid gap-1 text-xs text-muted-foreground min-w-0">
                               <p>
                                 <span className="font-medium">{t("expensesList.mainCategory")}: </span>
                                 <span>{categoryGroupLabel}</span>
@@ -224,10 +226,17 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                             </Button>
                           </div>
 
-                          <p className="text-xs font-medium text-muted-foreground">{t("addExpenseDialog.notes")}</p>
-                          <p className="mt-1 text-sm text-foreground wrap-break-word">
-                            {hasNotes ? expense.notes : t("expensesList.noNotes")}
+                          <p className="text-xs font-medium text-muted-foreground">{t("addExpenseDialog.titleLabel")}</p>
+                          <p className="mt-1 text-sm text-foreground break-words overflow-wrap-anywhere whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                            {expense.title}
                           </p>
+
+                          <p className="mt-2 text-xs font-medium text-muted-foreground">{t("addExpenseDialog.notes")}</p>
+                          <div style={{ width: '100%', maxWidth: '100%', tableLayout: 'fixed', display: 'table' }}>
+                            <p className="text-sm text-foreground" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal', width: '100%' }}>
+                              {hasNotes ? expense.notes : t("expensesList.noNotes")}
+                            </p>
+                          </div>
                         </div>
                       </motion.div>
                     )}
