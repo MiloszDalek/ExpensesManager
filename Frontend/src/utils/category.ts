@@ -164,7 +164,7 @@ export function getCategoryIcon(category: CategoryLike) {
   return categoryIcons.other || Smartphone;
 }
 
-const CATEGORY_GROUP_STYLES: Record<CategoryVisualGroup, { badgeClass: string; gradientClass: string }> = {
+export const CATEGORY_GROUP_STYLES: Record<CategoryVisualGroup, { badgeClass: string; gradientClass: string }> = {
   food: {
     badgeClass: "bg-amber-100 text-amber-700",
     gradientClass: "from-amber-500 to-orange-500",

@@ -461,6 +461,7 @@
     "noCategories": "Brak kategorii w tej grupie.",
     "noSearchResults": "Brak wyników dla podanej frazy.",
     "customCategoryPlaceholder": "Nowa kategoria...",
+    "customCategorySectionLabel": "Sekcja dla kategorii",
     "customCategorySectionPlaceholder": "Wybierz sekcję",
     "addCustomCategoryTile": "Dodaj własną kategorię",
     "addCustomCategoryTitle": "Dodaj własną kategorię",
@@ -480,7 +481,12 @@
     "addExpense": "Dodaj wydatek",
     "addRecurringExpense": "Dodaj cykliczny",
     "scanReceipt": "Skanuj paragon",
-    "loadMore": "Załaduj więcej"
+    "loadMore": "Załaduj więcej",
+    "numericSummary": "Podsumowanie w liczbach",
+    "expenseCount": "Wydatki",
+    "topCategory": "Najczęstsza kategoria",
+    "listTitle": "Lista wydatków",
+    "filtersTitle": "Filtry"
   },
   "recurringExpenses": {
     "title": "Wydatki cykliczne",

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Plus, Repeat2, ScanSearch } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, startOfMonth, subMonths } from "date-fns";
@@ -548,42 +547,6 @@ export default function PersonalExpensesPage() {
           </div>
         </motion.div>
 
-        <Card className="mx-auto mb-6 w-full max-w-4xl border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-          <CardContent className="p-4 md:p-5">
-            <h2 className="text-lg font-semibold text-foreground md:text-xl">
-              {t("personalExpensesPage.numericSummary", { defaultValue: "Podsumowanie w liczbach" })}
-            </h2>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-lg border border-border bg-background/60 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("personalExpensesPage.total", { defaultValue: "Total" })}
-                </p>
-                <p className="mt-1 text-xl font-bold text-foreground">{totalLabel || "0.00"}</p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-background/60 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("personalExpensesPage.expenseCount", { defaultValue: "Expenses" })}
-                </p>
-                <p className="mt-1 text-xl font-bold text-foreground">{summary?.total_count ?? 0}</p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-background/60 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("personalExpensesPage.topCategory", { defaultValue: "Top category" })}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {topCategoryName}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {topCategory ? Number(topCategory.total_amount).toFixed(2) : "-"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="mb-4 md:hidden">
           <div className="grid grid-cols-2 gap-1">
             <Button
@@ -628,6 +591,38 @@ export default function PersonalExpensesPage() {
           </div>
 
           <div className={`order-2 lg:col-span-6 ${mobileSection !== "expenses" ? "hidden md:block" : ""}`}>
+            <h2 className="mb-3 text-xl font-semibold text-foreground">
+              {t("personalExpensesPage.numericSummary")}
+            </h2>
+
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm p-4 md:p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("personalExpensesPage.total")}
+                </p>
+                <p className="mt-1 text-xl font-bold text-foreground">{totalLabel || "0.00"}</p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm p-4 md:p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("personalExpensesPage.expenseCount")}
+                </p>
+                <p className="mt-1 text-xl font-bold text-foreground">{summary?.total_count ?? 0}</p>
+              </div>
+
+              <div className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm p-4 md:p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("personalExpensesPage.topCategory")}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {topCategoryName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {topCategory ? Number(topCategory.total_amount).toFixed(2) : "-"}
+                </p>
+              </div>
+            </div>
+
             <h2 className="mb-3 text-xl font-semibold text-foreground">
               {t("personalExpensesPage.listTitle", { defaultValue: "Lista wydatkow" })}
             </h2>

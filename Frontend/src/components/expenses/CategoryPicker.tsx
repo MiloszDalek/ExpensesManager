@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import type { ApiCategoryResponse } from "@/types/category";
 import {
+  CATEGORY_GROUP_STYLES,
   formatCategoryNameForDisplay,
   getCategoryIcon,
   getCategoryVisualStyle,
@@ -26,7 +27,7 @@ import {
   type CategoryVisualGroup,
 } from "@/utils/category";
 import { getRecentCategoryIds, rememberRecentCategoryId } from "@/utils/categoryRecent";
-import { Trash2 } from "lucide-react";
+import { CircleQuestionMark, Trash2 } from "lucide-react";
 
 type CategoryPickerProps = {
   value: string; // "all" lub id kategorii jako string
@@ -516,7 +517,7 @@ export default function CategoryPicker({
       </Dialog>
 
       <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm sm:top-[45%]">
           <DialogHeader>
             <DialogTitle>{t("expenseFilters.addCustomCategoryTitle")}</DialogTitle>
           </DialogHeader>
@@ -535,6 +536,8 @@ export default function CategoryPicker({
               autoFocus
             />
 
+            <p className="text-sm text-muted-foreground">{t("expenseFilters.customCategorySectionLabel")}</p>
+
             <Select
               value={customCategorySection}
               onValueChange={(value) => setCustomCategorySection(value as CategoryVisualGroup)}
@@ -543,11 +546,19 @@ export default function CategoryPicker({
                 <SelectValue placeholder={t("expenseFilters.customCategorySectionPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORY_SECTION_OPTIONS.map((section) => (
-                  <SelectItem key={section} value={section}>
-                    {getCategoryGroupLabel(section)}
-                  </SelectItem>
-                ))}
+                {CATEGORY_SECTION_OPTIONS.map((section) => {
+                  const style = CATEGORY_GROUP_STYLES[section];
+                  return (
+                    <SelectItem key={section} value={section}>
+                      <span className="flex items-center gap-2">
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${style.badgeClass}`}>
+                          <CircleQuestionMark className="h-4 w-4 text-current" />
+                        </span>
+                        {getCategoryGroupLabel(section)}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
