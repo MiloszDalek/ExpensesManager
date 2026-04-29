@@ -509,6 +509,7 @@
     "change": "Change",
     "selectCategory": "Select category",
     "chooseGroup": "Choose a group on the left and a subcategory on the right.",
+    "dateToBeforeDateFrom": "End date cannot be earlier than start date.",
     "allCategories": "All categories",
     "search": "Search...",
     "noCategories": "No categories in this group.",

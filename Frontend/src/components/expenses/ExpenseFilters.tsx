@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -53,6 +54,7 @@ export default function ExpenseFilters({
   const { t } = useTranslation();
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
   const [isCurrencySelectOpen, setIsCurrencySelectOpen] = useState(false);
+  const [dateValidationError, setDateValidationError] = useState<string | null>(null);
   const ignoredCurrencySelectionRef = useRef<CurrencyEnum | null>(null);
 
   useEffect(() => {
@@ -107,6 +109,36 @@ export default function ExpenseFilters({
         currency: "all",
       });
       setIsCurrencySelectOpen(false);
+    }
+  };
+
+  const handleDateFromChange = (value: string) => {
+    onFilterChange({
+      ...filters,
+      periodPreset: "custom",
+      dateFrom: value,
+    });
+
+    // Validate if dateTo is earlier than new dateFrom
+    if (filters.dateTo && value && new Date(filters.dateTo) < new Date(value)) {
+      setDateValidationError(t("expenseFilters.dateToBeforeDateFrom"));
+    } else {
+      setDateValidationError(null);
+    }
+  };
+
+  const handleDateToChange = (value: string) => {
+    onFilterChange({
+      ...filters,
+      periodPreset: "custom",
+      dateTo: value,
+    });
+
+    // Validate if dateTo is earlier than dateFrom
+    if (filters.dateFrom && value && new Date(value) < new Date(filters.dateFrom)) {
+      setDateValidationError(t("expenseFilters.dateToBeforeDateFrom"));
+    } else {
+      setDateValidationError(null);
     }
   };
 
@@ -235,13 +267,7 @@ export default function ExpenseFilters({
             <DatePicker
               id="date-from"
               value={filters.dateFrom}
-              onChange={(value) =>
-                onFilterChange({
-                  ...filters,
-                  periodPreset: "custom",
-                  dateFrom: value,
-                })
-              }
+              onChange={handleDateFromChange}
             />
           </div>
 
@@ -250,15 +276,16 @@ export default function ExpenseFilters({
             <DatePicker
               id="date-to"
               value={filters.dateTo}
-              onChange={(value) =>
-                onFilterChange({
-                  ...filters,
-                  periodPreset: "custom",
-                  dateTo: value,
-                })
-              }
+              onChange={handleDateToChange}
             />
           </div>
+
+          {dateValidationError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{dateValidationError}</span>
+            </div>
+          )}
         </div>
       )}
 

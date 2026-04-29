@@ -499,6 +499,7 @@
     "change": "Zmień",
     "selectCategory": "Wybierz kategorię",
     "chooseGroup": "Wybierz grupę po lewej i podkategorię po prawej.",
+    "dateToBeforeDateFrom": "Data końcowa nie może być wcześniejsza niż data początkowa.",
     "allCategories": "Wszystkie kategorie",
     "search": "Wyszukaj...",
     "noCategories": "Brak kategorii w tej grupie.",
