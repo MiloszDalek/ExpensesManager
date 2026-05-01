@@ -163,7 +163,7 @@ class NotificationScheduler:
                 result = notification_service.notify_recurring_due_soon(
                     user_id=recurring.user_id,
                     recurring_id=recurring.id,
-                    recurring_name=recurring.name,
+                    recurring_name=recurring.title,
                     days_until_due=days_until
                 )
                 if result:

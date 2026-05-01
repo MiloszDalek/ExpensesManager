@@ -160,7 +160,7 @@ class DashboardService:
             items.append(AttentionItem(
                 id=f"recurring_due_{recurring.id}",
                 type=InsightType.UPCOMING_PAYMENT,
-                title=f"{recurring.name} due soon",
+                title=f"{recurring.title} due soon",
                 description=f"Due in {days_until} day{'s' if days_until != 1 else ''}",
                 severity=NotificationSeverity.WARNING if days_until <= 3 else NotificationSeverity.INFO,
                 action_url="/personal?tab=recurring",
