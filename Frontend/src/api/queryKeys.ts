@@ -4,6 +4,9 @@ import type {
   ApiExpenseSummaryOverviewParams,
   ApiExpenseSummaryTrendsParams,
   ApiPersonalExpenseListParams,
+  NotificationSeverity,
+  NotificationStatus,
+  NotificationType,
   RecurringScope,
 } from "@/types";
 import type { RecurringExpenseStatus } from "@/types/enums";
@@ -104,7 +107,13 @@ export const queryKeys = {
   },
 
   notifications: {
-    list: (params?: { limit?: number; offset?: number }) =>
+    list: (params?: {
+      limit?: number;
+      offset?: number;
+      status?: NotificationStatus;
+      type?: NotificationType;
+      severity?: NotificationSeverity;
+    }) =>
       ["notifications", "list", params ?? {}] as const,
     unreadCount: ["notifications", "unreadCount"] as const,
   },

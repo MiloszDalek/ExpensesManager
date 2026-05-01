@@ -1310,6 +1310,52 @@
       "onlyPendingCanBeCancelledOrArchived": "Only pending invitations can be cancelled, and completed invitations can be archived by sender."
     }
   },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Review recent updates and action items.",
+    "bellLabel": "Notifications ({{count}} unread)",
+    "unread": "unread",
+    "empty": "No notifications to show.",
+    "noMessage": "No message provided.",
+    "viewAll": "View all notifications",
+    "loading": "Loading notifications...",
+    "loadMore": "Load more",
+    "filters": {
+      "title": "Filters",
+      "subtitle": "Narrow down by severity or topic.",
+      "severityLabel": "Severity",
+      "groupLabel": "Notifications",
+      "allSeverities": "All severities",
+      "allGroups": "All notifications",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "listSubtitle": "Your most recent updates and alerts.",
+    "actions": {
+      "markAllRead": "Mark all as read",
+      "markRead": "Mark as read",
+      "archive": "Archive",
+      "open": "Open"
+    },
+    "severity": {
+      "info": "Info",
+      "warning": "Warning",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "archived": "Archived"
+    },
+    "typeGroups": {
+      "invitations": "Invitations",
+      "budgets": "Budgets",
+      "expenses": "Expenses",
+      "recurring": "Recurring",
+      "settlements": "Settlements",
+      "goals": "Goals",
+      "insights": "Insights",
+      "legacy": "Legacy"
+    }
+  },
   "contactsBalancesPage": {
     "title": "Contacts balances",
     "subtitle": "See your total balances with each contact and expand to check per-group breakdown.",

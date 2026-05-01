@@ -1300,6 +1300,52 @@
       "onlyPendingCanBeCancelledOrArchived": "Anulować można tylko zaproszenia oczekujące, a zakończone zaproszenia może archiwizować nadawca."
     }
   },
+  "notifications": {
+    "title": "Powiadomienia",
+    "subtitle": "Sprawdzaj najnowsze aktualizacje i działania.",
+    "bellLabel": "Powiadomienia (nieprzeczytane: {{count}})",
+    "unread": "nieprzeczytane",
+    "empty": "Brak powiadomień.",
+    "noMessage": "Brak treści powiadomienia.",
+    "viewAll": "Zobacz wszystkie powiadomienia",
+    "loading": "Ładowanie powiadomień...",
+    "loadMore": "Pokaż więcej",
+    "filters": {
+      "title": "Filtry",
+      "subtitle": "Zawężaj po priorytecie lub temacie.",
+      "severityLabel": "Priorytet",
+      "groupLabel": "Powiadomienia",
+      "allSeverities": "Wszystkie priorytety",
+      "allGroups": "Wszystkie powiadomienia",
+      "apply": "Zastosuj",
+      "reset": "Wyczyść"
+    },
+    "listSubtitle": "Twoje najnowsze aktualizacje i alerty.",
+    "actions": {
+      "markAllRead": "Oznacz wszystkie jako przeczytane",
+      "markRead": "Oznacz jako przeczytane",
+      "archive": "Archiwizuj",
+      "open": "Otwórz"
+    },
+    "severity": {
+      "info": "Informacyjne",
+      "warning": "Ostrzeżenie",
+      "urgent": "Pilne"
+    },
+    "status": {
+      "archived": "Zarchiwizowane"
+    },
+    "typeGroups": {
+      "invitations": "Zaproszenia",
+      "budgets": "Budżety",
+      "expenses": "Wydatki",
+      "recurring": "Cykliczne",
+      "settlements": "Rozliczenia",
+      "goals": "Cele",
+      "insights": "Wnioski",
+      "legacy": "Starsze"
+    }
+  },
   "contactsBalancesPage": {
     "title": "Salda kontaktów",
     "subtitle": "Sprawdź łączne saldo z każdym kontaktem i rozwiń, aby zobaczyć podział na grupy.",
