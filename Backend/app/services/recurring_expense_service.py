@@ -613,6 +613,17 @@ class RecurringExpenseService:
 
     def delete_recurring_expense(self, recurring_expense_id: int, user_id: int):
         recurring_expense = self.get_recurring_expense(recurring_expense_id, user_id)
+        has_occurrences = (
+            self.db.query(Expense.id)
+            .filter(Expense.recurring_expense_id == recurring_expense_id)
+            .first()
+            is not None
+        )
+        if has_occurrences:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete recurring expense with existing occurrences",
+            )
         self.recurring_repo.delete(recurring_expense)
         self.recurring_repo.save_all()
 

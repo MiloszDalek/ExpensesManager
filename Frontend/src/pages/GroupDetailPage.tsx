@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil, Repeat2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -73,6 +74,9 @@ const CONTACTS_LIMIT = 100;
 const SETTLEMENTS_LIMIT = 20;
 const RECURRING_LIMIT = 50;
 
+const getErrorStatus = (error: unknown): number | undefined =>
+  axios.isAxiosError(error) ? error.response?.status : undefined;
+
 export default function GroupDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -114,6 +118,7 @@ export default function GroupDetailPage() {
 
   const groupId = Number(id);
   const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
+  const canQueryGroup = !!user && isValidGroupId;
   const groupPendingInvitationsQueryKey = queryKeys.invitations.groupPending(groupId, {
     limit: 100,
     offset: 0,
@@ -126,8 +131,19 @@ export default function GroupDetailPage() {
   } = useQuery<ApiGroupResponse>({
     queryKey: queryKeys.groups.byId(groupId),
     queryFn: () => groupsApi.getById(groupId),
-    enabled: !!user && isValidGroupId,
+    enabled: canQueryGroup,
+    retry: (failureCount, error) => {
+      const status = getErrorStatus(error);
+      if (status === 403 || status === 404) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
+
+  const groupErrorStatus = getErrorStatus(groupError);
+  const isAccessDenied = groupErrorStatus === 403 || groupErrorStatus === 404;
+  const canLoadGroupData = canQueryGroup && !isAccessDenied && !!group;
 
   const {
     data: members = [],
@@ -136,7 +152,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiGroupMemberResponse[]>({
     queryKey: queryKeys.groups.members(groupId),
     queryFn: () => groupsApi.members(groupId),
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const currentMember = useMemo(
@@ -151,7 +167,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiContactResponse[]>({
     queryKey: queryKeys.contacts.list({ limit: CONTACTS_LIMIT, offset: 0 }),
     queryFn: () => contactsApi.list({ limit: CONTACTS_LIMIT, offset: 0 }),
-    enabled: !!user && isValidGroupId && isCurrentUserAdmin,
+    enabled: canLoadGroupData && isCurrentUserAdmin,
   });
 
   const {
@@ -161,7 +177,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiInvitationResponse[]>({
     queryKey: groupPendingInvitationsQueryKey,
     queryFn: () => invitationsApi.listGroupPending(groupId, { limit: 100, offset: 0 }),
-    enabled: !!user && isValidGroupId && isCurrentUserAdmin,
+    enabled: canLoadGroupData && isCurrentUserAdmin,
   });
 
   const {
@@ -171,7 +187,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiCategoryResponse[]>({
     queryKey: queryKeys.categories.availableGroup(groupId),
     queryFn: () => categoriesApi.getAvailableGroup(groupId),
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const {
@@ -181,7 +197,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiGroupBalances>({
     queryKey: queryKeys.balances.group(groupId),
     queryFn: () => balancesApi.getGroup(groupId),
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const {
@@ -202,7 +218,7 @@ export default function GroupDetailPage() {
       return lastPage.length === LIMIT ? allPages.length * LIMIT : undefined;
     },
     initialPageParam: 0,
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const {
@@ -212,7 +228,7 @@ export default function GroupDetailPage() {
   } = useQuery<ApiSettlementResponse[]>({
     queryKey: queryKeys.settlements.group(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
     queryFn: () => settlementsApi.getByGroup(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const {
@@ -233,7 +249,7 @@ export default function GroupDetailPage() {
         limit: RECURRING_LIMIT,
         offset: 0,
       }),
-    enabled: !!user && isValidGroupId,
+    enabled: canLoadGroupData,
   });
 
   const expenses = useMemo(() => expensePages?.pages.flatMap((page) => page) ?? [], [expensePages]);
@@ -867,6 +883,29 @@ export default function GroupDetailPage() {
     );
   }
 
+  if (isAccessDenied) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-xl border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-2xl font-bold text-foreground">{t("groupDetailPage.accessDeniedTitle")}</h2>
+            <p className="mt-2 text-muted-foreground">
+              {t("groupDetailPage.accessDeniedDescription")}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t("groupDetailPage.accessDeniedHint")}
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Button asChild>
+                <Link to={createPageUrl("Groups")}>{t("groupDetailPage.backToGroups")}</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!user || groupLoading || membersLoading || categoriesLoading || expensesLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -875,7 +914,7 @@ export default function GroupDetailPage() {
     );
   }
 
-  if (groupError || membersError || categoriesError || expensesError || !group) {
+  if ((groupError && !isAccessDenied) || membersError || categoriesError || expensesError || !group) {
     return (
       <div className="flex items-center justify-center h-screen px-4">
         <div className="text-center text-destructive">

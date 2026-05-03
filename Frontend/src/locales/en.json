@@ -1009,9 +1009,12 @@
     }
   },
   "groupDetailPage": {
-    "backToGroups": "Back to groups",
+    "backToGroups": "Back to group list",
     "invalidGroupTitle": "Invalid group id",
     "invalidGroupDescription": "The provided group path is not valid.",
+    "accessDeniedTitle": "No access to this group",
+    "accessDeniedDescription": "You do not have permission to view this group.",
+    "accessDeniedHint": "Make sure you are signed in to the correct account.",
     "noDescription": "No description",
     "currencyLabel": "Currency",
     "editGroup": "Edit group",

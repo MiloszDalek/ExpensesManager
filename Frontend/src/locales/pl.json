@@ -999,9 +999,12 @@
     }
   },
   "groupDetailPage": {
-    "backToGroups": "Powrót do grup",
+    "backToGroups": "Powrót do listy grup",
     "invalidGroupTitle": "Nieprawidłowe ID grupy",
     "invalidGroupDescription": "Podany adres grupy jest nieprawidłowy.",
+    "accessDeniedTitle": "Brak dostępu do tej grupy",
+    "accessDeniedDescription": "Nie masz pozwolenia na wgląd do tej grupy.",
+    "accessDeniedHint": "Upewnij się, że jesteś zalogowany/a na właściwe konto.",
     "noDescription": "Brak opisu",
     "currencyLabel": "Waluta",
     "editGroup": "Edytuj grupę",
