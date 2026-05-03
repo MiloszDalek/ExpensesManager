@@ -104,6 +104,7 @@ export default function GroupDetailPage() {
   const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
   const [editGroupError, setEditGroupError] = useState<string | null>(null);
   const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const [groupSettlementFeedback, setGroupSettlementFeedback] = useState<{
     tone: "success" | "error";
     message: string;
@@ -143,7 +144,7 @@ export default function GroupDetailPage() {
 
   const groupErrorStatus = getErrorStatus(groupError);
   const isAccessDenied = groupErrorStatus === 403 || groupErrorStatus === 404;
-  const canLoadGroupData = canQueryGroup && !isAccessDenied && !!group;
+  const canLoadGroupData = canQueryGroup && !isAccessDenied && !!group && !isLeavingGroup;
 
   const {
     data: members = [],
@@ -295,10 +296,34 @@ export default function GroupDetailPage() {
 
   const leaveGroupMutation = useMutation<void, Error>({
     mutationFn: () => groupsApi.leaveGroup(groupId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
+    onMutate: async () => {
+      setIsLeavingGroup(true);
+
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: queryKeys.groups.byId(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.groups.members(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.categories.availableGroup(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.balances.group(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.groupExpenses.list(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.settlements.group(groupId) }),
+        queryClient.cancelQueries({ queryKey: queryKeys.recurringExpenses.list({ scope: "group", group_id: groupId }) }),
+        queryClient.cancelQueries({ queryKey: groupPendingInvitationsQueryKey }),
+      ]);
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: queryKeys.groups.byId(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.groups.members(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.balances.group(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.groupExpenses.list(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.settlements.group(groupId) });
+      queryClient.removeQueries({ queryKey: queryKeys.recurringExpenses.list({ scope: "group", group_id: groupId }) });
+      queryClient.removeQueries({ queryKey: groupPendingInvitationsQueryKey });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
       navigate(createPageUrl("Groups"));
+    },
+    onError: () => {
+      setIsLeavingGroup(false);
     },
   });
 
@@ -1459,11 +1484,18 @@ export default function GroupDetailPage() {
                         className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
                       >
                         <div className="min-w-0">
+                          {(() => {
+                            const recipientLabel =
+                              invitation.to_user_username ?? invitation.to_user_email ?? `#${invitation.to_user_id}`;
+
+                            return (
                           <p className="truncate text-sm font-medium text-foreground">
-                            {t("groupDetailPage.pendingInvitationUser", {
-                              userId: invitation.to_user_id,
-                            })}
+                              {t("groupDetailPage.pendingInvitationUser", {
+                                username: recipientLabel,
+                              })}
                           </p>
+                            );
+                          })()}
                           <p className="truncate text-xs text-muted-foreground">
                             {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
                           </p>

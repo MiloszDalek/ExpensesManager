@@ -1076,7 +1076,7 @@
     "addMember": "Dodaj członka",
     "pendingInvitations": "Oczekujące zaproszenia",
     "noPendingInvitations": "Brak oczekujących zaproszeń.",
-    "pendingInvitationUser": "Zaproszenie wysłane do użytkownika #{{userId}}",
+    "pendingInvitationUser": "Zaproszenie wysłane do {{username}}",
     "cancelInvitation": "Anuluj",
     "cancelling": "Anulowanie...",
     "loadMore": "Załaduj więcej",

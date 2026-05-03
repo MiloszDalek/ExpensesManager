@@ -1086,7 +1086,7 @@
     "addMember": "Add member",
     "pendingInvitations": "Pending invitations",
     "noPendingInvitations": "There are no pending invitations.",
-    "pendingInvitationUser": "Invitation sent to user #{{userId}}",
+    "pendingInvitationUser": "Invitation sent to {{username}}",
     "cancelInvitation": "Cancel",
     "cancelling": "Cancelling...",
     "loadMore": "Load More",
