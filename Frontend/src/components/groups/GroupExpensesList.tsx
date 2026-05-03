@@ -202,11 +202,9 @@ export default function GroupExpensesList({
                             aria-label={t("groupExpensesList.delete")}
                             className="h-7 w-7 shrink-0 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                             onPointerDown={(event) => {
-                              event.preventDefault();
                               event.stopPropagation();
                             }}
                             onClick={(event) => {
-                              event.preventDefault();
                               event.stopPropagation();
                             }}
                           >
@@ -221,9 +219,14 @@ export default function GroupExpensesList({
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{t("groupExpensesList.cancel")}</AlertDialogCancel>
+                            <AlertDialogCancel onClick={(event) => event.stopPropagation()}>
+                              {t("groupExpensesList.cancel")}
+                            </AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => onDelete(expense.id)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onDelete(expense.id);
+                              }}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               {t("groupExpensesList.delete")}
