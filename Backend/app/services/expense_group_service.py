@@ -47,12 +47,24 @@ class ExpenseGroupService:
         return expense
 
 
-    def validate_participants(self, participants: list[ExpenseShareSchema], group_id: int):
+    def validate_participants(
+        self,
+        participants: list[ExpenseShareSchema],
+        group_id: int,
+        allow_left: bool = False,
+        allowed_missing_user_ids: set[int] | None = None,
+    ):
         participant_ids = []
+        allowed_missing_user_ids = allowed_missing_user_ids or set()
 
         for participant in participants:
-            if not self.group_service.get_member(group_id, participant.user_id):
-                raise HTTPException(status_code=404, detail="Participant not found in group")
+            try:
+                self.group_service.get_member(group_id, participant.user_id, include_left=allow_left)
+            except HTTPException as error:
+                if error.status_code == 404 and participant.user_id in allowed_missing_user_ids:
+                    participant_ids.append(participant.user_id)
+                    continue
+                raise
             participant_ids.append(participant.user_id)
         
         if len(participant_ids) != len(set(participant_ids)):
@@ -172,7 +184,12 @@ class ExpenseGroupService:
                 setattr(expense, field, value)
 
             if shares is not None:
-                self.validate_participants(expense_in.shares, group.id)
+                self.validate_participants(
+                    expense_in.shares,
+                    group.id,
+                    allow_left=True,
+                    allowed_missing_user_ids=old_share_user_ids,
+                )
 
                 if expense_in.amount is not None:
                     total_amount = expense_in.amount

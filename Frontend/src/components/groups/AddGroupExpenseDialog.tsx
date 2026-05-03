@@ -228,6 +228,24 @@ export default function AddGroupExpenseDialog({
     [members]
   );
 
+  const leftParticipants = useMemo(() => {
+    if (!isEditMode || !expense) {
+      return [];
+    }
+
+    const participantIds = new Set(expense.shares.map((share) => share.user_id));
+
+    return members.filter((member) => member.status !== "active" && participantIds.has(member.user_id));
+  }, [expense, isEditMode, members]);
+
+  const participantMembers = useMemo(() => {
+    if (!isEditMode) {
+      return activeMembers;
+    }
+
+    return [...activeMembers, ...leftParticipants];
+  }, [activeMembers, isEditMode, leftParticipants]);
+
   const defaultCategoryId = getDefaultCategoryId(categories);
 
   const buildInitialState = useCallback((): FormData => ({
@@ -285,13 +303,15 @@ export default function AddGroupExpenseDialog({
     [formData.selectedMemberIds]
   );
 
-  const selectedParticipantIds = useMemo(
-    () =>
-      activeMembers
-        .filter((member) => selectedMemberIdSet.has(member.user_id))
-        .map((member) => member.user_id),
-    [activeMembers, selectedMemberIdSet]
-  );
+  const selectedParticipantIds = useMemo(() => {
+    if (isEditMode) {
+      return formData.selectedMemberIds;
+    }
+
+    return activeMembers
+      .filter((member) => selectedMemberIdSet.has(member.user_id))
+      .map((member) => member.user_id);
+  }, [activeMembers, formData.selectedMemberIds, isEditMode, selectedMemberIdSet]);
 
   useEffect(() => {
     setExactShareInputs((previous) => {
@@ -340,11 +360,11 @@ export default function AddGroupExpenseDialog({
   }, [computedShares]);
 
   const memberNameById = useMemo(() => {
-    return activeMembers.reduce<Record<number, string>>((accumulator, member) => {
+    return members.reduce<Record<number, string>>((accumulator, member) => {
       accumulator[member.user_id] = member.username;
       return accumulator;
     }, {});
-  }, [activeMembers]);
+  }, [members]);
 
   const sharedAmountLabel = useMemo(() => {
     if (equalShares.length === 0 || selectedParticipantIds.length === 0) {
@@ -640,20 +660,27 @@ export default function AddGroupExpenseDialog({
             </div>
 
             <div className="max-h-44 space-y-2 overflow-y-auto rounded-md border border-border p-2">
-              {activeMembers.map((member) => {
+              {participantMembers.map((member) => {
                 const checked = selectedMemberIdSet.has(member.user_id);
+                const isInactive = member.status !== "active";
 
                 return (
                   <label
                     key={member.id}
                     htmlFor={`participant-${member.user_id}`}
-                    className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted/60"
+                    className={`flex items-center justify-between rounded-md px-2 py-1.5 ${
+                      isInactive ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-muted/60"
+                    }`}
                   >
-                    <span className="text-sm text-foreground">{member.username}</span>
+                    <span className="text-sm text-foreground">
+                      {member.username}
+                      {isInactive ? ` (${t("groupMembersPanel.status.left")})` : ""}
+                    </span>
                     <input
                       id={`participant-${member.user_id}`}
                       type="checkbox"
                       checked={checked}
+                      disabled={isInactive}
                       onChange={(event) => handleParticipantToggle(member.user_id, event.target.checked)}
                       className="h-4 w-4"
                     />

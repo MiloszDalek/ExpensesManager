@@ -87,7 +87,7 @@ export default function GroupMembersPanel({
         {members.map((member) => {
           const initials = (member.username || member.email).slice(0, 1).toUpperCase();
           const isCurrentUser = member.user_id === currentUserId;
-          const canManageTarget = canManageMembers && !isCurrentUser;
+          const canManageTarget = canManageMembers && !isCurrentUser && member.status === "active";
           return (
             <div
               key={member.id}

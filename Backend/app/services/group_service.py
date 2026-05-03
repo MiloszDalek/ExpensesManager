@@ -74,14 +74,14 @@ class GroupService:
             raise HTTPException(status_code=400, detail="You already have an active group with this name")
         
 
-    def get_all_members(self, group_id: int, user_id: int) -> list[GroupMember]:
+    def get_all_members(self, group_id: int, user_id: int, include_left: bool = True) -> list[GroupMember]:
         group = self.get_group(group_id, user_id)
 
-        return self.group_repo.get_all_members(group.id)
+        return self.group_repo.get_all_members(group.id, include_left=include_left)
     
 
-    def get_member(self, group_id, user_id) -> GroupMember | None:
-        member = self.group_repo.get_membership(group_id, user_id)
+    def get_member(self, group_id, user_id, include_left: bool = False) -> GroupMember | None:
+        member = self.group_repo.get_membership(group_id, user_id, include_left=include_left)
         if member is None:
             raise HTTPException(status_code=404, detail="Member not found")
         return member

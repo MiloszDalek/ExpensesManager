@@ -74,7 +74,10 @@ class GroupRepository:
                 membership_filter,
                 Group.id == membership_filter.group_id,
             )
-            .filter(membership_filter.user_id == user_id)
+            .filter(
+                membership_filter.user_id == user_id,
+                membership_filter.status == GroupMemberStatus.ACTIVE,
+            )
             .all()
         )
 
@@ -109,41 +112,49 @@ class GroupRepository:
         self.db.refresh(group)
 
 
-    def get_membership(self, group_id: int, user_id: int) -> GroupMember | None:
-        return (
-            self.db.query(GroupMember)
-            .filter(
-                GroupMember.group_id == group_id,
-                GroupMember.user_id == user_id
-            )
-            .first()
+    def get_membership(self, group_id: int, user_id: int, include_left: bool = False) -> GroupMember | None:
+        query = self.db.query(GroupMember).filter(
+            GroupMember.group_id == group_id,
+            GroupMember.user_id == user_id,
         )
+
+        if not include_left:
+            query = query.filter(GroupMember.status == GroupMemberStatus.ACTIVE)
+
+        return query.first()
     
 
     def add_member(self, group_id: int, user_id: int):
+        membership = self.get_membership(group_id, user_id, include_left=True)
+        if membership is not None:
+            membership.status = GroupMemberStatus.ACTIVE
+            membership.role = GroupMemberRole.MEMBER
+            membership.joined_at = func.now()
+            self.db.flush()
+            return membership
+
         membership = GroupMember(
             user_id=user_id,
-            group_id=group_id
+            group_id=group_id,
+            status=GroupMemberStatus.ACTIVE,
         )
         self.db.add(membership)
         self.db.flush()
+        return membership
 
 
     def delete_member(self, member: GroupMember):
-        self.db.delete(member)
+        member.status = GroupMemberStatus.LEFT
         self.db.flush()
 
 
-    def get_all_members(self, group_id: int) -> list[GroupMember]:
-        return (
-            self.db.query(GroupMember)
-            .filter(
-                GroupMember.group_id == group_id,
-                GroupMember.status == GroupMemberStatus.ACTIVE,
-            )
-            .options(selectinload(GroupMember.user))
-            .all()
-        )
+    def get_all_members(self, group_id: int, include_left: bool = False) -> list[GroupMember]:
+        query = self.db.query(GroupMember).filter(GroupMember.group_id == group_id)
+
+        if not include_left:
+            query = query.filter(GroupMember.status == GroupMemberStatus.ACTIVE)
+
+        return query.options(selectinload(GroupMember.user)).all()
 
 
     def get_active_admin_members(self, group_id: int) -> list[GroupMember]:

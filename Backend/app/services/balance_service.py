@@ -18,7 +18,7 @@ class BalanceService:
 
     def get_group_balances(self, group_id, user_id) -> GroupBalances:
 
-        group_members = self.group_service.get_all_members(group_id, user_id)
+        group_members = self.group_service.get_all_members(group_id, user_id, include_left=True)
         
         user_ids = [member.user_id for member in group_members]
 

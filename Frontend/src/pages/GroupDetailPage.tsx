@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowLeft, Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil, Repeat2 } from "lucide-react";
+import { Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil, Repeat2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -959,13 +959,6 @@ export default function GroupDetailPage() {
           className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12"
         >
           <div className="min-w-0 lg:col-span-8">
-            <Link to={createPageUrl("Groups")} className="hidden sm:inline-flex">
-              <Button variant="ghost" className="-ml-2 mb-3">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t("groupDetailPage.backToGroups")}
-              </Button>
-            </Link>
-
             <div className="flex max-w-full flex-wrap items-center gap-2">
               <h1 className="max-w-full break-all text-3xl font-bold text-foreground md:text-4xl">
                 {formatGroupName(group.name)}
