@@ -372,8 +372,8 @@ export default function PersonalExpensesPage() {
 
   const archiveRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.archive(recurringExpenseId),
-    onSuccess: async (updatedRecurringExpense) => {
-      setEditingRecurringExpense(updatedRecurringExpense);
+    onSuccess: async () => {
+      setEditingRecurringExpense(null);
       await invalidateRecurringRelatedQueries();
     },
   });
