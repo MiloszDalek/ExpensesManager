@@ -1108,6 +1108,8 @@
     "you": "Ty",
     "grantAdmin": "Nadaj admina",
     "grantingAdmin": "Nadawanie...",
+    "grantConfirmTitle": "Nadać rolę admina?",
+    "grantConfirmDescription": "{{username}} otrzyma uprawnienia administratora.",
     "remove": "Usuń",
     "removing": "Usuwanie...",
     "leaveGroup": "Opuść",

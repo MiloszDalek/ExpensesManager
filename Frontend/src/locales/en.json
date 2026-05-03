@@ -1118,6 +1118,8 @@
     "you": "You",
     "grantAdmin": "Grant admin",
     "grantingAdmin": "Granting...",
+    "grantConfirmTitle": "Grant admin role?",
+    "grantConfirmDescription": "{{username}} will receive admin privileges.",
     "remove": "Remove",
     "removing": "Removing...",
     "leaveGroup": "Leave",

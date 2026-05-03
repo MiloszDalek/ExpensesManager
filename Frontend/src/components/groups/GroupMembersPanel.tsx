@@ -109,17 +109,34 @@ export default function GroupMembersPanel({
                   <Badge variant={roleVariant[member.role]}>{t(`groupMembersPanel.role.${member.role}`)}</Badge>
                   <Badge variant="outline">{t(`groupMembersPanel.status.${member.status}`)}</Badge>
                   {canManageTarget && member.role !== "admin" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      disabled={grantPendingUserId === member.user_id}
-                      onClick={() => onGrantAdmin(member.user_id)}
-                    >
-                      {grantPendingUserId === member.user_id
-                        ? t("groupMembersPanel.grantingAdmin")
-                        : t("groupMembersPanel.grantAdmin")}
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-xs"
+                          disabled={grantPendingUserId === member.user_id}
+                        >
+                          {grantPendingUserId === member.user_id
+                            ? t("groupMembersPanel.grantingAdmin")
+                            : t("groupMembersPanel.grantAdmin")}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("groupMembersPanel.grantConfirmTitle")}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t("groupMembersPanel.grantConfirmDescription", { username: member.username })}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("groupMembersPanel.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onGrantAdmin(member.user_id)}>
+                            {t("groupMembersPanel.grantAdmin")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                   {canManageTarget && canRemoveMembers && (
                     <AlertDialog>
