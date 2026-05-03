@@ -514,6 +514,9 @@ class RecurringExpenseService:
     ):
         recurring_expense = self.get_recurring_expense(recurring_expense_id, user_id)
 
+        if recurring_expense.status == RecurringExpenseStatus.ARCHIVED:
+            raise HTTPException(status_code=400, detail="Archived recurring expenses cannot be updated")
+
         update_data = recurring_in.model_dump(exclude_unset=True)
         participants = update_data.pop("participants", None)
 
