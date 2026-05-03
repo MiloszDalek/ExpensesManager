@@ -566,7 +566,11 @@
     "pause": "Wstrzymaj",
     "resume": "Wznów",
     "archive": "Archiwizuj",
-    "delete": "Usuń"
+    "archiveCancel": "Zostaw serię",
+    "archiveConfirm": "Zarchiwizuj teraz",
+    "archiveWarningTitle": "Zarchiwizować tę serię cykliczną?",
+    "archiveWarningDescription": "Zarchiwizowane serie cykliczne pozostają w systemie, ale nie są traktowane jako aktywne. Upewnij się, że chcesz zarchiwizować tę serię.",
+    "archiving": "Archiwizowanie..."
   },
   "budgets": {
     "title": "Menedżer budżetu",

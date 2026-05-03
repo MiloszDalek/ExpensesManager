@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -46,7 +57,6 @@ type EditRecurringExpenseDialogProps = {
   onPause: () => void;
   onResume: () => void;
   onArchive: () => void;
-  onDelete: () => void;
   onCreateCustomCategory?: (payload: { name: string; section: CategorySection }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
 };
@@ -87,7 +97,6 @@ export default function EditRecurringExpenseDialog({
   onPause,
   onResume,
   onArchive,
-  onDelete,
   onCreateCustomCategory,
   onDeleteCustomCategory,
 }: EditRecurringExpenseDialogProps) {
@@ -328,14 +337,40 @@ export default function EditRecurringExpenseDialog({
               ) : null}
 
               {recurringExpense?.status !== "archived" ? (
-                <Button size="sm" variant="outline" onClick={onArchive} disabled={isActionPending}>
-                  {t("recurringExpenses.archive", { defaultValue: "Archive" })}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline" disabled={isActionPending}>
+                      {t("recurringExpenses.archive", { defaultValue: "Archive" })}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {t("recurringExpenses.archiveWarningTitle", {
+                          defaultValue: "Archive this recurring series?",
+                        })}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t("recurringExpenses.archiveWarningDescription", {
+                          defaultValue:
+                            "Archived recurring series stay in the system, but they are treated as no longer active. Make sure you want to archive this series.",
+                        })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>
+                        {t("recurringExpenses.archiveCancel", { defaultValue: "Keep series" })}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={onArchive}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t("recurringExpenses.archiveConfirm", { defaultValue: "Archive now" })}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               ) : null}
-
-              <Button size="sm" variant="destructive" onClick={onDelete} disabled={isActionPending}>
-                {t("recurringExpenses.delete", { defaultValue: "Delete" })}
-              </Button>
             </div>
           </div>
         </div>

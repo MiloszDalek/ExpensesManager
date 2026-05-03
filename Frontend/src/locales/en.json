@@ -576,7 +576,11 @@
     "pause": "Pause",
     "resume": "Resume",
     "archive": "Archive",
-    "delete": "Delete"
+    "archiveCancel": "Keep series",
+    "archiveConfirm": "Archive now",
+    "archiveWarningTitle": "Archive this recurring series?",
+    "archiveWarningDescription": "Archived recurring series stay in the system, but they are treated as no longer active. Make sure you want to archive this series.",
+    "archiving": "Archiving..."
   },
   "budgets": {
     "title": "Budget Manager",

@@ -543,30 +543,26 @@ export default function GroupDetailPage() {
     },
   });
 
-  const pauseRecurringMutation = useMutation({
+  const pauseRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.pause(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringGroupQueries();
     },
   });
 
-  const resumeRecurringMutation = useMutation({
+  const resumeRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.resume(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringGroupQueries();
     },
   });
 
-  const archiveRecurringMutation = useMutation({
+  const archiveRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.archive(recurringExpenseId),
-    onSuccess: async () => {
-      await invalidateRecurringGroupQueries();
-    },
-  });
-
-  const deleteRecurringMutation = useMutation({
-    mutationFn: (recurringExpenseId: number) => recurringExpensesApi.delete(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringGroupQueries();
     },
   });
@@ -864,8 +860,7 @@ export default function GroupDetailPage() {
     generateNowRecurringMutation.isPending ||
     pauseRecurringMutation.isPending ||
     resumeRecurringMutation.isPending ||
-    archiveRecurringMutation.isPending ||
-    deleteRecurringMutation.isPending;
+    archiveRecurringMutation.isPending;
 
   if (!isValidGroupId) {
     return (
@@ -1769,13 +1764,6 @@ export default function GroupDetailPage() {
           }
 
           archiveRecurringMutation.mutate(editingRecurringExpense.id);
-        }}
-        onDelete={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
-          deleteRecurringMutation.mutate(editingRecurringExpense.id);
         }}
         onCreateCustomCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
         onDeleteCustomCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}

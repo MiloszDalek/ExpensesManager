@@ -33,6 +33,7 @@ class RecurringExpenseRepository:
         scope: RecurringScope,
         group_id: int | None,
         status: RecurringExpenseStatus | None,
+        include_archived: bool,
         limit: int,
         offset: int,
     ) -> list[RecurringExpense]:
@@ -52,6 +53,9 @@ class RecurringExpenseRepository:
 
         if status is not None:
             query = query.filter(RecurringExpense.status == status)
+
+        if not include_archived:
+            query = query.filter(RecurringExpense.status != RecurringExpenseStatus.ARCHIVED)
 
         return (
             query.order_by(RecurringExpense.created_at.desc(), RecurringExpense.id.desc())

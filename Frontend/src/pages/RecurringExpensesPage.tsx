@@ -41,6 +41,7 @@ export default function RecurringExpensesPage() {
       offset: 0,
       scope,
       status: statusFilter === "all" ? undefined : statusFilter,
+      include_archived: statusFilter === "archived",
     }),
     [scope, statusFilter]
   );

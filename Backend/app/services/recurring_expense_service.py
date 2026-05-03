@@ -475,6 +475,7 @@ class RecurringExpenseService:
         scope: RecurringScope,
         group_id: int | None,
         status: RecurringExpenseStatus | None,
+        include_archived: bool,
         limit: int,
         offset: int,
     ):
@@ -492,6 +493,7 @@ class RecurringExpenseService:
             scope=scope,
             group_id=group_id,
             status=status,
+            include_archived=include_archived,
             limit=limit,
             offset=offset,
         )

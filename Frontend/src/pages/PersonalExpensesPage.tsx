@@ -354,32 +354,27 @@ export default function PersonalExpensesPage() {
     },
   });
 
-  const pauseRecurringMutation = useMutation({
+  const pauseRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.pause(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringRelatedQueries();
     },
   });
 
-  const resumeRecurringMutation = useMutation({
+  const resumeRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.resume(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringRelatedQueries();
     },
   });
 
-  const archiveRecurringMutation = useMutation({
+  const archiveRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
     mutationFn: (recurringExpenseId: number) => recurringExpensesApi.archive(recurringExpenseId),
-    onSuccess: async () => {
+    onSuccess: async (updatedRecurringExpense) => {
+      setEditingRecurringExpense(updatedRecurringExpense);
       await invalidateRecurringRelatedQueries();
-    },
-  });
-
-  const deleteRecurringMutation = useMutation({
-    mutationFn: (recurringExpenseId: number) => recurringExpensesApi.delete(recurringExpenseId),
-    onSuccess: async () => {
-      await invalidateRecurringRelatedQueries();
-      setEditingRecurringExpense(null);
     },
   });
 
@@ -498,8 +493,7 @@ export default function PersonalExpensesPage() {
     generateNowRecurringMutation.isPending ||
     pauseRecurringMutation.isPending ||
     resumeRecurringMutation.isPending ||
-    archiveRecurringMutation.isPending ||
-    deleteRecurringMutation.isPending;
+    archiveRecurringMutation.isPending;
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -890,13 +884,6 @@ export default function PersonalExpensesPage() {
           }
 
           archiveRecurringMutation.mutate(editingRecurringExpense.id);
-        }}
-        onDelete={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
-          deleteRecurringMutation.mutate(editingRecurringExpense.id);
         }}
         onCreateCustomCategory={handleCreateCustomCategory}
         onDeleteCustomCategory={handleDeleteCustomCategory}

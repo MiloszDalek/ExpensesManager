@@ -16,6 +16,7 @@ export type RecurringListParams = {
   scope?: RecurringScope;
   group_id?: number;
   status?: RecurringExpenseStatus;
+  include_archived?: boolean;
 };
 
 export type RecurringForecastParams = {

@@ -109,6 +109,7 @@ def list_recurring_expenses(
     scope: Literal["all", "personal", "group"] = Query(default="all"),
     group_id: int | None = Query(default=None, ge=1),
     status: RecurringExpenseStatus | None = Query(default=None),
+    include_archived: bool = Query(default=False),
     service: RecurringExpenseService = Depends(get_recurring_expense_service),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -117,6 +118,7 @@ def list_recurring_expenses(
         scope=scope,
         group_id=group_id,
         status=status,
+        include_archived=include_archived,
         limit=limit,
         offset=offset,
     )
