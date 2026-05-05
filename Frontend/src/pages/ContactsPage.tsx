@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown, ChevronUp, HandCoins, Search, UsersRound } from "lucide-react";
+import { format } from "date-fns";
+import { ChevronDown, ChevronUp, HandCoins, Search, UsersRound } from "lucide-react";
 
 import {
   AlertDialog,
@@ -24,12 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import { useAuth } from "@/contexts/AuthContext";
 import { contactsApi } from "@/api/contactsApi";
 import { balancesApi } from "@/api/balancesApi";
 import { groupsApi } from "@/api/groupsApi";
+import { invitationsApi } from "@/api/invitationsApi";
 import { settlementsApi } from "@/api/settlementsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { paypalConfig } from "@/config/paypal";
@@ -38,9 +39,11 @@ import { formatGroupName } from "@/utils/group";
 import PageInfoButton from "@/components/help/PageInfoButton";
 
 import type {
+  ApiContactInvitationCreate,
   ApiContactBalanceByGroup,
   ApiContactResponse,
   ApiGroupResponse,
+  ApiInvitationResponse,
 } from "@/types";
 
 const CONTACTS_LIMIT = 100;
@@ -85,7 +88,12 @@ export default function ContactsPage() {
   const [groupSettlementTarget, setGroupSettlementTarget] = useState<GroupSettlementTarget | null>(null);
   const [totalSettlementTarget, setTotalSettlementTarget] = useState<TotalSettlementTarget | null>(null);
   const [contactSearch, setContactSearch] = useState("");
-  const [selectedSummaryCurrency, setSelectedSummaryCurrency] = useState<string>("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFeedback, setInviteFeedback] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [mobileSection, setMobileSection] = useState<"contacts" | "invitations">("contacts");
   const isPayPalButtonEnabled = paypalConfig.isPayPalButtonEnabled;
 
   const getPayPalUnavailableMessage = () => {
@@ -124,6 +132,34 @@ export default function ContactsPage() {
                   : message === "Not authorized"
                     ? t("contactsBalancesPage.settlementErrors.notAuthorized")
                     : message || t("contactsBalancesPage.settlementErrors.settleGroupFailed");
+  };
+
+  const mapContactInvitationError = (message: string | undefined) => {
+    return message === "Cannot invite yourself"
+      ? t("dashboardInbox.errors.cannotInviteYourself")
+      : message === "Contact already exists"
+        ? t("dashboardInbox.errors.contactAlreadyExists")
+        : message === "Invitation already accepted"
+          ? t("dashboardInbox.errors.invitationAlreadyAccepted")
+          : message === "Invitation is already pending. Wait for response or cancel the existing invitation."
+            ? t("dashboardInbox.errors.invitationAlreadyPending")
+            : message === "User with this email does not exist"
+              ? t("dashboardInbox.errors.userWithEmailNotFound")
+              : message === "Not authorized"
+                ? t("dashboardInbox.errors.notAuthorized")
+                : message || t("common.somethingWentWrong");
+  };
+
+  const mapInvitationActionError = (message: string | undefined) => {
+    return message === "Invitation not found"
+      ? t("dashboardInbox.errors.invitationNotFound")
+      : message === "Only pending invitations can be accepted"
+        ? t("dashboardInbox.errors.onlyPendingCanBeAccepted")
+        : message === "Only pending invitations can be declined"
+          ? t("dashboardInbox.errors.onlyPendingCanBeDeclined")
+          : message === "Only pending invitations can be cancelled or archived"
+            ? t("dashboardInbox.errors.onlyPendingCanBeCancelledOrArchived")
+            : message || t("common.somethingWentWrong");
   };
 
   const mapPayPalSettlementError = (message: string | undefined) => {
@@ -258,6 +294,85 @@ export default function ContactsPage() {
     },
   });
 
+  const sendContactInvitationMutation = useMutation<
+    ApiInvitationResponse,
+    Error,
+    ApiContactInvitationCreate
+  >({
+    mutationFn: (payload) => invitationsApi.sendToContact(payload),
+    onMutate: () => {
+      setInviteFeedback(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: sentInvitationsQueryKey });
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.contactInviteSent"),
+      });
+      setInviteEmail("");
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapContactInvitationError(mutationError.message),
+      });
+    },
+  });
+
+  const cancelContactInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
+    mutationFn: (invitationId) => invitationsApi.cancel(invitationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: sentInvitationsQueryKey });
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.contactInviteCancelled"),
+      });
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapInvitationActionError(mutationError.message),
+      });
+    },
+  });
+
+  const acceptInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
+    mutationFn: (invitationId) => invitationsApi.accept(invitationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: pendingInvitationsQueryKey });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.contacts.list({ limit: CONTACTS_LIMIT, offset: 0 }),
+      });
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.invitationAccepted"),
+      });
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapInvitationActionError(mutationError.message),
+      });
+    },
+  });
+
+  const declineInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
+    mutationFn: (invitationId) => invitationsApi.decline(invitationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: pendingInvitationsQueryKey });
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.invitationDeclined"),
+      });
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapInvitationActionError(mutationError.message),
+      });
+    },
+  });
+
   const {
     data: contacts = [],
     isLoading: contactsLoading,
@@ -275,6 +390,40 @@ export default function ContactsPage() {
   } = useQuery<ApiGroupResponse[]>({
     queryKey: queryKeys.groups.all,
     queryFn: () => groupsApi.listAll(),
+    enabled: !!user,
+  });
+
+  const pendingInvitationsQueryKey = queryKeys.invitations.pending({ limit: 100, offset: 0 });
+  const sentInvitationsQueryKey = queryKeys.invitations.sent({
+    limit: 100,
+    offset: 0,
+    type: "contact",
+    status: "pending",
+  });
+
+  const {
+    data: pendingInvitations = [],
+    isLoading: pendingInvitationsLoading,
+    error: pendingInvitationsError,
+  } = useQuery<ApiInvitationResponse[]>({
+    queryKey: pendingInvitationsQueryKey,
+    queryFn: () => invitationsApi.listPending({ limit: 100, offset: 0 }),
+    enabled: !!user,
+  });
+
+  const {
+    data: sentInvitations = [],
+    isLoading: sentInvitationsLoading,
+    error: sentInvitationsError,
+  } = useQuery<ApiInvitationResponse[]>({
+    queryKey: sentInvitationsQueryKey,
+    queryFn: () =>
+      invitationsApi.listSent({
+        limit: 100,
+        offset: 0,
+        type: "contact",
+        status: "pending",
+      }),
     enabled: !!user,
   });
 
@@ -314,6 +463,18 @@ export default function ContactsPage() {
     }, {});
   }, [contacts, contactBreakdownQueries]);
 
+  const sentContactInvitations = useMemo(() => {
+    return sentInvitations
+      .filter((invitation) => invitation.type === "contact" && invitation.status === "pending")
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  }, [sentInvitations]);
+
+  const receivedContactInvitations = useMemo(() => {
+    return pendingInvitations
+      .filter((invitation) => invitation.type === "contact" && invitation.status === "pending")
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  }, [pendingInvitations]);
+
   const contactRows = useMemo(() => {
     return contacts
       .map<ContactBalanceRow>((contact) => {
@@ -337,55 +498,6 @@ export default function ContactsPage() {
       })
       .sort((left, right) => right.absoluteTotal - left.absoluteTotal);
   }, [contacts, breakdownByContactId, groupById, t]);
-
-  const summary = useMemo(() => {
-    return contactRows.reduce(
-      (accumulator, row) => {
-        Object.entries(row.currencyTotals).forEach(([currency, amount]) => {
-          if (amount > 0) {
-            accumulator.othersOweMe[currency] = (accumulator.othersOweMe[currency] ?? 0) + amount;
-          } else if (amount < 0) {
-            accumulator.iOweOthers[currency] = (accumulator.iOweOthers[currency] ?? 0) + Math.abs(amount);
-          }
-        });
-        return accumulator;
-      },
-      { othersOweMe: {} as Record<string, number>, iOweOthers: {} as Record<string, number> }
-    );
-  }, [contactRows]);
-
-  const summaryCurrencies = useMemo(() => {
-    const currencySet = new Set<string>();
-
-    contactRows.forEach((row) => {
-      Object.entries(row.currencyTotals).forEach(([currency, amount]) => {
-        if (amount !== 0) {
-          currencySet.add(currency);
-        }
-      });
-    });
-
-    return Array.from(currencySet).sort((left, right) => left.localeCompare(right));
-  }, [contactRows]);
-
-  useEffect(() => {
-    if (summaryCurrencies.length === 0) {
-      setSelectedSummaryCurrency("");
-      return;
-    }
-
-    if (!summaryCurrencies.includes(selectedSummaryCurrency)) {
-      setSelectedSummaryCurrency(summaryCurrencies[0]);
-    }
-  }, [summaryCurrencies, selectedSummaryCurrency]);
-
-  const summaryOthersOweAmount = selectedSummaryCurrency
-    ? summary.othersOweMe[selectedSummaryCurrency] ?? 0
-    : 0;
-
-  const summaryYouOweAmount = selectedSummaryCurrency
-    ? summary.iOweOthers[selectedSummaryCurrency] ?? 0
-    : 0;
 
   const filteredContactRows = useMemo(() => {
     const normalizedSearch = contactSearch.trim().toLowerCase();
@@ -413,6 +525,19 @@ export default function ContactsPage() {
     return entries
       .map(([currency, amount]) => `${amount > 0 ? "+" : "-"}${Math.abs(amount).toFixed(2)} ${currency}`)
       .join(" · ");
+  };
+
+  const handleSendContactInvite = async () => {
+    const normalizedEmail = inviteEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return;
+    }
+
+    try {
+      await sendContactInvitationMutation.mutateAsync({ to_user_email: normalizedEmail });
+    } catch {
+      // Error is displayed via invite feedback state.
+    }
   };
 
   const expandedContactBreakdown = useMemo(() => {
@@ -448,6 +573,183 @@ export default function ContactsPage() {
       .sort((left, right) => right.absoluteAmount - left.absoluteAmount);
   }, [expandedContactBreakdown, groupById, t]);
 
+  const invitePanel = (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">
+          {t("contactsBalancesPage.invitationsTitle")}
+        </h2>
+      </div>
+
+      <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+        <CardContent className="space-y-3 p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t("contactsBalancesPage.inviteByEmailTitle")}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {t("contactsBalancesPage.inviteByEmailDescription")}
+            </p>
+          </div>
+
+          <Input
+            type="email"
+            value={inviteEmail}
+            onChange={(event) => {
+              setInviteEmail(event.target.value);
+              if (inviteFeedback) {
+                setInviteFeedback(null);
+              }
+            }}
+            placeholder={t("dashboardInbox.contactEmailPlaceholder")}
+          />
+          <p className="text-xs text-muted-foreground">{t("addGroupMemberDialog.emailHint")}</p>
+
+          {inviteFeedback ? (
+            <p
+              className={`text-sm ${inviteFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"}`}
+            >
+              {inviteFeedback.message}
+            </p>
+          ) : null}
+
+          <Button
+            onClick={handleSendContactInvite}
+            disabled={sendContactInvitationMutation.isPending || !inviteEmail.trim()}
+            className="w-full"
+          >
+            {sendContactInvitationMutation.isPending
+              ? t("dashboardInbox.sendingInvite")
+              : t("dashboardInbox.sendInvite")}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h3 className="mb-2 text-base font-semibold text-foreground">
+          {t("dashboardInbox.sentInvitationsTitle")}
+        </h3>
+
+        {sentInvitationsLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((item) => (
+              <div key={item} className="h-12 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
+        ) : sentInvitationsError ? (
+          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+            {sentInvitationsError.message || t("common.somethingWentWrong")}
+          </p>
+        ) : sentContactInvitations.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+            {t("dashboardInbox.sentInvitationsEmpty")}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {sentContactInvitations.map((invitation) => {
+              const recipientLabel =
+                invitation.to_user_username ?? invitation.to_user_email ?? `#${invitation.to_user_id}`;
+              const isCancelling =
+                cancelContactInvitationMutation.isPending &&
+                cancelContactInvitationMutation.variables === invitation.id;
+
+              return (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {t("contactsBalancesPage.invitationTo", { username: recipientLabel })}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={isCancelling}
+                    onClick={() => cancelContactInvitationMutation.mutate(invitation.id)}
+                  >
+                    {isCancelling ? t("dashboardInbox.cancellingInvite") : t("dashboardInbox.cancelInvite")}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h3 className="mb-2 text-base font-semibold text-foreground">
+          {t("dashboardInbox.receivedInvitationsTitle")}
+        </h3>
+
+        {pendingInvitationsLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((item) => (
+              <div key={item} className="h-12 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
+        ) : pendingInvitationsError ? (
+          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+            {pendingInvitationsError.message || t("common.somethingWentWrong")}
+          </p>
+        ) : receivedContactInvitations.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+            {t("dashboardInbox.receivedInvitationsEmpty")}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {receivedContactInvitations.map((invitation) => {
+              const senderLabel =
+                invitation.from_user_username ?? invitation.from_user_email ?? t("dashboardInbox.userFallback");
+              const isAccepting =
+                acceptInvitationMutation.isPending && acceptInvitationMutation.variables === invitation.id;
+              const isDeclining =
+                declineInvitationMutation.isPending && declineInvitationMutation.variables === invitation.id;
+
+              return (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {t("contactsBalancesPage.invitationFrom", { username: senderLabel })}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isAccepting || isDeclining}
+                      onClick={() => acceptInvitationMutation.mutate(invitation.id)}
+                    >
+                      {isAccepting ? t("dashboardInbox.acceptingInvite") : t("dashboardInbox.acceptInvite")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isAccepting || isDeclining}
+                      onClick={() => declineInvitationMutation.mutate(invitation.id)}
+                    >
+                      {isDeclining ? t("dashboardInbox.decliningInvite") : t("dashboardInbox.declineInvite")}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (!user || contactsLoading || groupsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -474,15 +776,8 @@ export default function ContactsPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-4xl">
         <div className="mb-8">
-          <Link to={createPageUrl("Dashboard")}> 
-            <Button variant="ghost" className="mb-3 -ml-2">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("contactsBalancesPage.backToDashboard")}
-            </Button>
-          </Link>
-
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
             <PageInfoButton pageKey="contacts" variant="icon" className="md:hidden" autoOpen={true} />
@@ -491,237 +786,202 @@ export default function ContactsPage() {
           <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
         </div>
 
-        <div className="mb-6 mx-auto flex w-full max-w-md items-stretch gap-3">
-          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="flex aspect-square flex-col justify-between p-4">
-              <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.contactsCount")}</p>
-              <div className="self-center text-center">
-                <p className="flex items-center justify-center gap-2 text-2xl font-bold text-foreground sm:text-3xl">
-                  <UsersRound className="h-5 w-5 text-primary" />
-                  {contactRows.length}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="flex aspect-square flex-col justify-between p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-xs text-muted-foreground sm:text-sm">{t("contactsBalancesPage.othersOweYou")}</p>
-                {summaryCurrencies.length > 0 ? (
-                  <Select value={selectedSummaryCurrency} onValueChange={setSelectedSummaryCurrency}>
-                    <SelectTrigger className="h-8 w-[74px] text-xs sm:w-[92px] sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {summaryCurrencies.map((currency) => (
-                        <SelectItem key={`summary-others-${currency}`} value={currency}>
-                          {currency}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-              </div>
-
-              <p className="text-center text-lg font-bold text-emerald-700 sm:text-2xl">
-                {summaryCurrencies.length > 0
-                  ? `${summaryOthersOweAmount.toFixed(2)} ${selectedSummaryCurrency}`
-                  : t("contactsBalancesPage.settled")}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="min-w-0 flex-1 border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-            <CardContent className="flex aspect-square flex-col justify-between p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-xs text-muted-foreground sm:text-sm">{t("contactsBalancesPage.youOweOthers")}</p>
-                {summaryCurrencies.length > 0 ? (
-                  <Select value={selectedSummaryCurrency} onValueChange={setSelectedSummaryCurrency}>
-                    <SelectTrigger className="h-8 w-[74px] text-xs sm:w-[92px] sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {summaryCurrencies.map((currency) => (
-                        <SelectItem key={`summary-owe-${currency}`} value={currency}>
-                          {currency}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-              </div>
-
-              <p className="text-center text-lg font-bold text-rose-700 sm:text-2xl">
-                {summaryCurrencies.length > 0
-                  ? `${summaryYouOweAmount.toFixed(2)} ${selectedSummaryCurrency}`
-                  : t("contactsBalancesPage.settled")}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <HandCoins className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">{t("contactsBalancesPage.listTitle")}</h2>
-          </div>
-
-          <div className="relative w-full md:w-80">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={contactSearch}
-              onChange={(event) => setContactSearch(event.target.value)}
-              placeholder={t("contactsBalancesPage.searchPlaceholder", { defaultValue: "Search contacts" })}
-              className="pl-9"
-            />
+        <div className="mb-4 lg:hidden">
+          <div className="grid grid-cols-2 gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={mobileSection === "contacts" ? "default" : "outline"}
+              className="h-8 px-2 text-[11px]"
+              onClick={() => setMobileSection("contacts")}
+            >
+              {t("contactsBalancesPage.mobileTabContacts")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={mobileSection === "invitations" ? "default" : "outline"}
+              className="h-8 px-2 text-[11px]"
+              onClick={() => setMobileSection("invitations")}
+            >
+              {t("contactsBalancesPage.mobileTabInvitations")}
+            </Button>
           </div>
         </div>
 
-        {settlementFeedback ? (
-          <p
-            className={`mb-3 text-sm ${
-              settlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
-            }`}
-          >
-            {settlementFeedback.message}
-          </p>
-        ) : null}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className={`space-y-3 ${mobileSection !== "contacts" ? "hidden lg:block" : ""}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <HandCoins className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{t("contactsBalancesPage.listTitle")}</h2>
+              </div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <UsersRound className="h-4 w-4 text-primary" />
+                <span>{contactRows.length}</span>
+              </div>
+            </div>
 
-        {filteredContactRows.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-            {contactRows.length === 0
-              ? t("contactsBalancesPage.empty")
-              : t("contactsBalancesPage.searchNoResults", { defaultValue: "No contacts match your search." })}
-          </p>
-        ) : (
-          <div className="mx-auto max-w-3xl space-y-2">
-            {filteredContactRows.map((row) => {
-                  const rowBreakdown = breakdownByContactId[row.contact.contact_id] ?? [];
-                  const payableGroupCount = rowBreakdown.filter((item) => Number(item.balance) < 0).length;
-                  const payableCurrency =
-                    Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN";
-                  const isExpanded = expandedContactUserId === row.contact.contact_id;
-                  const balanceLabel = formatSignedCurrencyTotals(row.currencyTotals);
-                  const hasPositive = Object.values(row.currencyTotals).some((amount) => amount > 0);
-                  const hasNegative = Object.values(row.currencyTotals).some((amount) => amount < 0);
-                  const canSettleTotal = hasNegative && payableGroupCount > 1;
+            {settlementFeedback ? (
+              <p
+                className={`text-sm ${
+                  settlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+                }`}
+              >
+                {settlementFeedback.message}
+              </p>
+            ) : null}
 
-                  return (
-                    <div key={row.contact.id} className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                      <button
-                        type="button"
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/40"
-                        onClick={() =>
-                          setExpandedContactUserId((previous) =>
-                            previous === row.contact.contact_id ? null : row.contact.contact_id
-                          )
-                        }
-                        aria-expanded={isExpanded}
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">{row.contact.username}</p>
-                          <p className="truncate text-xs text-muted-foreground">{row.contact.email}</p>
-                        </div>
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={contactSearch}
+                onChange={(event) => setContactSearch(event.target.value)}
+                placeholder={t("contactsBalancesPage.searchPlaceholder", { defaultValue: "Search contacts" })}
+                className="pl-9"
+              />
+            </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className={`text-sm font-semibold ${hasPositive && !hasNegative ? "text-emerald-700" : hasNegative && !hasPositive ? "text-rose-700" : "text-foreground"}`}>
-                              {balanceLabel}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {hasPositive && hasNegative
-                                ? t("contactsBalancesPage.mixedDirections")
-                                : hasPositive
-                                  ? t("contactsBalancesPage.contactOwesYou")
-                                  : hasNegative
-                                    ? t("contactsBalancesPage.youOweContact")
-                                    : t("contactsBalancesPage.settled")}
-                            </p>
-                          </div>
+            {filteredContactRows.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                {contactRows.length === 0
+                  ? t("contactsBalancesPage.empty")
+                  : t("contactsBalancesPage.searchNoResults", { defaultValue: "No contacts match your search." })}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {filteredContactRows.map((row) => {
+                      const rowBreakdown = breakdownByContactId[row.contact.contact_id] ?? [];
+                      const payableGroupCount = rowBreakdown.filter((item) => Number(item.balance) < 0).length;
+                      const payableCurrency =
+                        Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN";
+                      const isExpanded = expandedContactUserId === row.contact.contact_id;
+                      const balanceLabel = formatSignedCurrencyTotals(row.currencyTotals);
+                      const hasPositive = Object.values(row.currencyTotals).some((amount) => amount > 0);
+                      const hasNegative = Object.values(row.currencyTotals).some((amount) => amount < 0);
+                      const canSettleTotal = hasNegative && payableGroupCount > 1;
 
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="border-t border-border px-3 py-3">
-                          {canSettleTotal ? (
-                            <div className="mb-3 flex flex-col gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setTotalSettlementOptionsTarget({
-                                    contactUserId: row.contact.contact_id,
-                                    contactUsername: row.contact.username,
-                                    currency: payableCurrency,
-                                  });
-                                }}
-                              >
-                                {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
-                              </Button>
+                      return (
+                        <div key={row.contact.id} className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/40"
+                            onClick={() =>
+                              setExpandedContactUserId((previous) =>
+                                previous === row.contact.contact_id ? null : row.contact.contact_id
+                              )
+                            }
+                            aria-expanded={isExpanded}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{row.contact.username}</p>
+                              <p className="truncate text-xs text-muted-foreground">{row.contact.email}</p>
                             </div>
-                          ) : null}
 
-                          {expandedBreakdownLoading ? (
-                            <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.loadingBreakdown")}</p>
-                          ) : expandedBreakdownError ? (
-                            <p className="text-sm text-destructive">{t("contactsBalancesPage.errorBreakdown")}</p>
-                          ) : expandedGroupRows.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.noGroupRows")}</p>
-                          ) : (
-                            <div className="space-y-2">
-                              {expandedGroupRows.map((groupRow) => (
-                                <div key={groupRow.groupId} className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium text-foreground">{groupRow.groupName}</p>
-                                    <p className="truncate text-xs text-muted-foreground">
-                                      {groupRow.amount > 0
-                                        ? t("contactsBalancesPage.contactOwesYou")
-                                        : t("contactsBalancesPage.youOweContact")}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                                      {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
-                                    </p>
-                                    {groupRow.amount < 0 ? (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => {
-                                            setGroupSettlementOptionsTarget({
-                                              contactUserId: row.contact.contact_id,
-                                              contactUsername: row.contact.username,
-                                              groupId: groupRow.groupId,
-                                              groupName: groupRow.groupName,
-                                              amount: groupRow.absoluteAmount,
-                                              currency: groupRow.groupCurrency,
-                                            });
-                                          }}
-                                        >
-                                          {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
-                                        </Button>
-                                      </>
-                                    ) : null}
-                                  </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`text-sm font-semibold ${hasPositive && !hasNegative ? "text-emerald-700" : hasNegative && !hasPositive ? "text-rose-700" : "text-foreground"}`}>
+                                  {balanceLabel}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {hasPositive && hasNegative
+                                    ? t("contactsBalancesPage.mixedDirections")
+                                    : hasPositive
+                                      ? t("contactsBalancesPage.contactOwesYou")
+                                      : hasNegative
+                                        ? t("contactsBalancesPage.youOweContact")
+                                        : t("contactsBalancesPage.settled")}
+                                </p>
+                              </div>
+
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-border px-3 py-3">
+                              {canSettleTotal ? (
+                                <div className="mb-3 flex flex-col gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setTotalSettlementOptionsTarget({
+                                        contactUserId: row.contact.contact_id,
+                                        contactUsername: row.contact.username,
+                                        currency: payableCurrency,
+                                      });
+                                    }}
+                                  >
+                                    {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
+                                  </Button>
                                 </div>
-                              ))}
+                              ) : null}
+
+                              {expandedBreakdownLoading ? (
+                                <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.loadingBreakdown")}</p>
+                              ) : expandedBreakdownError ? (
+                                <p className="text-sm text-destructive">{t("contactsBalancesPage.errorBreakdown")}</p>
+                              ) : expandedGroupRows.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">{t("contactsBalancesPage.noGroupRows")}</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {expandedGroupRows.map((groupRow) => (
+                                    <div key={groupRow.groupId} className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+                                      <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground">{groupRow.groupName}</p>
+                                        <p className="truncate text-xs text-muted-foreground">
+                                          {groupRow.amount > 0
+                                            ? t("contactsBalancesPage.contactOwesYou")
+                                            : t("contactsBalancesPage.youOweContact")}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                                          {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
+                                        </p>
+                                        {groupRow.amount < 0 ? (
+                                          <>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => {
+                                                setGroupSettlementOptionsTarget({
+                                                  contactUserId: row.contact.contact_id,
+                                                  contactUsername: row.contact.username,
+                                                  groupId: groupRow.groupId,
+                                                  groupName: groupRow.groupName,
+                                                  amount: groupRow.absoluteAmount,
+                                                  currency: groupRow.groupCurrency,
+                                                });
+                                              }}
+                                            >
+                                              {t("contactsBalancesPage.settle", { defaultValue: "Settle" })}
+                                            </Button>
+                                          </>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+              </div>
+            )}
           </div>
-        )}
+
+          <div className={`${mobileSection !== "invitations" ? "hidden lg:block" : ""}`}>
+            {invitePanel}
+          </div>
+        </div>
       </div>
 
       <Dialog
