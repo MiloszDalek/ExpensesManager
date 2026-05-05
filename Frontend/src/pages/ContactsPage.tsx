@@ -809,7 +809,7 @@ export default function ContactsPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[55%_45%]">
           <div className={`space-y-3 ${mobileSection !== "contacts" ? "hidden lg:block" : ""}`}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">

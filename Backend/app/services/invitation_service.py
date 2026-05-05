@@ -148,7 +148,7 @@ class InvitationService:
                 type=NotificationType.INVITATION,
                 reference_id=invitation.id,
                 message="You received a new invitation to group",
-                action_url=f"/groups/{group.id}"
+                action_url="/groups"
             )
                 
             self.invitation_repo.save_all()

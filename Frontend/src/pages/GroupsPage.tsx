@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,14 +14,26 @@ import CreateGroupDialog from "../components/groups/CreateGroupDialog";
 import GroupCard from "../components/groups/GroupCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { groupsApi } from "@/api/groupsApi";
+import { invitationsApi } from "@/api/invitationsApi";
 import { queryKeys } from "@/api/queryKeys";
-import type { ApiGroupCreate, ApiGroupResponse } from "@/types";
+import { createPageUrl } from "@/utils/url";
+import { formatGroupName } from "@/utils/group";
+import type {
+  ApiGroupCreate,
+  ApiGroupResponse,
+  ApiGroupInvitationResponse,
+  ApiInvitationResponse,
+} from "@/types";
 
 export default function GroupsPage() {
   const { t } = useTranslation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [createGroupError, setCreateGroupError] = useState<string | null>(null);
+  const [inviteFeedback, setInviteFeedback] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const { user } = useAuth();
@@ -28,6 +42,72 @@ export default function GroupsPage() {
     queryKey: queryKeys.groups.all,
     queryFn: () => groupsApi.listAll(),
     enabled: !!user,
+  });
+
+  const pendingInvitationsQueryKey = queryKeys.invitations.pending({ limit: 100, offset: 0 });
+
+  const { data: pendingInvitations = [] } = useQuery<ApiInvitationResponse[]>({
+    queryKey: pendingInvitationsQueryKey,
+    queryFn: () => invitationsApi.listPending({ limit: 100, offset: 0 }),
+    enabled: !!user,
+  });
+
+  const pendingGroupInvitations = useMemo(
+    () =>
+      pendingInvitations.filter(
+        (invitation): invitation is ApiGroupInvitationResponse =>
+          invitation.type === "group" && invitation.status === "pending"
+      ),
+    [pendingInvitations]
+  );
+
+  const mapInvitationActionError = (message: string | undefined) => {
+    return message === "Invitation not found"
+      ? t("dashboardInbox.errors.invitationNotFound")
+      : message === "Only pending invitations can be accepted"
+        ? t("dashboardInbox.errors.onlyPendingCanBeAccepted")
+        : message === "Only pending invitations can be declined"
+          ? t("dashboardInbox.errors.onlyPendingCanBeDeclined")
+          : message === "Only pending invitations can be cancelled or archived"
+            ? t("dashboardInbox.errors.onlyPendingCanBeCancelledOrArchived")
+            : message || t("common.somethingWentWrong");
+  };
+
+  const acceptInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
+    mutationFn: (invitationId) => invitationsApi.accept(invitationId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pendingInvitationsQueryKey }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.groups.all }),
+      ]);
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.invitationAccepted"),
+      });
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapInvitationActionError(mutationError.message),
+      });
+    },
+  });
+
+  const declineInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
+    mutationFn: (invitationId) => invitationsApi.decline(invitationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: pendingInvitationsQueryKey });
+      setInviteFeedback({
+        tone: "success",
+        message: t("dashboardInbox.invitationDeclined"),
+      });
+    },
+    onError: (mutationError) => {
+      setInviteFeedback({
+        tone: "error",
+        message: mapInvitationActionError(mutationError.message),
+      });
+    },
   });
 
   const createGroupMutation = useMutation<ApiGroupResponse, Error, ApiGroupCreate>({
@@ -121,6 +201,88 @@ export default function GroupsPage() {
             </Button>
           </div>
         </motion.div>
+
+        {pendingGroupInvitations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="mb-8"
+          >
+            <div className="mx-auto w-full max-w-lg space-y-2">
+              {inviteFeedback && (
+                <div
+                  className={
+                    inviteFeedback.tone === "error"
+                      ? "rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                      : "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+                  }
+                >
+                  {inviteFeedback.message}
+                </div>
+              )}
+              {pendingGroupInvitations.map((invitation) => {
+                const senderLabel =
+                  invitation.from_user_username ??
+                  invitation.from_user_email ??
+                  t("dashboardInbox.userFallback");
+                const groupLabel = formatGroupName(
+                  invitation.group_name ?? t("groupsPage.pendingInvitationUnknownGroup")
+                );
+                const isAccepting =
+                  acceptInvitationMutation.isPending &&
+                  acceptInvitationMutation.variables === invitation.id;
+                const isDeclining =
+                  declineInvitationMutation.isPending &&
+                  declineInvitationMutation.variables === invitation.id;
+                const isBusy = isAccepting || isDeclining;
+
+                return (
+                  <div
+                    key={invitation.id}
+                    className="flex items-center justify-between gap-3 rounded-md overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all px-3 py-2 transition-colors"
+                  >
+                    <Link
+                      to={createPageUrl("Groups")}
+                      className="min-w-0 flex-1 transition-colors hover:text-foreground"
+                    >
+                      <p className="text-sm font-medium text-foreground">
+                        {t("groupsPage.pendingInvitationItem", {
+                          group: groupLabel,
+                          user: senderLabel,
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
+                      </p>
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => declineInvitationMutation.mutate(invitation.id)}
+                        disabled={isBusy}
+                      >
+                        {isDeclining
+                          ? t("dashboardInbox.decliningInvite")
+                          : t("dashboardInbox.declineInvite")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => acceptInvitationMutation.mutate(invitation.id)}
+                        disabled={isBusy}
+                      >
+                        {isAccepting
+                          ? t("dashboardInbox.acceptingInvite")
+                          : t("dashboardInbox.acceptInvite")}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: -8 }}

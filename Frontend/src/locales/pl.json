@@ -979,7 +979,10 @@
     "noDescription": "Brak opisu",
     "statusActive": "Aktywna",
     "statusArchived": "Zarchiwizowana",
-    "createdAt": "Utworzono"
+    "createdAt": "Utworzono",
+    "pendingInvitationsTitle": "Zaproszenia do grup ({{count}})",
+    "pendingInvitationItem": "Zaproszenie do {{group}} od {{user}}",
+    "pendingInvitationUnknownGroup": "Nieznana grupa"
   },
   "createGroupDialog": {
     "title": "Utwórz nową grupę",

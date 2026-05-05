@@ -989,7 +989,10 @@
     "noDescription": "No description",
     "statusActive": "Active",
     "statusArchived": "Archived",
-    "createdAt": "Created"
+    "createdAt": "Created",
+    "pendingInvitationsTitle": "Group invitations ({{count}})",
+    "pendingInvitationItem": "Invitation to {{group}} from {{user}}",
+    "pendingInvitationUnknownGroup": "Unknown group"
   },
   "createGroupDialog": {
     "title": "Create New Group",
