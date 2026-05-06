@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 import { getDefaultCategoryId } from "@/utils/category";
 
 import type {
@@ -484,9 +485,12 @@ export default function AddGroupRecurringExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg **:data-radix-dialog-close:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>
-            {t("addGroupRecurringExpenseDialog.title", { defaultValue: "Add recurring group expense" })}
-          </DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>
+              {t("addGroupRecurringExpenseDialog.title", { defaultValue: "Add recurring group expense" })}
+            </DialogTitle>
+            <DialogInfoButton dialogKey="addGroupRecurringExpense" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">

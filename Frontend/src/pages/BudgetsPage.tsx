@@ -671,8 +671,7 @@ export default function BudgetsPage() {
               <h1 className="text-3xl font-bold text-foreground md:text-4xl">
                 {t("budgets.title", { defaultValue: "Budget Manager" })}
               </h1>
-              <PageInfoButton pageKey="budgets" variant="icon" className="md:hidden" autoOpen={true} />
-              <PageInfoButton pageKey="budgets" className="hidden md:inline-flex" autoOpen={true} />
+              <PageInfoButton pageKey="budgets" autoOpen={true} />
             </div>
             <p className="mt-2 text-muted-foreground">
               {t("budgets.subtitle", {
@@ -824,7 +823,13 @@ export default function BudgetsPage() {
 
           <div className={`space-y-4 ${mobileSection !== "periods" ? "hidden" : ""}`}>
             <div className="space-y-4">
-              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+              <Card className="relative border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <PageInfoButton
+                  pageKey="budgetsPeriods"
+                  variant="icon"
+                  autoOpen={mobileSection === "periods"}
+                  className="absolute right-4 top-4"
+                />
                 <CardContent className="space-y-3 p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -944,7 +949,13 @@ export default function BudgetsPage() {
 
           <div className={`space-y-4 ${mobileSection !== "income" ? "hidden" : ""}`}>
             <div className="space-y-4">
-              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+              <Card className="relative border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <PageInfoButton
+                  pageKey="budgetsIncome"
+                  variant="icon"
+                  autoOpen={mobileSection === "income"}
+                  className="absolute right-4 top-4"
+                />
                 <CardContent className="grid gap-3 p-4 md:grid-cols-4">
                   <div className="space-y-1">
                     <Label>{t("budgets.income.title", { defaultValue: "Title" })}</Label>
@@ -1016,7 +1027,13 @@ export default function BudgetsPage() {
 
           <div className={`space-y-4 ${mobileSection !== "pools" ? "hidden" : ""}`}>
             <div className="space-y-4">
-              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+              <Card className="relative border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <PageInfoButton
+                  pageKey="budgetsPools"
+                  variant="icon"
+                  autoOpen={mobileSection === "pools"}
+                  className="absolute right-4 top-4"
+                />
                 <CardContent className="grid gap-3 p-4 md:grid-cols-5">
                   <div className="space-y-1">
                     <Label>{t("budgets.pools.name", { defaultValue: "Pool name" })}</Label>
@@ -1157,7 +1174,13 @@ export default function BudgetsPage() {
 
           <div className={`space-y-4 ${mobileSection !== "goals" ? "hidden" : ""}`}>
             <div className="space-y-4">
-              <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+              <Card className="relative border border-border bg-card/80 shadow-sm backdrop-blur-sm">
+                <PageInfoButton
+                  pageKey="budgetsGoals"
+                  variant="icon"
+                  autoOpen={mobileSection === "goals"}
+                  className="absolute right-4 top-4"
+                />
                 <CardContent className="grid gap-3 p-4 md:grid-cols-6">
                   <div className="space-y-1 md:col-span-2">
                     <Label>{t("budgets.goals.name", { defaultValue: "Goal name" })}</Label>

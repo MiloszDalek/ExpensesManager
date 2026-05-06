@@ -385,6 +385,42 @@
             "Przelicz budżet i monitoruj status realizacji."
           ]
         },
+        "budgetsPeriods": {
+          "title": "Okresy budżetu",
+          "purpose": "Wybierz aktywny okres budżetowy, zarządzaj ustawieniami okresu i akcjami rollover.",
+          "actions": [
+            "Wybierz aktywny okres do pracy z przychodami, pulami i celami.",
+            "Przelicz lub zamknij okres, gdy to potrzebne.",
+            "Włączaj lub wyłączaj udziały wydatków grupowych dla okresu."
+          ]
+        },
+        "budgetsIncome": {
+          "title": "Przychody budżetu",
+          "purpose": "Dodawaj i przeglądaj wpisy przychodów, które wyznaczają środki dostępne w okresie.",
+          "actions": [
+            "Dodawaj wpisy przychodów z datą i kwotą.",
+            "Usuwaj błędne wpisy i odśwież kalkulacje.",
+            "Wykorzystuj sumy przychodów do pul procentowych."
+          ]
+        },
+        "budgetsPools": {
+          "title": "Pule budżetu",
+          "purpose": "Konfiguruj pule wydatków według kategorii i monitoruj wykorzystanie oraz pozostałe środki.",
+          "actions": [
+            "Dodawaj pule jako kwoty stałe lub % przychodu.",
+            "Ustawiaj progi alertów, aby reagować przed przekroczeniem.",
+            "Sprawdzaj status puli i pozostałe kwoty w podsumowaniu."
+          ]
+        },
+        "budgetsGoals": {
+          "title": "Cele budżetu",
+          "purpose": "Twórz cele oszczędnościowe, alokuj środki z pul i śledź postęp w czasie.",
+          "actions": [
+            "Utwórz cel z kwotą docelową i opcjonalnym terminem.",
+            "Alokuj środki ręcznie lub użyj auto-alokacji na okres.",
+            "Wstrzymuj, edytuj lub usuwaj cele, gdy zmieniają się priorytety."
+          ]
+        },
         "contacts": {
           "title": "Kontakty",
           "purpose": "Zarządzaj kontaktami i zaproszeniami, aby szybciej dodawać osoby do grup i rozliczeń.",
@@ -465,6 +501,60 @@
             "Modyfikuj parametry serii.",
             "Używaj akcji serii do kontrolowania generacji i statusu.",
             "Zmiany dotyczą tylko przyszłych wystąpień."
+          ]
+        },
+        "addGroupMember": {
+          "title": "Dodawanie członka grupy",
+          "purpose": "Zaproś nowego użytkownika do grupy z listy kontaktów lub za pomocą adresu e-mail.",
+          "actions": [
+            "Wybierz kontakt z listy lub wpisz e-mail.",
+            "Kliknij Zaproś, aby wysłać zaproszenie.",
+            "Oczekuj na akceptację zaproszenia przez użytkownika."
+          ]
+        },
+        "addGroupExpense": {
+          "title": "Dodawanie wydatku grupowego",
+          "purpose": "Dodaj jednorazowy wydatek w grupie z podziałem kosztów między uczestników.",
+          "actions": [
+            "Wypełnij tytuł i kwotę wydatku.",
+            "Wybierz typ podziału (równy, dokładny, procentowy).",
+            "Zaznacz uczestników i przypisz ich udziały.",
+            "Wybierz kategorię i datę, opcjonalnie dodaj notatki."
+          ]
+        },
+        "editGroupExpense": {
+          "title": "Edycja wydatku grupowego",
+          "purpose": "Modyfikuj szczegóły istniejącego wydatku grupowego, w tym uczestników i podział kosztów.",
+          "actions": [
+            "Zaktualizuj dowolne pola według potrzeb.",
+            "Zmiany w uczestnikach i podziale zostaną zastosowane po zapisaniu."
+          ]
+        },
+        "addGroupRecurringExpense": {
+          "title": "Dodawanie cyklicznego wydatku grupowego",
+          "purpose": "Utwórz serię cyklicznych wydatków grupowych, generowanych automatycznie z wybraną częstotliwością.",
+          "actions": [
+            "Ustaw tytuł, kwotę, kategorię i uczestników.",
+            "Wybierz częstotliwość i interwał generowania.",
+            "Zdefiniuj datę początku i opcjonalną datę końca."
+          ]
+        },
+        "editGroup": {
+          "title": "Edycja grupy",
+          "purpose": "Zmień nazwę, opis lub walutę grupy. Możesz również archiwizować grupę.",
+          "actions": [
+            "Edytuj nazwę i opis grupy.",
+            "Walutę można zmienić tylko, gdy grupa nie ma wydatków.",
+            "Użyj przycisku Archiwizuj, aby zamknąć grupę."
+          ]
+        },
+        "groupSettlement": {
+          "title": "Rozliczenie w grupie",
+          "purpose": "Wybierz sposób rozliczenia salda z innym członkiem grupy.",
+          "actions": [
+            "Wybierz rozliczenie gotówkowe poza aplikacją.",
+            "Lub użyj przycisku PayPal, jeśli jest dostępny.",
+            "Po rozliczeniu saldo zostanie zaktualizowane automatycznie."
           ]
         }
       }

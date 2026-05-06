@@ -1064,8 +1064,7 @@ export default function DetailedSummaryPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
-              <PageInfoButton pageKey="summaries" variant="icon" className="md:hidden" autoOpen={true} />
-              <PageInfoButton pageKey="summaries" className="hidden md:inline-flex" autoOpen={true} />
+              <PageInfoButton pageKey="summaries" autoOpen={true} />
             </div>
             <p className="mt-2 text-muted-foreground">
               {t("summaryPage.subtitle")} · {t("summaryPage.total")}: <span className="font-semibold text-primary">{totalLabel || "0.00"}</span>

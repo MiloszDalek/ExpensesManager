@@ -1,8 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +17,10 @@ type PageInfoButtonProps = {
     | "groupDetail"
     | "personal"
     | "budgets"
+    | "budgetsPeriods"
+    | "budgetsIncome"
+    | "budgetsPools"
+    | "budgetsGoals"
     | "contacts"
     | "summaries"
     | "receiptScan";
@@ -52,31 +54,29 @@ export default function PageInfoButton({ pageKey, variant = "full", className, a
     return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
   }, [pageKey, t]);
 
+  const baseClassName =
+    "text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {variant === "icon" ? (
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="icon"
-          className={className}
+          className={`${baseClassName} ${className ?? ""}`}
           onClick={() => setOpen(true)}
           aria-label={t("help.pageInfo.buttonLabel")}
         >
-          <Info className="h-4 w-4" />
-        </Button>
+          <Info className="h-6 w-6" />
+        </button>
       ) : (
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
-          className={className}
+          className={`${baseClassName} ${className ?? ""}`}
           onClick={() => setOpen(true)}
           aria-label={t("help.pageInfo.buttonLabel")}
         >
-          <Info className="h-4 w-4" />
-          {/* <span className="ml-2">{t("help.pageInfo.buttonLabel")}</span> */}
-        </Button>
+          <Info className="h-6 w-6" />
+        </button>
       )}
 
       <DialogContent>

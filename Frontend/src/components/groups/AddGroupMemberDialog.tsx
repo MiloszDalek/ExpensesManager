@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 import type { ApiContactResponse, ApiGroupMemberResponse } from "@/types";
 
 type AddGroupMemberDialogProps = {
@@ -96,7 +97,10 @@ export default function AddGroupMemberDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("addGroupMemberDialog.title")}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{t("addGroupMemberDialog.title")}</DialogTitle>
+            <DialogInfoButton dialogKey="addGroupMember" autoOpen={true} />
+          </div>
           <DialogDescription>{t("addGroupMemberDialog.description")}</DialogDescription>
         </DialogHeader>
 

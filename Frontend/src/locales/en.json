@@ -395,6 +395,42 @@
             "Recalculate and monitor progress status."
           ]
         },
+        "budgetsPeriods": {
+          "title": "Budget periods",
+          "purpose": "Pick the active budget period, manage period-level settings, and control rollover actions.",
+          "actions": [
+            "Select the active period to work with its income, pools, and goals.",
+            "Recalculate or close the period when needed.",
+            "Toggle group expense shares for the selected period."
+          ]
+        },
+        "budgetsIncome": {
+          "title": "Budget income",
+          "purpose": "Add and review income entries that define the money available in the selected period.",
+          "actions": [
+            "Add income entries with date and amount.",
+            "Remove incorrect entries and refresh calculations.",
+            "Use income totals to drive percent-based pools."
+          ]
+        },
+        "budgetsPools": {
+          "title": "Budget pools",
+          "purpose": "Configure spending pools by category and monitor how much is used or remaining.",
+          "actions": [
+            "Add pools as fixed amounts or % of income.",
+            "Set alert thresholds to be notified before overspending.",
+            "Review pool status and remaining amounts in the summary."
+          ]
+        },
+        "budgetsGoals": {
+          "title": "Budget goals",
+          "purpose": "Create savings goals, allocate funds from pools, and track progress over time.",
+          "actions": [
+            "Create a goal with target amount and optional deadline.",
+            "Allocate money manually or use auto-allocate per period.",
+            "Pause, edit, or delete goals as your priorities change."
+          ]
+        },
         "contacts": {
           "title": "Contacts",
           "purpose": "Manage contacts and invitations to add people to groups and settlements faster.",
@@ -475,6 +511,60 @@
             "Modify series parameters.",
             "Use series actions to control generation and status.",
             "Changes affect future occurrences only."
+          ]
+        },
+        "addGroupMember": {
+          "title": "Add group member",
+          "purpose": "Invite a new user to the group from your contacts list or by email address.",
+          "actions": [
+            "Select a contact from the list or enter an email.",
+            "Click Invite to send the invitation.",
+            "Wait for the user to accept the invitation."
+          ]
+        },
+        "addGroupExpense": {
+          "title": "Add group expense",
+          "purpose": "Add a one-time group expense with cost splitting among participants.",
+          "actions": [
+            "Fill in the title and amount.",
+            "Choose the split type (equal, exact, percentage).",
+            "Select participants and assign their shares.",
+            "Pick a category and date, optionally add notes."
+          ]
+        },
+        "editGroupExpense": {
+          "title": "Edit group expense",
+          "purpose": "Modify an existing group expense details, including participants and cost split.",
+          "actions": [
+            "Update any fields as needed.",
+            "Changes to participants and split will be applied after saving."
+          ]
+        },
+        "addGroupRecurringExpense": {
+          "title": "Add recurring group expense",
+          "purpose": "Create a recurring group expense series generated automatically with the chosen frequency.",
+          "actions": [
+            "Set title, amount, category, and participants.",
+            "Choose frequency and generation interval.",
+            "Define start date and optional end date."
+          ]
+        },
+        "editGroup": {
+          "title": "Edit group",
+          "purpose": "Change the group name, description, or currency. You can also archive the group.",
+          "actions": [
+            "Edit the group name and description.",
+            "Currency can only be changed when the group has no expenses.",
+            "Use the Archive button to close the group."
+          ]
+        },
+        "groupSettlement": {
+          "title": "Group settlement",
+          "purpose": "Choose how to settle the balance with another group member.",
+          "actions": [
+            "Choose cash settlement outside the app.",
+            "Or use the PayPal button if available.",
+            "After settlement the balance will be updated automatically."
           ]
         }
       }

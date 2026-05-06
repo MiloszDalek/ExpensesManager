@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
 import { getCurrenciesWithRecentFirst, getRecentCurrencies, rememberRecentCurrency, removeRecentCurrency } from "@/utils/currency";
 import type { ApiGroupResponse, ApiGroupUpdate } from "@/types";
@@ -162,7 +163,10 @@ export default function EditGroupDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-full min-w-0 max-w-[calc(100%-2rem)] overflow-hidden sm:max-w-lg [&_[data-radix-dialog-close]]:cursor-pointer">
         <DialogHeader>
-          <DialogTitle>{t("groupEditDialog.title")}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{t("groupEditDialog.title")}</DialogTitle>
+            <DialogInfoButton dialogKey="editGroup" autoOpen={true} />
+          </div>
         </DialogHeader>
 
         <div className="min-w-0 space-y-4">
