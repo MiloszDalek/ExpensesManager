@@ -207,6 +207,9 @@ export default function GlobalHeader() {
                     ) : null}
                   </div>
 
+                  <div className="lg:hidden">
+                    <NotificationBell />
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"

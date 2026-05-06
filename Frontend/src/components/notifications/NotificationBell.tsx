@@ -124,9 +124,10 @@ export function NotificationBell() {
       {isOpen && (
         <div
           className={cn(
-            "absolute right-0 top-[calc(100%+0.5rem)] z-50 w-80 md:w-96",
+            "fixed left-1/2 -translate-x-1/2 translate-y-1/44 z-50 w-[calc(100%-2rem)] max-w-md",
+            "lg:absolute lg:right-0 lg:top-[calc(100%+0.5rem)] lg:translate-x-0 lg:translate-y-0 lg:left-auto lg:w-80 lg:md:w-96",
             "rounded-lg border border-border bg-popover shadow-lg",
-            "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+            "animate-in fade-in-0 zoom-in-95"
           )}
           role="menu"
         >
