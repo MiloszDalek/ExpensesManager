@@ -15,7 +15,6 @@ import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import PageInfoButton from "@/components/help/PageInfoButton";
 import {
@@ -180,6 +179,7 @@ export default function BudgetsPage() {
   const [expandedGoalHistoryId, setExpandedGoalHistoryId] = useState<number | null>(null);
   const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
   const [goalEditDraft, setGoalEditDraft] = useState<GoalEditDraft | null>(null);
+  const [mobileSection, setMobileSection] = useState<"periods" | "income" | "pools" | "goals">("periods");
 
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
     queryKey: queryKeys.budgets.list("active"),
@@ -780,15 +780,49 @@ export default function BudgetsPage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="periods" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="periods">{t("budgets.tabs.periods", { defaultValue: "Periods" })}</TabsTrigger>
-            <TabsTrigger value="income">{t("budgets.tabs.income", { defaultValue: "Income" })}</TabsTrigger>
-            <TabsTrigger value="pools">{t("budgets.tabs.pools", { defaultValue: "Pools" })}</TabsTrigger>
-            <TabsTrigger value="goals">{t("budgets.tabs.goals", { defaultValue: "Goals" })}</TabsTrigger>
-          </TabsList>
+        <div className="space-y-4">
+          <div className="mb-4">
+            <div className="grid grid-cols-4 gap-1 md:gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={mobileSection === "periods" ? "default" : "outline"}
+                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                onClick={() => setMobileSection("periods")}
+              >
+                {t("budgets.tabs.periods", { defaultValue: "Periods" })}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mobileSection === "income" ? "default" : "outline"}
+                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                onClick={() => setMobileSection("income")}
+              >
+                {t("budgets.tabs.income", { defaultValue: "Income" })}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mobileSection === "pools" ? "default" : "outline"}
+                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                onClick={() => setMobileSection("pools")}
+              >
+                {t("budgets.tabs.pools", { defaultValue: "Pools" })}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mobileSection === "goals" ? "default" : "outline"}
+                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                onClick={() => setMobileSection("goals")}
+              >
+                {t("budgets.tabs.goals", { defaultValue: "Goals" })}
+              </Button>
+            </div>
+          </div>
 
-          <TabsContent value="periods">
+          <div className={`space-y-4 ${mobileSection !== "periods" ? "hidden" : ""}`}>
             <div className="space-y-4">
               <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="space-y-3 p-4">
@@ -906,9 +940,9 @@ export default function BudgetsPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="income">
+          <div className={`space-y-4 ${mobileSection !== "income" ? "hidden" : ""}`}>
             <div className="space-y-4">
               <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="grid gap-3 p-4 md:grid-cols-4">
@@ -978,9 +1012,9 @@ export default function BudgetsPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="pools">
+          <div className={`space-y-4 ${mobileSection !== "pools" ? "hidden" : ""}`}>
             <div className="space-y-4">
               <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="grid gap-3 p-4 md:grid-cols-5">
@@ -1119,9 +1153,9 @@ export default function BudgetsPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="goals">
+          <div className={`space-y-4 ${mobileSection !== "goals" ? "hidden" : ""}`}>
             <div className="space-y-4">
               <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="grid gap-3 p-4 md:grid-cols-6">
@@ -1527,8 +1561,8 @@ export default function BudgetsPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
