@@ -90,5 +90,21 @@ class BalanceService:
             elif s.to_user_id == current_user_id:
                 balances_map[s.group_id] = balances_map.get(s.group_id, Decimal("0.00")) - s.amount
 
-        balances = [ContactBalanceByGroup(group_id=gid, balance=bal) for gid, bal in balances_map.items()]
+        if not balances_map:
+            return []
+
+        groups = self.group_service.group_repo.get_by_ids(list(balances_map.keys()))
+        group_map = {group.id: group for group in groups}
+
+        balances: list[ContactBalanceByGroup] = []
+        for gid, bal in balances_map.items():
+            group = group_map.get(gid)
+            balances.append(
+                ContactBalanceByGroup(
+                    group_id=gid,
+                    balance=bal,
+                    group_name=group.name if group else None,
+                    group_currency=group.currency if group else None,
+                )
+            )
         return balances

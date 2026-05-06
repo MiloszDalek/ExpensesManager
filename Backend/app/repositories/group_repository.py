@@ -55,6 +55,13 @@ class GroupRepository:
 
     def get_by_id(self, group_id: int) -> Group | None:
         return self.db.query(Group).filter(Group.id == group_id).first()
+
+
+    def get_by_ids(self, group_ids: list[int]) -> list[Group]:
+        if not group_ids:
+            return []
+
+        return self.db.query(Group).filter(Group.id.in_(group_ids)).all()
     
     
     def get_all_by_user_id(self, user_id: int) -> list[Group]:

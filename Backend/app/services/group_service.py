@@ -15,11 +15,11 @@ class GroupService:
         self.group_repo = GroupRepository(db)
 
 
-    def get_group(self, group_id: int, user_id: int) -> Group | None:
+    def get_group(self, group_id: int, user_id: int, include_left: bool = False) -> Group | None:
         group = self.group_repo.get_by_id(group_id)
         if not group:
             raise HTTPException(status_code=404, detail="Group not found")
-        if not self.group_repo.get_membership(group_id, user_id):
+        if not self.group_repo.get_membership(group_id, user_id, include_left=include_left):
             raise HTTPException(status_code=403, detail="Not authorized")
 
         members_count, expenses_count, total_amount = self.group_repo.get_counts_for_group(group_id)
@@ -75,7 +75,7 @@ class GroupService:
         
 
     def get_all_members(self, group_id: int, user_id: int, include_left: bool = True) -> list[GroupMember]:
-        group = self.get_group(group_id, user_id)
+        group = self.get_group(group_id, user_id, include_left=include_left)
 
         return self.group_repo.get_all_members(group.id, include_left=include_left)
     

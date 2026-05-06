@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from decimal import Decimal
+from app.enums import CurrencyEnum
 
 
 class UserBalanceItem(BaseModel):
@@ -16,3 +17,5 @@ class GroupBalances(BaseModel):
 class ContactBalanceByGroup(BaseModel):
     group_id: int
     balance: Decimal
+    group_name: str | None = None
+    group_currency: CurrencyEnum | None = None

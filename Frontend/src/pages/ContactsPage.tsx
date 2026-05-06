@@ -481,7 +481,10 @@ export default function ContactsPage() {
         const breakdown = breakdownByContactId[contact.contact_id] ?? [];
 
         const currencyTotals = breakdown.reduce<Record<string, number>>((accumulator, item) => {
-          const groupCurrency = groupById[item.group_id]?.currency ?? t("contactsBalancesPage.unknownCurrency");
+          const groupCurrency =
+            groupById[item.group_id]?.currency ??
+            item.group_currency ??
+            t("contactsBalancesPage.unknownCurrency");
           accumulator[groupCurrency] = (accumulator[groupCurrency] ?? 0) + Number(item.balance);
           return accumulator;
         }, {});
@@ -561,12 +564,15 @@ export default function ContactsPage() {
       .map((row) => {
         const amount = Number(row.balance);
         const group = groupById[row.group_id];
+        const fallbackGroupName = row.group_name ? formatGroupName(row.group_name) : null;
         return {
           groupId: row.group_id,
           amount,
           absoluteAmount: Math.abs(amount),
-          groupName: group ? formatGroupName(group.name) : t("contactsBalancesPage.unknownGroup", { groupId: row.group_id }),
-          groupCurrency: group?.currency ?? "",
+          groupName: group
+            ? formatGroupName(group.name)
+            : fallbackGroupName ?? t("contactsBalancesPage.unknownGroup", { groupId: row.group_id }),
+          groupCurrency: group?.currency ?? row.group_currency ?? "",
         };
       })
       .filter((row) => row.amount !== 0)

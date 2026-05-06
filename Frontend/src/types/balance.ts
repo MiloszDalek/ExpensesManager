@@ -1,4 +1,5 @@
 import type { DecimalLike } from "./common";
+import type { CurrencyEnum } from "./enums";
 
 export interface ApiUserBalanceItem {
   user_id: number;
@@ -14,4 +15,6 @@ export interface ApiGroupBalances {
 export interface ApiContactBalanceByGroup {
   group_id: number;
   balance: DecimalLike;
+  group_name?: string | null;
+  group_currency?: CurrencyEnum | null;
 }

@@ -34,9 +34,9 @@ class SettlementService:
         if from_user_id == to_user_id:
             raise HTTPException(400, "Cannot settle with yourself")
 
-        group = self.group_service.get_group(group_id, from_user_id)
+        group = self.group_service.get_group(group_id, from_user_id, include_left=True)
 
-        self.group_service.get_member(group.id, from_user_id)
+        self.group_service.get_member(group.id, from_user_id, include_left=True)
         self.group_service.get_member(group.id, to_user_id, include_left=True)
 
         balances = self.balance_service.get_group_balances(group.id, from_user_id)
