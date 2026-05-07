@@ -18,3 +18,9 @@ export interface ApiContactBalanceByGroup {
   group_name?: string | null;
   group_currency?: CurrencyEnum | null;
 }
+
+export interface BalanceSummary {
+  owed_to_me: number;
+  i_owe: number;
+  currency: string;
+}

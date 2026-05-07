@@ -4,9 +4,6 @@ from .group_router import group_router
 from .expense_group_router import expense_group_router
 from .expense_personal_router import expense_personal_router
 from .expense_summary_router import expense_summary_router
-from .expense_categories_router import expense_categories_router
-from .expense_trend_router import expense_trend_router
-from .dashboard_router import dashboard_router
 from .category_router import category_router
 from .invitation_router import invitation_router
 from .notification_router import notification_router

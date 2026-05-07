@@ -19,3 +19,10 @@ class ContactBalanceByGroup(BaseModel):
     balance: Decimal
     group_name: str | None = None
     group_currency: CurrencyEnum | None = None
+
+
+class SettlementDashboardSummary(BaseModel):
+    """Global balance summary for a single currency."""
+    owed_to_me: Decimal
+    i_owe: Decimal
+    currency: str

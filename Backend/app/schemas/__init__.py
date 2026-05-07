@@ -47,19 +47,7 @@ from .contact_schemas import ContactCreate, ContactResponse
 from .category_schemas import CategoryCreate, CategoryResponse, CategoryUpdate
 from .notification_schemas import NotificationResponse, UnreadNotificationCountResponse, MarkAllReadResponse
 from .invitation_schemas import ContactInvitationCreate, ContactInvitationResponse, GroupInvitationCreate, GroupInvitationResponse, InvitationResponse
-from .dashboard_schemas import (
-    KPISummaryResponse,
-    AttentionItem,
-    TrendDataResponse,
-    TrendDataPoint,
-    CategoryBreakdownResponse,
-    CategoryBreakdownItem,
-    BudgetStatusResponse,
-    BudgetPoolStatusResponse,
-    SettlementSnapshotResponse,
-    SettlementDashboardSummary,
-)
-from .balance_schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
+from .balance_schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup, SettlementDashboardSummary
 from .receipt_schemas import ReceiptUploadResponse
 from .recurring_expense_schemas import (
     DashboardUpcomingRecurringItem,

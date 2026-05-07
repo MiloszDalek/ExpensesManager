@@ -13,13 +13,15 @@ from app.schemas import (
     ExpenseSummaryDrilldownResponse,
     ExpenseSummaryOverviewResponse,
     ExpenseSummaryTrendsResponse,
+    ExpenseCategoriesResponse,
+    ExpenseTrendResponse,
 )
 from app.services.expense_summary_service import ExpenseSummaryService
 from app.utils.auth_dependencies import get_current_active_user
 
 
 expense_summary_router = APIRouter(
-    prefix="/expenses/summary",
+    prefix="/expenses",
     tags=["Expense Summary"],
 )
 
@@ -28,7 +30,7 @@ def get_summary_service(db: Session = Depends(get_db)):
     return ExpenseSummaryService(db)
 
 
-@expense_summary_router.get("/overview", response_model=ExpenseSummaryOverviewResponse)
+@expense_summary_router.get("/summary/overview", response_model=ExpenseSummaryOverviewResponse)
 def get_expense_summary_overview(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -58,7 +60,7 @@ def get_expense_summary_overview(
     )
 
 
-@expense_summary_router.get("/trends", response_model=ExpenseSummaryTrendsResponse)
+@expense_summary_router.get("/summary/trends", response_model=ExpenseSummaryTrendsResponse)
 def get_expense_summary_trends(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -86,7 +88,7 @@ def get_expense_summary_trends(
     )
 
 
-@expense_summary_router.get("/drilldown", response_model=ExpenseSummaryDrilldownResponse)
+@expense_summary_router.get("/summary/drilldown", response_model=ExpenseSummaryDrilldownResponse)
 def get_expense_summary_drilldown(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -118,7 +120,7 @@ def get_expense_summary_drilldown(
     )
 
 
-@expense_summary_router.get("/export/csv")
+@expense_summary_router.get("/summary/export/csv")
 def export_expense_summary_csv(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -155,7 +157,7 @@ def export_expense_summary_csv(
     return StreamingResponse(stream, media_type="text/csv; charset=utf-8", headers=headers)
 
 
-@expense_summary_router.get("/export/xlsx")
+@expense_summary_router.get("/summary/export/xlsx")
 def export_expense_summary_xlsx(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -198,7 +200,7 @@ def export_expense_summary_xlsx(
     )
 
 
-@expense_summary_router.get("/export/pdf")
+@expense_summary_router.get("/summary/export/pdf")
 def export_expense_summary_pdf(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -235,3 +237,31 @@ def export_expense_summary_pdf(
     }
 
     return StreamingResponse(stream, media_type="application/pdf", headers=headers)
+
+
+@expense_summary_router.get("/categories", response_model=ExpenseCategoriesResponse)
+def get_expense_categories(
+    range: str = Query(..., description="One of: current_week, previous_week, current_month, previous_month"),
+    currency: CurrencyEnum = Query(...),
+    service: ExpenseSummaryService = Depends(get_summary_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_categories_by_range(
+        user_id=current_user.id,
+        range_value=range,
+        currency=currency,
+    )
+
+
+@expense_summary_router.get("/trend", response_model=ExpenseTrendResponse)
+def get_expense_trend(
+    range: str = Query(..., description="One of: current_week, previous_week, current_month, previous_month"),
+    currency: CurrencyEnum = Query(...),
+    service: ExpenseSummaryService = Depends(get_summary_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_trend_by_range(
+        user_id=current_user.id,
+        range_value=range,
+        currency=currency,
+    )

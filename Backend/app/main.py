@@ -2,17 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.database import SessionLocal
-from app.routers import ( 
+from app.routers import (
         auth_router,
-        user_router, 
-        group_router, 
-        expense_group_router, 
+        user_router,
+        group_router,
+        expense_group_router,
         expense_personal_router,
         expense_summary_router,
-        expense_categories_router,
-        expense_trend_router,
-        dashboard_router, 
-        category_router, 
+        category_router,
         invitation_router,
         notification_router,
         contact_router,
@@ -66,9 +63,6 @@ app.include_router(group_router, prefix='/api')
 app.include_router(expense_group_router, prefix='/api')
 app.include_router(expense_personal_router, prefix='/api')
 app.include_router(expense_summary_router, prefix='/api')
-app.include_router(expense_categories_router, prefix='/api')
-app.include_router(expense_trend_router, prefix='/api')
-app.include_router(dashboard_router, prefix='/api')
 app.include_router(category_router, prefix='/api')
 app.include_router(invitation_router, prefix='/api')
 app.include_router(notification_router, prefix='/api')
