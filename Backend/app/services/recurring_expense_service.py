@@ -745,6 +745,29 @@ class RecurringExpenseService:
 
         return Decimal("0.00")
 
+    def get_upcoming_by_currency(self, user_id: int, currency: CurrencyEnum):
+        expenses = self.recurring_repo.get_upcoming_by_currency(user_id, currency)
+        items = []
+        for expense in expenses:
+            user_share = self._forecast_user_amount(expense, user_id)
+            group_name = expense.group.name if expense.group_id and expense.group else None
+            items.append(
+                {
+                    "id": expense.id,
+                    "title": expense.title,
+                    "total_amount": self._round_money(expense.amount),
+                    "user_share_amount": user_share,
+                    "currency": expense.currency,
+                    "next_due_on": expense.next_due_on,
+                    "is_group": expense.group_id is not None,
+                    "group_name": group_name,
+                }
+            )
+        return {
+            "currency": currency,
+            "items": items,
+        }
+
     def get_forecast(
         self,
         user_id: int,

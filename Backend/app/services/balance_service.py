@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.repositories import ExpenseRepository, SettlementRepository
 from app.services import GroupService
-from app.schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
+from app.schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup, SettlementDashboardSummary
 from decimal import Decimal
 import logging
 
@@ -73,6 +73,33 @@ class BalanceService:
                 balances[s.from_user_id] = balances.get(s.from_user_id, Decimal("0.00")) - s.amount
 
         return [UserBalanceItem(user_id=uid, amount=amount) for uid, amount in balances.items() if uid != user_id]
+    
+    def get_global_balance_summary_by_currency(self, user_id: int, currency) -> dict:
+        raw_balances = self.expense_repo.get_balances_with_users(user_id, currency)
+        balances = {row[0]: row[1] for row in raw_balances if row[0] != user_id}
+
+        completed_settlements = self.settlement_repo.get_completed_settlements_for_user(user_id, currency)
+        for s in completed_settlements:
+            if s.from_user_id == user_id:
+                balances[s.to_user_id] = balances.get(s.to_user_id, Decimal("0.00")) + s.amount
+            elif s.to_user_id == user_id:
+                balances[s.from_user_id] = balances.get(s.from_user_id, Decimal("0.00")) - s.amount
+
+        owed_to_me = sum((b for b in balances.values() if b > 0), Decimal("0.00"))
+        i_owe = sum((-b for b in balances.values() if b < 0), Decimal("0.00"))
+
+        return {
+            "owed_to_me": owed_to_me,
+            "i_owe": i_owe,
+        }
+    
+    def get_global_balance_summary(self, user_id: int, currency) -> SettlementDashboardSummary:
+        result = self.get_global_balance_summary_by_currency(user_id, currency)
+        return SettlementDashboardSummary(
+            owed_to_me=result["owed_to_me"],
+            i_owe=result["i_owe"],
+            currency=str(currency),
+        )
     
 
     def get_contacts_balances_by_group(self, current_user_id: int, other_user_id: int) -> list[ContactBalanceByGroup]:

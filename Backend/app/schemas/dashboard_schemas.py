@@ -109,3 +109,10 @@ class SettlementSnapshotResponse(BaseModel):
     total_i_owe: Decimal  # Total user owes (primary currency)
     net_balance: Decimal  # Net balance (primary currency)
     currency: Optional[str] = None  # Deprecated: use currency-specific fields instead
+
+
+class SettlementDashboardSummary(BaseModel):
+    """Dashboard settlement summary for a single currency."""
+    owed_to_me: Decimal
+    i_owe: Decimal
+    currency: str

@@ -27,12 +27,12 @@ export default function HomePage() {
             <p className="mt-1 text-sm text-muted-foreground">{t("homePage.bullets.groups")}</p>
           </div>
           <div className="rounded-lg border border-border bg-card/60 p-4 text-left">
-            <p className="text-sm font-semibold">{t("globalHeader.navBudgets", { defaultValue: "Budgets" })}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t("homePage.bullets.budgets")}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card/60 p-4 text-left">
             <p className="text-sm font-semibold">{t("globalHeader.navSummaries", { defaultValue: "Summaries" })}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("homePage.bullets.summaries")}</p>
+          </div> 
+          <div className="rounded-lg border border-border bg-card/60 p-4 text-left">
+            <p className="text-sm font-semibold">{t("globalHeader.navBudgets", { defaultValue: "Budgets" })}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("homePage.bullets.budgets")}</p>
           </div>
         </div>
 

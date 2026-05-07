@@ -185,3 +185,35 @@ class ExpenseSummaryDrilldownItem(BaseModel):
 class ExpenseSummaryDrilldownResponse(BaseModel):
     total_count: int
     items: list[ExpenseSummaryDrilldownItem]
+
+
+class ExpenseCategoryItem(BaseModel):
+    category_id: int
+    category_name: str
+    amount: Decimal
+    currency: CurrencyEnum
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseCategoriesResponse(BaseModel):
+    currency: CurrencyEnum
+    range: str
+    total_amount: Decimal
+    categories: list[ExpenseCategoryItem]
+
+
+class ExpenseTrendPoint(BaseModel):
+    date: date
+    amount: Decimal
+    currency: CurrencyEnum
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseTrendResponse(BaseModel):
+    currency: CurrencyEnum
+    range: str
+    date_from: date
+    date_to: date
+    points: list[ExpenseTrendPoint]

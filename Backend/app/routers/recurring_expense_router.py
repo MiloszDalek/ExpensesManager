@@ -5,9 +5,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.enums import RecurringExpenseStatus
+from app.enums import CurrencyEnum, RecurringExpenseStatus
 from app.models import User
 from app.schemas import (
+    DashboardUpcomingRecurringResponse,
     GroupRecurringExpenseCreate,
     PersonalRecurringExpenseCreate,
     RecurringExpenseResponse,
@@ -122,6 +123,15 @@ def list_recurring_expenses(
         limit=limit,
         offset=offset,
     )
+
+
+@recurring_expense_router.get("/upcoming", response_model=DashboardUpcomingRecurringResponse)
+def get_upcoming_recurring_expenses(
+    currency: CurrencyEnum = Query(...),
+    service: RecurringExpenseService = Depends(get_recurring_expense_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_upcoming_by_currency(current_user.id, currency)
 
 
 @recurring_expense_router.get("/{recurring_expense_id}", response_model=RecurringExpenseResponse)

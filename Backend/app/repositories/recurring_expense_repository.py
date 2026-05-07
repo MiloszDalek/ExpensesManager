@@ -1,10 +1,11 @@
 from datetime import date
 from typing import Literal
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
-from app.enums import RecurringExpenseStatus
-from app.models import Expense, RecurringExpense
+from app.enums import CurrencyEnum, RecurringExpenseStatus
+from app.models import Expense, RecurringExpense, RecurringExpenseParticipant
 
 
 RecurringScope = Literal["all", "personal", "group"]
@@ -123,6 +124,31 @@ class RecurringExpenseRepository:
                 RecurringExpense.status == RecurringExpenseStatus.ACTIVE,
                 RecurringExpense.next_due_on <= lookahead_date,
                 RecurringExpense.next_due_on >= date.today()
+            )
+            .order_by(RecurringExpense.next_due_on.asc())
+            .all()
+        )
+
+    def get_upcoming_by_currency(
+        self,
+        user_id: int,
+        currency: CurrencyEnum,
+    ) -> list[RecurringExpense]:
+        return (
+            self.db.query(RecurringExpense)
+            .options(
+                selectinload(RecurringExpense.participants),
+                selectinload(RecurringExpense.group),
+            )
+            .filter(
+                or_(
+                    RecurringExpense.user_id == user_id,
+                    RecurringExpense.participants.any(
+                        RecurringExpenseParticipant.user_id == user_id
+                    ),
+                ),
+                RecurringExpense.currency == currency,
+                RecurringExpense.status == RecurringExpenseStatus.ACTIVE,
             )
             .order_by(RecurringExpense.next_due_on.asc())
             .all()

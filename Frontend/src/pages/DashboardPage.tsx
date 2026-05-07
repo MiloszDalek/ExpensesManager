@@ -1,15 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { dashboardApi } from "@/api/dashboardApi";
-import { KPICards } from "@/components/dashboard/KPICards";
-import { AttentionSection } from "@/components/dashboard/AttentionSection";
 import { SpendingTrendChart } from "@/components/dashboard/SpendingTrendChart";
 import { CategoryBreakdownChart } from "@/components/dashboard/CategoryBreakdownChart";
-import { BudgetStatusList } from "@/components/dashboard/BudgetStatusList";
-import { SettlementSnapshot } from "@/components/dashboard/SettlementSnapshot";
+import { UpcomingRecurringExpenses } from "@/components/dashboard/UpcomingRecurringExpenses";
+import { SettlementsSummary } from "@/components/dashboard/SettlementsSummary";
 import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getRecentCurrencies } from "@/utils/currency";
 import { type CurrencyEnum } from "@/types/enums";
 import PageInfoButton from "@/components/help/PageInfoButton";
@@ -17,52 +13,13 @@ import PageInfoButton from "@/components/help/PageInfoButton";
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  
-  // Currency state management
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyEnum>("PLN");
-  
-  useEffect(() => {
+
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyEnum>(() => {
     const recentCurrencies = getRecentCurrencies();
-    if (recentCurrencies.length > 0) {
-      setSelectedCurrency(recentCurrencies[0]);
-    }
-  }, []);
-
-  const { data: kpi, isLoading: kpiLoading } = useQuery({
-    queryKey: ['dashboard', 'kpi', selectedCurrency],
-    queryFn: () => dashboardApi.getKPI({ currency: selectedCurrency }),
-    enabled: !!user,
+    return recentCurrencies.length > 0 ? recentCurrencies[0] : "PLN";
   });
 
-  const { data: attentionItems, isLoading: attentionLoading } = useQuery({
-    queryKey: ['dashboard', 'attention', selectedCurrency],
-    queryFn: () => dashboardApi.getAttentionItems({ limit: 10, currency: selectedCurrency }),
-    enabled: !!user,
-  });
-
-  const { data: trendData, isLoading: trendLoading } = useQuery({
-    queryKey: ['dashboard', 'trend', selectedCurrency],
-    queryFn: () => dashboardApi.getTrend({ period: 'monthly', currency: selectedCurrency }),
-    enabled: !!user,
-  });
-
-  const { data: categoryData, isLoading: categoryLoading } = useQuery({
-    queryKey: ['dashboard', 'categories', selectedCurrency],
-    queryFn: () => dashboardApi.getCategories({ currency: selectedCurrency }),
-    enabled: !!user,
-  });
-
-  const { data: budgetStatus, isLoading: budgetLoading } = useQuery({
-    queryKey: ['dashboard', 'budgets', selectedCurrency],
-    queryFn: () => dashboardApi.getBudgets({ currency: selectedCurrency }),
-    enabled: !!user,
-  });
-
-  const { data: settlementSnapshot, isLoading: settlementLoading } = useQuery({
-    queryKey: ['dashboard', 'settlements', selectedCurrency],
-    queryFn: () => dashboardApi.getSettlements({ currency: selectedCurrency }),
-    enabled: !!user,
-  });
+  const [range, setRange] = useState("current_month");
 
   if (!user) {
     return (
@@ -98,22 +55,20 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <KPICards data={kpi} isLoading={kpiLoading} currency={selectedCurrency} />
-
-        {/* Attention Section */}
-        <AttentionSection items={attentionItems} isLoading={attentionLoading} />
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SpendingTrendChart data={trendData} isLoading={trendLoading} currency={selectedCurrency} />
-          <CategoryBreakdownChart data={categoryData} isLoading={categoryLoading} currency={selectedCurrency} />
+        {/* Top Row: Trend (60%) + Category (40%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+            <SpendingTrendChart currency={selectedCurrency} range={range} onRangeChange={setRange} />
+          </div>
+          <div className="lg:col-span-2">
+            <CategoryBreakdownChart currency={selectedCurrency} range={range} />
+          </div>
         </div>
 
-        {/* Budget & Settlements Row */}
+        {/* Bottom Row: Upcoming Recurring + Settlements Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BudgetStatusList budgets={budgetStatus} isLoading={budgetLoading} currency={selectedCurrency} />
-          <SettlementSnapshot snapshot={settlementSnapshot} isLoading={settlementLoading} currency={selectedCurrency} />
+          <UpcomingRecurringExpenses currency={selectedCurrency} />
+          <SettlementsSummary currency={selectedCurrency} />
         </div>
       </div>
     </div>

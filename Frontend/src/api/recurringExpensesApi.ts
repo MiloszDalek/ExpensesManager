@@ -1,5 +1,6 @@
 import client from "./client";
 import type {
+  ApiDashboardUpcomingRecurringResponse,
   ApiRecurringExpenseResponse,
   ApiRecurringExpenseUpdate,
   ApiRecurringForecastResponse,
@@ -8,7 +9,7 @@ import type {
   ApiRecurringPersonalExpenseCreate,
   RecurringScope,
 } from "@/types";
-import type { RecurringExpenseStatus } from "@/types/enums";
+import type { CurrencyEnum, RecurringExpenseStatus } from "@/types/enums";
 
 export type RecurringListParams = {
   limit?: number;
@@ -141,6 +142,13 @@ export const recurringExpensesApi = {
 
   forecast: async (params: RecurringForecastParams): Promise<ApiRecurringForecastResponse> => {
     const { data } = await client.get<ApiRecurringForecastResponse>("/recurring-expenses/forecast", {
+      params,
+    });
+    return data;
+  },
+
+  upcoming: async (params: { currency: CurrencyEnum }): Promise<ApiDashboardUpcomingRecurringResponse> => {
+    const { data } = await client.get<ApiDashboardUpcomingRecurringResponse>("/recurring-expenses/upcoming", {
       params,
     });
     return data;

@@ -348,3 +348,47 @@ export interface ApiRecurringForecastResponse {
   total_count: number;
   items: ApiRecurringForecastItem[];
 }
+
+export interface ApiDashboardUpcomingRecurringItem {
+  id: number;
+  title: string;
+  total_amount: DecimalLike;
+  user_share_amount: DecimalLike;
+  currency: CurrencyEnum;
+  next_due_on: string;
+  is_group: boolean;
+  group_name: string | null;
+}
+
+export interface ApiDashboardUpcomingRecurringResponse {
+  currency: CurrencyEnum;
+  items: ApiDashboardUpcomingRecurringItem[];
+}
+
+export interface ApiExpenseCategoryItem {
+  category_id: number;
+  category_name: string;
+  amount: DecimalLike;
+  currency: CurrencyEnum;
+}
+
+export interface ApiExpenseCategoriesResponse {
+  currency: CurrencyEnum;
+  range: string;
+  total_amount: DecimalLike;
+  categories: ApiExpenseCategoryItem[];
+}
+
+export interface ApiExpenseTrendPoint {
+  date: string;
+  amount: DecimalLike;
+  currency: CurrencyEnum;
+}
+
+export interface ApiExpenseTrendResponse {
+  currency: CurrencyEnum;
+  range: string;
+  date_from: string;
+  date_to: string;
+  points: ApiExpenseTrendPoint[];
+}

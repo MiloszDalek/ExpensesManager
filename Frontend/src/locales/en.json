@@ -80,8 +80,16 @@
     "custom": "Custom"
   },
   "common": {
+    "error": "Failed to load data.",
     "errorLoadingData": "Error Loading Data",
     "somethingWentWrong": "Something went wrong"
+  },
+  "range": {
+    "select": "Select range",
+    "currentWeek": "Current week",
+    "previousWeek": "Previous week",
+    "currentMonth": "Current month",
+    "previousMonth": "Previous month"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -107,7 +115,27 @@
       "average": "Average",
       "amount": "Amount",
       "showingLimited": "Showing 10 of {{count}} periods",
+      "cumulativeDescription": "Cumulative spending ({{currency}})",
+      "comparePrevious": "Compare with previous period",
+      "current": "Current",
+      "previous": "Previous",
+      "cumulative": "Cumulative",
       "chartNote": "Install Recharts for advanced chart visualization"
+    },
+    "settlementsSummary": {
+      "title": "Settlements Summary",
+      "description": "Overview of pending settlements",
+      "noData": "No settlement data available",
+      "othersOweYou": "Others owe you",
+      "youOwe": "You owe"
+    },
+    "upcomingRecurring": {
+      "title": "Upcoming Recurring Expenses",
+      "description": "Next scheduled payments",
+      "noUpcoming": "No upcoming recurring expenses",
+      "group": "Group",
+      "personal": "Personal",
+      "ofTotal": "of"
     },
     "categoryBreakdown": {
       "title": "Category Breakdown",
@@ -352,11 +380,11 @@
       "pages": {
         "dashboard": {
           "title": "Dashboard",
-          "purpose": "A quick overview of key data: activity, notifications, and shortcuts to common actions.",
+          "purpose": "A unified financial overview: track cumulative spending trends, explore category breakdowns, review upcoming recurring payments, and check pending settlements — all filtered by your selected currency.",
           "actions": [
-            "Open groups or personal expenses from cards/shortcuts.",
-            "Review recent activity and respond to invitations.",
-            "Use widgets to quickly assess your financial status."
+            "Use the currency picker to switch between currencies — every widget updates automatically.",
+            "Select a time range on the trend chart and toggle 'Compare with previous period' to spot spending patterns.",
+            "Review the category breakdown and settlements summary to understand where your money goes and who owes what."
           ]
         },
         "groups": {

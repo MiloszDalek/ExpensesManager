@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart } from "lucide-react";
+import { PieChart, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   PieChart as RechartsPieChart,
@@ -9,32 +10,36 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import type { CategoryBreakdown } from "@/types/dashboard";
+import { expensesSummaryApi } from "@/api/expensesSummaryApi";
+import type { CurrencyEnum } from "@/types/enums";
 import { formatCurrency } from "@/utils/currency";
 import { toFiniteNumber, toFixedSafe } from "@/utils/toFiniteNumber";
 
 interface CategoryBreakdownChartProps {
-  data: CategoryBreakdown | undefined;
-  isLoading?: boolean;
-  currency?: string;
+  currency: CurrencyEnum;
+  range: string;
 }
 
-// Color palette for Recharts
 const COLORS = [
-  "#3b82f6", // blue-500
-  "#10b981", // green-500
-  "#eab308", // yellow-500
-  "#ef4444", // red-500
-  "#a855f7", // purple-500
-  "#ec4899", // pink-500
-  "#6366f1", // indigo-500
-  "#f97316", // orange-500
+  "#3b82f6",
+  "#10b981",
+  "#eab308",
+  "#ef4444",
+  "#a855f7",
+  "#ec4899",
+  "#6366f1",
+  "#f97316",
 ];
 
-export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: CategoryBreakdownChartProps) {
+export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownChartProps) {
   const { t } = useTranslation();
 
-  if (isLoading || !data) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["expenses", "categories", range, currency],
+    queryFn: () => expensesSummaryApi.categories({ range, currency }),
+  });
+
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -48,7 +53,25 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
     );
   }
 
-  if (data.items.length === 0) {
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+            <AlertTriangle className="h-12 w-12 text-destructive/50" />
+            <p className="text-sm text-muted-foreground">
+              {t("common.error", { defaultValue: "Failed to load data." })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.categories.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -67,28 +90,33 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
     );
   }
 
-  // Prepare data for Recharts
-  const chartData = data.items.map((item) => ({
-    name: item.category_name,
-    value: item.amount,
-    percentage: item.percentage,
-    budget: item.budget_allocated,
-    remaining: item.budget_remaining,
-  }));
+  const items = data.categories;
+
+  const total = toFiniteNumber(data.total_amount);
+
+  const chartData = items.map((item) => {
+    const amount = toFiniteNumber(item.amount);
+    const percentage = total > 0 ? (amount / total) * 100 : 0;
+    const translatedName = t(`category.${item.category_name}`, {
+      defaultValue: item.category_name,
+    });
+    return {
+      name: translatedName,
+      rawName: item.category_name,
+      value: amount,
+      percentage,
+      currency: data.currency,
+    };
+  });
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm">{formatCurrency(data.value, currency as any)}</p>
-          <p className="text-sm text-muted-foreground">{toFixedSafe(data.percentage, 1)}%</p>
-          {data.budget !== null && (
-            <p className="text-xs text-muted-foreground">
-              {t("dashboard.categoryBreakdown.budget")}: {formatCurrency(data.budget, currency as any)}
-            </p>
-          )}
+          <p className="font-medium">{d.name}</p>
+          <p className="text-sm">{formatCurrency(d.value, d.currency)}</p>
+          <p className="text-sm text-muted-foreground">{toFixedSafe(d.percentage, 1)}%</p>
         </div>
       );
     }
@@ -99,19 +127,17 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
     <Card>
       <CardHeader>
         <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
-        <CardDescription>{t("dashboard.categoryBreakdown.topCategories")}</CardDescription>
+        <CardDescription>{t("dashboard.categoryBreakdown.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Total */}
           <div className="flex items-center justify-between pb-2 border-b">
             <span className="font-semibold">{t("dashboard.categoryBreakdown.total")}</span>
-            <span className="font-bold text-lg">{formatCurrency(toFiniteNumber(data.total), currency as any)}</span>
+            <span className="font-bold text-lg">{formatCurrency(total, currency)}</span>
           </div>
 
-          {/* Recharts Pie Chart */}
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <RechartsPieChart>
                 <Pie
                   data={chartData}
@@ -127,9 +153,9 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  verticalAlign="middle" 
-                  align="right" 
+                <Legend
+                  verticalAlign="middle"
+                  align="right"
                   layout="vertical"
                   formatter={(value: string, entry: any) => (
                     <span className="text-sm">
@@ -139,23 +165,6 @@ export function CategoryBreakdownChart({ data, isLoading, currency = "USD" }: Ca
                 />
               </RechartsPieChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* Budget information for categories with budgets */}
-          <div className="space-y-2">
-            {data.items.filter(item => item.budget_allocated !== null).map((item) => (
-              <div key={item.category_id} className="flex items-center justify-between text-xs text-muted-foreground p-2 bg-muted/30 rounded">
-                <span>{item.category_name}</span>
-                <div className="flex items-center gap-3">
-                  <span>{t("dashboard.categoryBreakdown.budget")}: {formatCurrency(item.budget_allocated!, currency as any)}</span>
-                  {item.budget_remaining !== null && (
-                    <span className={item.budget_remaining < 0 ? "text-destructive" : "text-green-600"}>
-                      {t("dashboard.categoryBreakdown.remaining")}: {formatCurrency(item.budget_remaining, currency as any)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </CardContent>

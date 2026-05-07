@@ -135,3 +135,19 @@ class RecurringForecastItem(BaseModel):
 class RecurringForecastResponse(BaseModel):
     total_count: int
     items: list[RecurringForecastItem]
+
+
+class DashboardUpcomingRecurringItem(BaseModel):
+    id: int
+    title: str
+    total_amount: Decimal
+    user_share_amount: Decimal
+    currency: CurrencyEnum
+    next_due_on: date
+    is_group: bool
+    group_name: str | None
+
+
+class DashboardUpcomingRecurringResponse(BaseModel):
+    currency: CurrencyEnum
+    items: list[DashboardUpcomingRecurringItem]

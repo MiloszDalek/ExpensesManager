@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth_dependencies import get_current_active_user
 from app.services import BalanceService
-from app.schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
+from app.schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup, SettlementDashboardSummary
+from app.enums import CurrencyEnum
 from app.models import User
 
 
@@ -40,3 +41,12 @@ def get_contact_balance_by_group(
     current_user: User = Depends(get_current_active_user)
 ):
     return service.get_contacts_balances_by_group(current_user.id, other_user_id)
+
+
+@balance_router.get("/summary", response_model=SettlementDashboardSummary)
+def get_balance_summary(
+    currency: CurrencyEnum = Query(...),
+    service: BalanceService = Depends(get_balance_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_global_balance_summary(current_user.id, currency)

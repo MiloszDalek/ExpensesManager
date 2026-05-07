@@ -5,7 +5,7 @@ import type {
   TrendData,
   CategoryBreakdown,
   BudgetStatus,
-  SettlementSnapshot,
+  SettlementDashboardSummary,
   AggregationPeriod,
 } from "@/types/dashboard";
 import { type CurrencyEnum } from "@/types/enums";
@@ -47,8 +47,8 @@ export const dashboardApi = {
     return data;
   },
 
-  getSettlements: async (params?: { currency?: CurrencyEnum }): Promise<SettlementSnapshot> => {
-    const { data } = await client.get<SettlementSnapshot>("/dashboard/settlements", { params });
+  getSettlementsSummary: async (params: { currency: CurrencyEnum }): Promise<SettlementDashboardSummary> => {
+    const { data } = await client.get<SettlementDashboardSummary>("/balances/summary", { params });
     return data;
   },
 };

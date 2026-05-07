@@ -1,12 +1,15 @@
 import client from "./client";
 import type {
+  ApiExpenseCategoriesResponse,
   ApiExpenseSummaryDrilldownParams,
   ApiExpenseSummaryDrilldownResponse,
   ApiExpenseSummaryOverviewParams,
   ApiExpenseSummaryOverviewResponse,
   ApiExpenseSummaryTrendsParams,
   ApiExpenseSummaryTrendsResponse,
+  ApiExpenseTrendResponse,
 } from "@/types";
+import type { CurrencyEnum } from "@/types/enums";
 
 const getFilenameFromDisposition = (contentDisposition?: string | null): string | null => {
   if (!contentDisposition) {
@@ -27,6 +30,20 @@ const getFilenameFromDisposition = (contentDisposition?: string | null): string 
 };
 
 export const expensesSummaryApi = {
+  categories: async (params: { range: string; currency: CurrencyEnum }): Promise<ApiExpenseCategoriesResponse> => {
+    const { data } = await client.get<ApiExpenseCategoriesResponse>("/expenses/categories", {
+      params,
+    });
+    return data;
+  },
+
+  trend: async (params: { range: string; currency: CurrencyEnum }): Promise<ApiExpenseTrendResponse> => {
+    const { data } = await client.get<ApiExpenseTrendResponse>("/expenses/trend", {
+      params,
+    });
+    return data;
+  },
+
   overview: async (params?: ApiExpenseSummaryOverviewParams): Promise<ApiExpenseSummaryOverviewResponse> => {
     const { data } = await client.get<ApiExpenseSummaryOverviewResponse>("/expenses/summary/overview", {
       params,

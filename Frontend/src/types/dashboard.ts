@@ -99,3 +99,9 @@ export interface SettlementSnapshot {
   pending_settlements_count: number;
   currency: string;
 }
+
+export interface SettlementDashboardSummary {
+  owed_to_me: number;
+  i_owe: number;
+  currency: string;
+}

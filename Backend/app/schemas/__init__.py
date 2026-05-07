@@ -29,6 +29,10 @@ from .expense_schemas import (
     ExpenseSummaryTrendsResponse,
     ExpenseSummaryDrilldownItem,
     ExpenseSummaryDrilldownResponse,
+    ExpenseCategoryItem,
+    ExpenseCategoriesResponse,
+    ExpenseTrendPoint,
+    ExpenseTrendResponse,
 )
 from .settlement_schemas import (
     SettlementCreate,
@@ -53,10 +57,13 @@ from .dashboard_schemas import (
     BudgetStatusResponse,
     BudgetPoolStatusResponse,
     SettlementSnapshotResponse,
+    SettlementDashboardSummary,
 )
 from .balance_schemas import GroupBalances, UserBalanceItem, ContactBalanceByGroup
 from .receipt_schemas import ReceiptUploadResponse
 from .recurring_expense_schemas import (
+    DashboardUpcomingRecurringItem,
+    DashboardUpcomingRecurringResponse,
     GroupRecurringExpenseCreate,
     PersonalRecurringExpenseCreate,
     RecurringExpenseParticipantInput,

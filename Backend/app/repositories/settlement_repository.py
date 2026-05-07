@@ -24,15 +24,17 @@ class SettlementRepository:
             .all()
         )
 
-    def get_completed_settlements_for_user(self, user_id: int):
-        return (
+    def get_completed_settlements_for_user(self, user_id: int, currency=None):
+        query = (
             self.db.query(Settlement)
             .filter(
                 Settlement.status == SettlementStatus.COMPLETED,
                 (Settlement.from_user_id == user_id) | (Settlement.to_user_id == user_id),
             )
-            .all()
         )
+        if currency is not None:
+            query = query.filter(Settlement.currency == currency)
+        return query.all()
 
     def get_completed_settlements_between_users(self, user1_id: int, user2_id: int):
         return (

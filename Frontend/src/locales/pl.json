@@ -70,8 +70,16 @@
     "custom": "Własne"
   },
   "common": {
+    "error": "Nie udało się załadować danych.",
     "errorLoadingData": "Błąd ładowania danych",
     "somethingWentWrong": "Coś poszło nie tak"
+  },
+  "range": {
+    "select": "Wybierz zakres",
+    "currentWeek": "Bieżący tydzień",
+    "previousWeek": "Poprzedni tydzień",
+    "currentMonth": "Bieżący miesiąc",
+    "previousMonth": "Poprzedni miesiąc"
   },
   "dashboard": {
     "title": "Pulpit",
@@ -97,7 +105,27 @@
       "average": "Średnia",
       "amount": "Kwota",
       "showingLimited": "Pokazywanie 10 z {{count}} okresów",
+      "cumulativeDescription": "Skumulowane wydatki ({{currency}})",
+      "comparePrevious": "Porównaj z poprzednim okresem",
+      "current": "Bieżący",
+      "previous": "Poprzedni",
+      "cumulative": "Skumulowane",
       "chartNote": "Zainstaluj Recharts dla zaawansowanej wizualizacji wykresów"
+    },
+    "settlementsSummary": {
+      "title": "Podsumowanie rozliczeń",
+      "description": "Przegląd oczekujących rozliczeń",
+      "noData": "Brak danych rozliczeń",
+      "othersOweYou": "Należne Tobie",
+      "youOwe": "Twoje długi"
+    },
+    "upcomingRecurring": {
+      "title": "Nadchodzące cykliczne wydatki",
+      "description": "Najbliższe zaplanowane płatności",
+      "noUpcoming": "Brak nadchodzących cyklicznych wydatków",
+      "group": "Grupowy",
+      "personal": "Osobisty",
+      "ofTotal": "z"
     },
     "categoryBreakdown": {
       "title": "Podział według kategorii",
@@ -342,11 +370,11 @@
       "pages": {
         "dashboard": {
           "title": "Pulpit",
-          "purpose": "Szybki podgląd najważniejszych danych: aktywności, powiadomień i skrótów do najczęstszych akcji.",
+          "purpose": "Zunifikowany przegląd finansowy: śledź skumulowane trendy wydatków, analizuj podział według kategorii, przeglądaj nadchodzące płatności cykliczne i sprawdzaj oczekujące rozliczenia — wszystko filtrowane według wybranej waluty.",
           "actions": [
-            "Przejdź do grup lub wydatków osobistych z kart/skrótów.",
-            "Sprawdź ostatnią aktywność i reaguj na zaproszenia.",
-            "Użyj widżetów, aby szybko ocenić sytuację finansową."
+            "Użyj selektora waluty, aby przełączać się między walutami — każdy widżet aktualizuje się automatycznie.",
+            "Wybierz zakres czasu na wykresie trendu i włącz opcję \"Porównaj z poprzednim okresem\", aby zauważyć wzorce wydatków.",
+            "Przeglądaj podział według kategorii i podsumowanie rozliczeń, aby zrozumieć, gdzie trafiają Twoje pieniądze i kto jest Ci dłużny."
           ]
         },
         "groups": {

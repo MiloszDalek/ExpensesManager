@@ -368,6 +368,54 @@ class ExpenseRepository:
         )
 
 
+    def get_personal_daily_totals(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        day_label = func.date(Expense.expense_date).label("day")
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    day_label,
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                ),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            )
+            .group_by(day_label)
+            .order_by(day_label.asc())
+            .all()
+        )
+
+    def get_group_daily_totals(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        day_label = func.date(Expense.expense_date).label("day")
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    day_label,
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            )
+            .group_by(day_label)
+            .order_by(day_label.asc())
+            .all()
+        )
+
     def get_personal_daily_trends(
         self,
         user_id: int,
@@ -559,7 +607,7 @@ class ExpenseRepository:
         )
 
 
-    def get_balances_with_users(self, current_user_id: int):
+    def get_balances_with_users(self, current_user_id: int, currency=None):
         other_user_id_expr = case(
             (Expense.user_id == current_user_id, ExpenseShare.user_id),
             else_=Expense.user_id,
@@ -572,7 +620,7 @@ class ExpenseRepository:
             )
         ).label("balance")
 
-        return (
+        query = (
             self.db.query(other_user_id_expr, balance_expr)
             .select_from(Expense)
             .join(ExpenseShare, ExpenseShare.expense_id == Expense.id)
@@ -582,8 +630,12 @@ class ExpenseRepository:
                 | (ExpenseShare.user_id == current_user_id)
             )
             .group_by(other_user_id_expr)
-            .all()
         )
+
+        if currency is not None:
+            query = query.filter(Expense.currency == currency)
+
+        return query.all()
 
 
     def get_balance_with_user_by_group(self, current_user_id: int, other_user_id: int):
@@ -694,3 +746,52 @@ class ExpenseRepository:
         )
 
         return results
+
+    def get_personal_category_totals(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        return (
+            self._apply_personal_expense_filters(
+                query=self.db.query(
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    func.coalesce(func.sum(Expense.amount), 0).label("total_amount"),
+                )
+                .select_from(Expense)
+                .join(Category, Category.id == Expense.category_id),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            )
+            .group_by(Expense.category_id, Category.name)
+            .all()
+        )
+
+    def get_group_category_totals(
+        self,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        currency: CurrencyEnum,
+    ):
+        return (
+            self._apply_group_share_filters(
+                query=self.db.query(
+                    Expense.category_id.label("category_id"),
+                    Category.name.label("category_name"),
+                    func.coalesce(func.sum(ExpenseShare.share_amount), 0).label("total_amount"),
+                ).select_from(Expense),
+                user_id=user_id,
+                date_from=date_from,
+                date_to=date_to,
+                currency=currency,
+            )
+            .join(Category, Category.id == Expense.category_id)
+            .group_by(Expense.category_id, Category.name)
+            .all()
+        )

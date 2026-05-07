@@ -128,6 +128,130 @@ class ExpenseSummaryService:
             return value
         return Decimal(str(value or 0))
 
+    def _resolve_date_range(self, range_value: str) -> tuple[date, date]:
+        today = date.today()
+        if range_value == "current_week":
+            start = today - timedelta(days=today.weekday())
+            end = today
+        elif range_value == "previous_week":
+            end = today - timedelta(days=today.weekday() + 1)
+            start = end - timedelta(days=6)
+        elif range_value == "current_month":
+            start = date(today.year, today.month, 1)
+            end = today
+        elif range_value == "previous_month":
+            if today.month == 1:
+                start = date(today.year - 1, 12, 1)
+                end = date(today.year - 1, 12, 31)
+            else:
+                start = date(today.year, today.month - 1, 1)
+                import calendar
+                _, last_day = calendar.monthrange(today.year, today.month - 1)
+                end = date(today.year, today.month - 1, last_day)
+        else:
+            raise HTTPException(status_code=400, detail="range must be one of: current_week, previous_week, current_month, previous_month")
+        return start, end
+
+    def get_categories_by_range(
+        self,
+        user_id: int,
+        range_value: str,
+        currency: CurrencyEnum,
+    ):
+        date_from, date_to = self._resolve_date_range(range_value)
+        date_from_dt = datetime.combine(date_from, time.min)
+        date_to_dt = datetime.combine(date_to, time.max)
+
+        personal_rows = self.expense_repo.get_personal_category_totals(
+            user_id=user_id,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            currency=currency,
+        )
+        group_rows = self.expense_repo.get_group_category_totals(
+            user_id=user_id,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            currency=currency,
+        )
+
+        category_map: dict[int, dict] = {}
+        total_amount = Decimal("0")
+
+        for row in personal_rows + group_rows:
+            cat_id = int(row.category_id)
+            current = category_map.setdefault(
+                cat_id,
+                {
+                    "category_id": cat_id,
+                    "category_name": row.category_name,
+                    "amount": Decimal("0"),
+                    "currency": currency,
+                },
+            )
+            amount = Decimal(str(row.total_amount or 0))
+            current["amount"] += amount
+            total_amount += amount
+
+        categories = sorted(
+            category_map.values(),
+            key=lambda item: item["amount"],
+            reverse=True,
+        )
+
+        return {
+            "currency": currency,
+            "range": range_value,
+            "total_amount": total_amount,
+            "categories": categories,
+        }
+
+    def get_trend_by_range(
+        self,
+        user_id: int,
+        range_value: str,
+        currency: CurrencyEnum,
+    ):
+        date_from, date_to = self._resolve_date_range(range_value)
+        date_from_dt = datetime.combine(date_from, time.min)
+        date_to_dt = datetime.combine(date_to, time.max)
+
+        personal_rows = self.expense_repo.get_personal_daily_totals(
+            user_id=user_id,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            currency=currency,
+        )
+        group_rows = self.expense_repo.get_group_daily_totals(
+            user_id=user_id,
+            date_from=date_from_dt,
+            date_to=date_to_dt,
+            currency=currency,
+        )
+
+        day_map: dict[date, Decimal] = {}
+        for row in personal_rows + group_rows:
+            day = row.day if isinstance(row.day, date) else date.fromisoformat(str(row.day))
+            day_map[day] = day_map.get(day, Decimal("0")) + Decimal(str(row.total_amount or 0))
+
+        current = date_from
+        points = []
+        while current <= date_to:
+            points.append({
+                "date": current,
+                "amount": day_map.get(current, Decimal("0")),
+                "currency": currency,
+            })
+            current += timedelta(days=1)
+
+        return {
+            "currency": currency,
+            "range": range_value,
+            "date_from": date_from,
+            "date_to": date_to,
+            "points": points,
+        }
+
     @staticmethod
     def _to_currency(value) -> CurrencyEnum:
         return value if isinstance(value, CurrencyEnum) else CurrencyEnum(str(value))
