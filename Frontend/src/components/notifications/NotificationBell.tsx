@@ -101,7 +101,7 @@ export function NotificationBell() {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "relative flex items-center justify-center rounded-md p-2 transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
+          "text-muted-foreground hover:bg-accent hover:text-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "cursor-pointer",
           isOpen && "bg-accent text-accent-foreground"
