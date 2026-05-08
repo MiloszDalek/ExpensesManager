@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { PieChart as PieChartIcon } from "lucide-react";
 import {
@@ -35,6 +35,14 @@ const SummaryCategoryChart = memo(function SummaryCategoryChart({
   currency,
 }: SummaryCategoryChartProps) {
   const { t } = useTranslation();
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   const tooltipContent = useCallback(({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -73,14 +81,14 @@ const SummaryCategoryChart = memo(function SummaryCategoryChart({
         {data.length === 0 ? (
           <p className="py-10 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
         ) : (
-          <div className="min-h-[320px] h-80">
-            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={280}>
+          <div className="sm:min-h-[320px] sm:h-80 h-[450px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={450}>
               <RechartsPieChart>
                 <Pie
                   data={data}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={60}
+                  cy={isDesktop ? "30%" : "50%"}
+                  innerRadius={50}
                   outerRadius={100}
                   paddingAngle={2}
                   dataKey="value"
@@ -91,11 +99,11 @@ const SummaryCategoryChart = memo(function SummaryCategoryChart({
                 </Pie>
                 <Tooltip content={tooltipContent} />
                 <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  layout="horizontal"
+                  verticalAlign={isDesktop ? "top" : "bottom"}
+                  align={isDesktop ? "right" : "center"}
+                  layout={isDesktop ? "vertical" : "horizontal"}
+                  wrapperStyle={isDesktop ? { paddingTop: 8 } : { paddingTop: 8 }}
                   formatter={legendFormatter}
-                  wrapperStyle={{ paddingTop: 8 }}
                 />
               </RechartsPieChart>
             </ResponsiveContainer>

@@ -939,6 +939,8 @@
       "topCategoriesSubtitle": "Kliknij etykietę, aby filtrować tabelę po kategorii",
       "topGroupsTitle": "Top grupy",
       "topGroupsSubtitle": "Grupy posortowane po sumie Twoich udziałów",
+      "categoryTitle": "Podział według kategorii",
+      "categorySubtitle": "Rozkład wydatków według kategorii",
       "total": "Suma",
       "personal": "Osobiste",
       "group": "Grupowe",

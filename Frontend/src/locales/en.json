@@ -949,6 +949,8 @@
       "topCategoriesSubtitle": "Click a chip to filter the table by category",
       "topGroupsTitle": "Top groups",
       "topGroupsSubtitle": "Groups ordered by your share totals",
+      "categoryTitle": "Category breakdown",
+      "categorySubtitle": "Distribution by category",
       "total": "Total",
       "personal": "Personal",
       "group": "Group",

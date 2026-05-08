@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -33,6 +34,14 @@ const COLORS = [
 
 export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownChartProps) {
   const { t } = useTranslation();
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["expenses", "categories", range, currency],
@@ -126,7 +135,10 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <PieChart className="h-5 w-5 text-primary" />
+          {t("dashboard.categoryBreakdown.title")}
+        </CardTitle>
         <CardDescription>{t("dashboard.categoryBreakdown.description")}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -136,14 +148,14 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
             <span className="font-bold text-lg">{formatCurrency(total, currency)}</span>
           </div>
 
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+          <div className="sm:h-[300px] h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
               <RechartsPieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={60}
+                  cy={isDesktop ? "30%" : "50%"}
+                  innerRadius={50}
                   outerRadius={100}
                   paddingAngle={2}
                   dataKey="value"
@@ -154,9 +166,10 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
                 <Legend
-                  verticalAlign="middle"
-                  align="right"
-                  layout="vertical"
+                  verticalAlign={isDesktop ? "top" : "bottom"}
+                  align={isDesktop ? "right" : "center"}
+                  layout={isDesktop ? "vertical" : "horizontal"}
+                  wrapperStyle={isDesktop ? { paddingTop: 8 } : { paddingTop: 8 }}
                   formatter={(value: string, entry: any) => (
                     <span className="text-sm">
                       {value} ({toFixedSafe(entry.payload.percentage, 1)}%)

@@ -63,8 +63,8 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
         {data.length === 0 ? (
           <p className="py-10 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
         ) : (
-          <div className={`sm:h-[325px] h-[220px] w-full ${showComparePrevious ? 'sm:h-[350px] h-[250px]' : ''}`}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={showComparePrevious ? 250 : 220}>
+          <div className={`sm:h-[325px] h-[220px] w-full ${showComparePrevious ? 'h-[250px]' : ''}`}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={220}>
               <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="currentFill" x1="0" y1="0" x2="0" y2="1">

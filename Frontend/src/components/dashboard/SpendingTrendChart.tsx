@@ -212,8 +212,8 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
         </div>
       </CardHeader>
       <CardContent className="px-0 sm:px-6">
-        <div className={`sm:h-[325px] h-[200px] w-full ${compare ? 'sm:h-[350px] h-[230px]' : ''}`}>
-          <ResponsiveContainer width="100%" height="100%" minHeight={compare ? 230 : 200}>
+        <div className={`sm:h-[325px] h-[200px] w-full ${compare ? 'h-[230px]' : ''}`}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={200}>
             <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="trendColor" x1="0" y1="0" x2="0" y2="1">
