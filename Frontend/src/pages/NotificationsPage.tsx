@@ -9,6 +9,7 @@ import { queryKeys } from "@/api/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
   Select,
   SelectContent,
@@ -204,11 +205,7 @@ export default function NotificationsPage() {
   };
 
   if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   return (

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import PageInfoButton from "@/components/help/PageInfoButton";
 import DialogInfoButton from "@/components/help/DialogInfoButton";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -930,11 +931,7 @@ export default function GroupDetailPage() {
   }
 
   if (!user || groupLoading || membersLoading || categoriesLoading || expensesLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   if ((groupError && !isAccessDenied) || membersError || categoriesError || expensesError || !group) {

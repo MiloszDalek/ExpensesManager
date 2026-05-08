@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import PageInfoButton from "@/components/help/PageInfoButton";
 
 import CreateGroupDialog from "../components/groups/CreateGroupDialog";
@@ -155,11 +155,7 @@ export default function GroupsPage() {
   }, [groups, normalizedSearch]);
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-500"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   if (error) {
@@ -304,15 +300,7 @@ export default function GroupsPage() {
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 justify-center justify-items-center gap-4 sm:grid-cols-[repeat(auto-fit,minmax(360px,440px))]">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-20 bg-muted rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <LoadingSpinnerWrapper className="min-h-[200px]" />
         ) : groups.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}

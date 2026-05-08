@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Plus, Repeat2, ScanSearch } from "lucide-rea
 import { motion } from "framer-motion";
 import { format, startOfMonth, subMonths } from "date-fns";
 import PageInfoButton from "@/components/help/PageInfoButton";
+import { LoadingSpinner, LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 
 import AddExpenseDialog from "../components/expenses/AddExpenseDialog";
 import AddRecurringExpenseDialog from "../components/expenses/AddRecurringExpenseDialog";
@@ -426,11 +427,7 @@ export default function PersonalExpensesPage() {
   // Handle loading states
 
   if (!user || categoriesLoading || expensesLoading || summaryLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   // Handle error states
@@ -639,7 +636,7 @@ export default function PersonalExpensesPage() {
                   className="w-full md:w-auto"
                 >
                   {isFetchingNextPage ? (
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
+                    <LoadingSpinner className="mr-2 h-4 w-4" />
                   ) : null}
                   {t("personalExpensesPage.loadMore")}
                 </Button>

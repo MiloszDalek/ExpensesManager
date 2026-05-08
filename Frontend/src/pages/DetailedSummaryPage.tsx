@@ -7,6 +7,7 @@ import { Download, ListFilter, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import PageInfoButton from "@/components/help/PageInfoButton";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
   categoriesApi,
   expensesSummaryApi,
@@ -351,11 +352,7 @@ export default function DetailedSummaryPage() {
     trendsLoading ||
     transactionsLoading
   ) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   if (groupsError || categoriesError || overviewError || trendsError || transactionsError) {

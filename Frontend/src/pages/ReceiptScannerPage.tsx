@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
   Select,
   SelectContent,
@@ -581,11 +582,7 @@ export default function ReceiptScannerPage() {
     (expenseScope === "group" && groupsLoading) ||
     (expenseScope === "group" && (groupCategoriesLoading || groupMembersLoading))
   ) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   return (

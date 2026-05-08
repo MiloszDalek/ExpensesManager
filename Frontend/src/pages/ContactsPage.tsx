@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp, HandCoins, Search, UsersRound } from "lucide-react";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 
 import {
   AlertDialog,
@@ -745,11 +746,7 @@ export default function ContactsPage() {
   );
 
   if (!user || contactsLoading || groupsLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinnerWrapper className="h-screen" />;
   }
 
   if (contactsError || groupsError) {

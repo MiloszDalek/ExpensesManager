@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { categoriesApi, queryKeys, usersApi } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
     Card,
     CardContent,
@@ -397,11 +398,7 @@ export default function AdminPage() {
     };
 
     if (!user) {
-        return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-            </div>
-        );
+        return <LoadingSpinnerWrapper className="h-screen" />;
     }
 
     if (user.role !== "admin") {
