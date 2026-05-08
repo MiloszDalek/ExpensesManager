@@ -97,9 +97,10 @@ export const queryKeys = {
       currency: string,
       sortBy: string,
       sortOrder: string,
-      categoryIdsKey: string
+      categoryIdsKey: string,
+      page: number
     ) =>
-      ["expenses", "summary", "drilldown", dateFrom, dateTo, scope, String(groupId), currency, sortBy, sortOrder, categoryIdsKey] as const,
+      ["expenses", "summary", "drilldown", dateFrom, dateTo, scope, String(groupId), currency, sortBy, sortOrder, categoryIdsKey, page] as const,
   },
 
   categories: {

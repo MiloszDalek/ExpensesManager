@@ -232,7 +232,8 @@ export default function DetailedSummaryPage() {
       appliedFilters.currency,
       appliedFilters.sortBy,
       appliedFilters.sortOrder,
-      categoryIdsKey
+      categoryIdsKey,
+      page
     ),
     queryFn: () => expensesSummaryApi.drilldown(transactionParams),
     enabled: !!user,

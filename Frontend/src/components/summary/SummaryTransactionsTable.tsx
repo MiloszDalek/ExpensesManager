@@ -87,7 +87,7 @@ const SummaryTransactionsTable = memo(function SummaryTransactionsTable({
                 {items.map((item) => (
                   <tr key={`${item.scope}-${item.expense_id}`} className="border-b/60">
                     <td className="px-2 py-2">{format(parseISO(item.expense_date), "yyyy-MM-dd")}</td>
-                    <td className="px-2 py-2 font-medium">{item.title}</td>
+                    <td className="px-2 py-2 font-medium max-w-[200px] truncate" title={item.title}>{item.title}</td>
                     <td className="px-2 py-2">
                       <Badge variant={item.scope === "personal" ? "outline" : "secondary"}>
                         {item.scope === "personal"

@@ -11,7 +11,7 @@ const MobileSummarySwitcher = memo(function MobileSummarySwitcher({ view, onView
   const { t } = useTranslation();
 
   return (
-    <div className="mb-4 md:hidden">
+    <div className="mb-4 lg:hidden">
       <div className="grid grid-cols-2 gap-1">
         <Button
           type="button"
