@@ -63,7 +63,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
   } = useQuery({
     queryKey: ["expenses", "trend", previousRange, currency],
     queryFn: () => expensesSummaryApi.trend({ range: previousRange!, currency }),
-    enabled: compare && !!previousRange,
+    enabled: !!previousRange,
   });
 
   const isLoading = currentLoading || (compare && previousLoading);

@@ -151,11 +151,11 @@ export default function DetailedSummaryPage() {
       group_id: appliedGroupId,
       category_ids: appliedFilters.categoryIds.length > 0 ? appliedFilters.categoryIds : undefined,
       currency: appliedFilters.currency,
-      compare_previous: showComparePrevious,
+      compare_previous: true,
       top_categories_limit: 20,
       top_groups_limit: 6,
     }),
-    [appliedFilters, appliedGroupId, showComparePrevious]
+    [appliedFilters, appliedGroupId]
   );
 
   const {
@@ -169,7 +169,7 @@ export default function DetailedSummaryPage() {
       appliedFilters.scope,
       appliedGroupId ?? "all",
       appliedFilters.currency,
-      showComparePrevious,
+      true,
       categoryIdsKey
     ),
     queryFn: () => expensesSummaryApi.overview(summaryParams),
@@ -187,7 +187,7 @@ export default function DetailedSummaryPage() {
       appliedFilters.scope,
       appliedGroupId ?? "all",
       appliedFilters.currency,
-      showComparePrevious,
+      true,
       categoryIdsKey
     ),
     queryFn: () =>
@@ -199,7 +199,7 @@ export default function DetailedSummaryPage() {
         category_ids: appliedFilters.categoryIds.length > 0 ? appliedFilters.categoryIds : undefined,
         currency: appliedFilters.currency,
         group_id: appliedGroupId,
-        compare_previous: showComparePrevious,
+        compare_previous: true,
       }),
     enabled: !!user,
   });
