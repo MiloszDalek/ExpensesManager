@@ -26,12 +26,9 @@ import {
   type ApiSavingsGoalResponse,
   type ApiSavingsGoalUpdate,
 } from "@/types";
-import { SUPPORTED_CURRENCIES } from "@/types/enums";
-
-
-const formatMoney = (value: number | string, currency: string) => {
-  return `${Number(value || 0).toFixed(2)} ${currency}`;
-};
+import { type CurrencyEnum } from "@/types/enums";
+import { formatCurrency } from "@/utils/currency";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 
 const toIsoDateStart = (value: string) => `${value}T00:00:00`;
 
@@ -152,7 +149,7 @@ export default function BudgetsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [budgetName, setBudgetName] = useState("");
-  const [budgetCurrency, setBudgetCurrency] = useState<typeof SUPPORTED_CURRENCIES[number]>("PLN");
+  const [budgetCurrency, setBudgetCurrency] = useState<CurrencyEnum>("PLN");
   const [periodType, setPeriodType] = useState<"monthly" | "weekly">("monthly");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
@@ -729,18 +726,10 @@ export default function BudgetsPage() {
 
             <div className="space-y-1">
               <Label>{t("budgets.form.currency", { defaultValue: "Currency" })}</Label>
-              <Select value={budgetCurrency} onValueChange={(value) => setBudgetCurrency(value as typeof SUPPORTED_CURRENCIES[number])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CurrencyPicker
+                selectedCurrency={budgetCurrency}
+                onCurrencyChange={setBudgetCurrency}
+              />
             </div>
 
             <div className="space-y-1">
@@ -1007,7 +996,7 @@ export default function BudgetsPage() {
                           <p className="text-xs text-muted-foreground">{income.income_date.slice(0, 10)}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-foreground">{formatMoney(income.amount, income.currency || selectedBudget.currency)}</span>
+                          <span className="text-sm text-foreground">{formatCurrency(Number(income.amount), (income.currency || selectedBudget.currency) as CurrencyEnum)}</span>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1103,19 +1092,19 @@ export default function BudgetsPage() {
                         <Card>
                           <CardContent className="p-3">
                             <p className="text-xs text-muted-foreground">{t("budgets.summary.income", { defaultValue: "Income" })}</p>
-                            <p className="text-lg font-semibold">{formatMoney(budgetSummary.income_total, budgetSummary.currency)}</p>
+                            <p className="text-lg font-semibold">{formatCurrency(Number(budgetSummary.income_total), budgetSummary.currency as CurrencyEnum)}</p>
                           </CardContent>
                         </Card>
                         <Card>
                           <CardContent className="p-3">
                             <p className="text-xs text-muted-foreground">{t("budgets.summary.spent", { defaultValue: "Spent" })}</p>
-                            <p className="text-lg font-semibold">{formatMoney(budgetSummary.spent_total, budgetSummary.currency)}</p>
+                            <p className="text-lg font-semibold">{formatCurrency(Number(budgetSummary.spent_total), budgetSummary.currency as CurrencyEnum)}</p>
                           </CardContent>
                         </Card>
                         <Card>
                           <CardContent className="p-3">
                             <p className="text-xs text-muted-foreground">{t("budgets.summary.saved", { defaultValue: "Saved" })}</p>
-                            <p className="text-lg font-semibold">{formatMoney(budgetSummary.saved_total, budgetSummary.currency)}</p>
+                            <p className="text-lg font-semibold">{formatCurrency(Number(budgetSummary.saved_total), budgetSummary.currency as CurrencyEnum)}</p>
                           </CardContent>
                         </Card>
                         <Card>
@@ -1159,7 +1148,7 @@ export default function BudgetsPage() {
                             </div>
 
                             <p className="text-xs text-muted-foreground">
-                              {formatMoney(pool.spent_amount, budgetSummary.currency)} / {formatMoney(pool.allocated_amount, budgetSummary.currency)} · {t("budgets.summary.remaining", { defaultValue: "Remaining" })}: {formatMoney(pool.remaining_amount, budgetSummary.currency)}
+                              {formatCurrency(Number(pool.spent_amount), budgetSummary.currency as CurrencyEnum)} / {formatCurrency(Number(pool.allocated_amount), budgetSummary.currency as CurrencyEnum)} · {t("budgets.summary.remaining", { defaultValue: "Remaining" })}: {formatCurrency(Number(pool.remaining_amount), budgetSummary.currency as CurrencyEnum)}
                               {pool.utilization_percent != null ? ` (${pool.utilization_percent.toFixed(2)}%)` : ""}
                             </p>
                           </div>
@@ -1282,7 +1271,7 @@ export default function BudgetsPage() {
                             <div>
                               <p className="text-sm font-semibold text-foreground">{goal.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {t("budgets.goals.target", { defaultValue: "Target" })}: {formatMoney(goal.target_amount, selectedBudgetCurrency)}
+                                {t("budgets.goals.target", { defaultValue: "Target" })}: {formatCurrency(Number(goal.target_amount), selectedBudgetCurrency)}
                                 {goal.deadline ? ` · ${t("budgets.goals.deadline", { defaultValue: "Deadline" })}: ${goal.deadline}` : ""}
                               </p>
                             </div>
@@ -1298,8 +1287,8 @@ export default function BudgetsPage() {
                           </div>
 
                           <p className="mb-3 text-xs text-muted-foreground">
-                            {formatMoney(goal.current_amount, selectedBudgetCurrency)} / {formatMoney(goal.target_amount, selectedBudgetCurrency)}
-                            {` (${progressPercent.toFixed(2)}%) · ${t("budgets.summary.remaining", { defaultValue: "Remaining" })}: ${formatMoney(remainingAmount, selectedBudgetCurrency)}`}
+                            {formatCurrency(Number(goal.current_amount), selectedBudgetCurrency)} / {formatCurrency(Number(goal.target_amount), selectedBudgetCurrency)}
+                            {` (${progressPercent.toFixed(2)}%) · ${t("budgets.summary.remaining", { defaultValue: "Remaining" })}: ${formatCurrency(Number(remainingAmount), selectedBudgetCurrency)}`}
                           </p>
 
                           <div className="flex flex-wrap items-end gap-2">
@@ -1568,7 +1557,7 @@ export default function BudgetsPage() {
                                           </p>
                                         </div>
                                         <span className="text-xs font-semibold text-foreground">
-                                          {formatMoney(allocation.amount, selectedBudgetCurrency)}
+                                          {formatCurrency(Number(allocation.amount), selectedBudgetCurrency)}
                                         </span>
                                       </div>
                                     ))}

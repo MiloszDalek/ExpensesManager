@@ -38,6 +38,8 @@ import AddGroupRecurringExpenseDialog from "@/components/groups/AddGroupRecurrin
 import EditRecurringExpenseDialog from "@/components/expenses/EditRecurringExpenseDialog";
 import EditGroupDialog from "@/components/groups/EditGroupDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 import { groupsApi } from "@/api/groupsApi";
 import { expensesGroupApi } from "@/api/expensesGroupApi";
 import { recurringExpensesApi } from "@/api/recurringExpensesApi";
@@ -1035,7 +1037,7 @@ export default function GroupDetailPage() {
                 })}
               </p>
               <p className="text-xs text-muted-foreground">
-                {t("groupDetailPage.chartPeak", { defaultValue: "Peak month" })}: {groupSpendChart.maxAmount.toFixed(2)} {group.currency}
+                {t("groupDetailPage.chartPeak", { defaultValue: "Peak month" })}: {formatCurrency(groupSpendChart.maxAmount, group.currency as CurrencyEnum)}
               </p>
             </CardContent>
           </Card>
@@ -1085,7 +1087,7 @@ export default function GroupDetailPage() {
                   <div className="flex flex-1 items-center justify-center">
                     <div className="text-center">
                       <p className="text-[clamp(0.95rem,4.6vw,1.5rem)] font-bold leading-none text-foreground sm:text-2xl md:text-4xl">
-                        {Number(group.total_amount ?? 0).toFixed(2)}
+                        {formatCurrency(Number(group.total_amount ?? 0), group.currency as CurrencyEnum)}
                       </p>
                       <p className="mt-1 text-[10px] font-medium text-muted-foreground sm:text-xs md:mt-2 md:text-sm">
                         {group.currency}
@@ -1200,7 +1202,7 @@ export default function GroupDetailPage() {
                               : "text-foreground"
                         }`}
                       >
-                        {Math.abs(userBalanceSummary.othersOweMe - userBalanceSummary.iOweOthers).toFixed(2)} {group.currency}
+                        {formatCurrency(Math.abs(userBalanceSummary.othersOweMe - userBalanceSummary.iOweOthers), group.currency as CurrencyEnum)}
                       </p>
                     </div>
 
@@ -1240,7 +1242,7 @@ export default function GroupDetailPage() {
                                   row.amount > 0 ? "text-emerald-700" : row.amount < 0 ? "text-rose-700" : "text-foreground"
                                 }`}
                               >
-                                {row.absoluteAmount.toFixed(2)} {group.currency}
+                                {formatCurrency(row.absoluteAmount, group.currency as CurrencyEnum)}
                               </p>
                             </div>
 
@@ -1299,7 +1301,7 @@ export default function GroupDetailPage() {
                           })}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {Number(settlement.amount).toFixed(2)} {settlement.currency} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
+                          {formatCurrency(Number(settlement.amount), settlement.currency as CurrencyEnum)} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
                         </p>
                       </div>
                     ))}
@@ -1350,7 +1352,7 @@ export default function GroupDetailPage() {
                           <p className="truncate text-sm font-semibold leading-tight text-foreground">{series.title}</p>
 
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardAmount", { defaultValue: "Amount" })}: {Number(series.amount).toFixed(2)} {series.currency}
+                            {t("recurringExpenses.cardAmount", { defaultValue: "Amount" })}: {formatCurrency(Number(series.amount), series.currency as CurrencyEnum)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {t("recurringExpenses.cardFrequency", { defaultValue: "Frequency" })}: {mapRecurringFrequencyLabel(series.frequency)}
@@ -1660,7 +1662,7 @@ export default function GroupDetailPage() {
                 ? t("groupDetailPage.settlementOutsideConfirmDescription", {
                     defaultValue:
                       "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
-                    amount: outsideAppConfirmTarget.absoluteAmount.toFixed(2),
+                    amount: formatCurrency(outsideAppConfirmTarget.absoluteAmount, group.currency as CurrencyEnum),
                     currency: group.currency,
                   })
                 : ""}

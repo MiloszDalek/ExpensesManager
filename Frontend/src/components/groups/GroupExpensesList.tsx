@@ -17,6 +17,8 @@ import { format } from "date-fns";
 import { enUS, pl } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 import { formatCategoryNameForDisplay, getCategoryIcon, getCategoryVisualStyle } from "@/utils/category";
 import type { ApiCategoryResponse, ApiGroupExpenseResponse } from "@/types";
@@ -130,7 +132,7 @@ export default function GroupExpensesList({
                 : "text-muted-foreground";
           const secondaryAmountText =
             borrowedAmount > 0 || lentAmount > 0
-              ? `${secondaryAmount.toFixed(2)} ${displayCurrency}`
+              ? formatCurrency(secondaryAmount, displayCurrency as CurrencyEnum)
               : t("groupExpensesList.notApplicable", { defaultValue: "not applicable" });
 
           return (
@@ -182,7 +184,7 @@ export default function GroupExpensesList({
                         <p className="truncate text-[10px] text-muted-foreground">{payerName}</p>
                       ) : null}
                       <p className="truncate text-[12px] font-bold text-foreground sm:text-sm">
-                        {totalAmount.toFixed(2)} {displayCurrency}
+                        {formatCurrency(totalAmount, displayCurrency as CurrencyEnum)}
                       </p>
                     </div>
 
@@ -280,7 +282,7 @@ export default function GroupExpensesList({
                                     {memberNameById[share.user_id] ?? `${t("groupExpensesList.userPrefix")}#${share.user_id}`}
                                   </span>
                                   <span className="font-medium text-foreground">
-                                    {Number(share.share_amount).toFixed(2)} {displayCurrency}
+                                    {formatCurrency(Number(share.share_amount), displayCurrency as CurrencyEnum)}
                                   </span>
                                 </div>
                               ))}

@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DatePicker from "@/components/ui/date-picker";
-import { SUPPORTED_CURRENCIES } from "@/types/enums";
 import { resolveCategoryGroup } from "@/utils/category";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import type {
   PersonalExpensePeriodPreset,
   ExpenseSummaryScope,
@@ -116,21 +116,11 @@ export default function SummaryFilters({
 
         <div className="space-y-1">
           <Label>{t("expenseFilters.currency")}</Label>
-          <Select
-            value={draftFilters.currency}
-            onValueChange={(value) => onCurrencyChange(value as CurrencyEnum)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SUPPORTED_CURRENCIES.map((currency) => (
-                <SelectItem key={currency} value={currency}>
-                  {currency}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CurrencyPicker
+            selectedCurrency={draftFilters.currency as CurrencyEnum}
+            onCurrencyChange={onCurrencyChange}
+            className="w-full"
+          />
         </div>
 
         <div className="space-y-1">

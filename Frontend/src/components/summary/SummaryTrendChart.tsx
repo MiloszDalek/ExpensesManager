@@ -1,5 +1,7 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 import { BarChart3 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import {
@@ -91,7 +93,7 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
                         <p className="text-sm font-medium mb-1">{formattedDate}</p>
                         {payload.map((entry) => (
                           <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
-                            {entry.name}: {Number(entry.value ?? 0).toFixed(2)} {currency}
+                            {entry.name}: {formatCurrency(Number(entry.value ?? 0), currency as CurrencyEnum)}
                           </p>
                         ))}
                       </div>

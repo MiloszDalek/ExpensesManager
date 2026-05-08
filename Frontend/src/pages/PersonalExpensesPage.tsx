@@ -21,6 +21,8 @@ import { recurringExpensesApi } from "@/api/recurringExpensesApi";
 import { categoriesApi } from "@/api/categoriesApi";
 import { queryKeys } from "@/api/queryKeys";
 import { formatCategoryNameForDisplay } from "@/utils/category";
+import { formatCurrency, formatCurrencyNumber } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 import type {
   ApiPersonalExpenseResponse,
@@ -446,7 +448,7 @@ export default function PersonalExpensesPage() {
   }
 
   const totalLabel = (summary?.totals_by_currency ?? [])
-    .map((item) => `${Number(item.total_amount).toFixed(2)} ${item.currency}`)
+    .map((item) => formatCurrency(Number(item.total_amount), item.currency as CurrencyEnum))
     .join(" · ");
 
   const topCategory = summary?.top_categories?.[0] ?? null;
@@ -611,7 +613,7 @@ export default function PersonalExpensesPage() {
                   {topCategoryName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {topCategory ? Number(topCategory.total_amount).toFixed(2) : "-"}
+                  {topCategory ? formatCurrencyNumber(Number(topCategory.total_amount)) : "-"}
                 </p>
               </div>
             </div>
@@ -688,7 +690,7 @@ export default function PersonalExpensesPage() {
                           <p className="truncate text-sm font-semibold leading-tight text-foreground">{series.title}</p>
 
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardAmount", { defaultValue: "Amount" })}: {Number(series.amount).toFixed(2)} {series.currency}
+                            {t("recurringExpenses.cardAmount", { defaultValue: "Amount" })}: {formatCurrency(Number(series.amount), series.currency as CurrencyEnum)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {t("recurringExpenses.cardFrequency", { defaultValue: "Frequency" })}: {mapRecurringFrequencyLabel(series.frequency)}

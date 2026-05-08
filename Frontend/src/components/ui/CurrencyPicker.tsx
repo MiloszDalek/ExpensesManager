@@ -21,17 +21,29 @@ import { type CurrencyEnum } from "@/types/enums";
 import { SUPPORTED_CURRENCIES } from "@/types/enums";
 import { X } from "lucide-react";
 
-interface CurrencyPickerProps {
-  selectedCurrency: CurrencyEnum;
-  onCurrencyChange: (currency: CurrencyEnum) => void;
+interface CurrencyPickerProps<TValue extends CurrencyEnum | "all" = CurrencyEnum> {
+  selectedCurrency: TValue;
+  onCurrencyChange: (currency: TValue) => void;
   className?: string;
+  allowAll?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
+  id?: string;
 }
 
-export function CurrencyPicker({ selectedCurrency, onCurrencyChange, className }: CurrencyPickerProps) {
+export function CurrencyPicker<TValue extends CurrencyEnum | "all" = CurrencyEnum>({
+  selectedCurrency,
+  onCurrencyChange,
+  className,
+  allowAll,
+  placeholder,
+  disabled,
+  id,
+}: CurrencyPickerProps<TValue>) {
   const { t } = useTranslation();
   const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
-  const ignoredCurrencySelectionRef = useRef<CurrencyEnum | null>(null);
+  const ignoredCurrencySelectionRef = useRef<TValue | null>(null);
 
   useEffect(() => {
     setRecentCurrencies(getRecentCurrencies());
@@ -44,7 +56,7 @@ export function CurrencyPicker({ selectedCurrency, onCurrencyChange, className }
 
   const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
 
-  const handleCurrencySelect = (currency: CurrencyEnum) => {
+  const handleCurrencySelect = (currency: TValue) => {
     if (currency === ignoredCurrencySelectionRef.current) {
       ignoredCurrencySelectionRef.current = null;
       return;
@@ -52,21 +64,24 @@ export function CurrencyPicker({ selectedCurrency, onCurrencyChange, className }
 
     ignoredCurrencySelectionRef.current = null;
     onCurrencyChange(currency);
-    setRecentCurrencies(rememberRecentCurrency(currency));
+
+    if (currency !== "all") {
+      setRecentCurrencies(rememberRecentCurrency(currency as unknown as CurrencyEnum));
+    }
   };
 
   const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
     setRecentCurrencies(removeRecentCurrency(currency));
 
-    if (selectedCurrency === currency) {
-      ignoredCurrencySelectionRef.current = currency;
+    if (selectedCurrency === (currency as unknown as TValue)) {
+      ignoredCurrencySelectionRef.current = currency as unknown as TValue;
       // Change to the first available currency
       const remainingCurrencies = removeRecentCurrency(currency);
       if (remainingCurrencies.length > 0) {
-        onCurrencyChange(remainingCurrencies[0]);
+        onCurrencyChange(remainingCurrencies[0] as unknown as TValue);
       } else {
         // Fallback to PLN if no recent currencies
-        onCurrencyChange("PLN");
+        onCurrencyChange("PLN" as unknown as TValue);
       }
       setIsSelectOpen(false);
     }
@@ -78,11 +93,25 @@ export function CurrencyPicker({ selectedCurrency, onCurrencyChange, className }
       onValueChange={handleCurrencySelect}
       open={isSelectOpen}
       onOpenChange={setIsSelectOpen}
+      disabled={disabled}
     >
-      <SelectTrigger className={`gap-2 ${className}`}>
-        <SelectValue placeholder="Select currency" />
+      <SelectTrigger id={id} className={`gap-2 ${className}`}>
+        <SelectValue placeholder={placeholder ?? "Select currency"} />
       </SelectTrigger>
       <SelectContent className="w-48">
+        {allowAll && (
+          <>
+            <SelectGroup>
+              <SelectItem value="all">
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span className="font-medium">All</span>
+                  <span className="text-muted-foreground">—</span>
+                </div>
+              </SelectItem>
+            </SelectGroup>
+            {recentCurrencies.length > 0 && <SelectSeparator />}
+          </>
+        )}
         {recentCurrencies.length > 0 && (
           <>
             <SelectGroup>

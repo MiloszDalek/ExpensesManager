@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -11,24 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { X } from "lucide-react";
-import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
-import {
-  getCurrenciesWithRecentFirst,
-  getRecentCurrencies,
-  rememberRecentCurrency,
-  removeRecentCurrency,
-} from "@/utils/currency";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
+import { type CurrencyEnum } from "@/types/enums";
 
 type CreateGroupFormData = {
   name: string;
@@ -55,25 +39,11 @@ export default function CreateGroupDialog({
   errorMessage,
 }: CreateGroupDialogProps) {
   const { t } = useTranslation();
-  const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateGroupFormData>({
     name: "",
     description: "",
-    currency: "PLN" as CurrencyEnum,
+    currency: "PLN",
   });
-
-  useEffect(() => {
-    if (open) {
-      setRecentCurrencies(getRecentCurrencies());
-    }
-  }, [open]);
-
-  const orderedCurrencies = useMemo(
-    () => getCurrenciesWithRecentFirst(recentCurrencies),
-    [recentCurrencies]
-  );
-
-  const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
 
   const resetForm = () => {
     setFormData({
@@ -83,16 +53,11 @@ export default function CreateGroupDialog({
     });
   };
 
-  const handleCurrencyChange = (value: string) => {
+  const handleCurrencyChange = (value: CurrencyEnum) => {
     setFormData((prev) => ({
       ...prev,
-      currency: value as CurrencyEnum,
+      currency: value,
     }));
-    setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
-  };
-
-  const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
-    setRecentCurrencies(removeRecentCurrency(currency));
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -108,7 +73,6 @@ export default function CreateGroupDialog({
       formData.name.length <= GROUP_NAME_MAX_LENGTH &&
       formData.description.length <= GROUP_DESCRIPTION_MAX_LENGTH
     ) {
-      setRecentCurrencies(rememberRecentCurrency(formData.currency));
       onSubmit(formData);
       resetForm();
     }
@@ -172,56 +136,11 @@ export default function CreateGroupDialog({
 
             <div>
               <Label>{t("createGroupDialog.currency")}</Label>
-              <Select
-                value={formData.currency}
-                onValueChange={handleCurrencyChange}
-              >
-                <SelectTrigger className="mt-2 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {recentCurrencies.length > 0 && (
-                    <>
-                      <SelectGroup>
-                        <SelectLabel>{t("createGroupDialog.recentCurrencies")}</SelectLabel>
-                        {orderedCurrencies
-                          .filter((currency) => recentCurrencySet.has(currency))
-                          .map((currency) => (
-                            <SelectItem key={`recent-${currency}`} value={currency} className="group pr-12">
-                              <span>{currency}</span>
-                              <button
-                                type="button"
-                                tabIndex={-1}
-                                aria-label={t("createGroupDialog.removeRecentCurrency")}
-                                className="ml-auto mr-4 cursor-pointer rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100"
-                                onPointerDown={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                }}
-                                onPointerUp={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleRemoveRecentCurrency(currency);
-                                }}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </SelectItem>
-                          ))}
-                      </SelectGroup>
-                      <SelectSeparator />
-                    </>
-                  )}
-
-                  <SelectGroup>
-                    {SUPPORTED_CURRENCIES.filter((currency) => !recentCurrencySet.has(currency)).map((currency) => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <CurrencyPicker
+                selectedCurrency={formData.currency}
+                onCurrencyChange={handleCurrencyChange}
+                className="mt-2 w-full"
+              />
             </div>
           </div>
 

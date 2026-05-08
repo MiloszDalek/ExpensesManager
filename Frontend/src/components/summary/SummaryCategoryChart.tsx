@@ -10,6 +10,8 @@ import {
   Tooltip,
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 interface CategoryPieDatum {
   name: string;
@@ -28,8 +30,6 @@ const COLORS = [
   "#ec4899", "#6366f1", "#f97316", "#14b8a6", "#8b5cf6",
 ];
 
-const formatAmount = (value: number | string | null | undefined) => Number(value ?? 0).toFixed(2);
-
 const SummaryCategoryChart = memo(function SummaryCategoryChart({
   data,
   currency,
@@ -42,7 +42,7 @@ const SummaryCategoryChart = memo(function SummaryCategoryChart({
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="font-medium">{d.name}</p>
-          <p className="text-sm">{formatAmount(d.value)} {currency}</p>
+          <p className="text-sm">{formatCurrency(Number(d.value), currency as CurrencyEnum)}</p>
           <p className="text-sm text-muted-foreground">{d.percentage.toFixed(1)}%</p>
         </div>
       );

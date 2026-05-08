@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import type { RecurringScope } from "@/types";
 import type { RecurringExpenseStatus } from "@/types/enums";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 const FORECAST_WINDOW_DAYS = 30;
 
@@ -256,7 +258,7 @@ export default function RecurringExpensesPage() {
                       <div>
                         <p className="text-sm font-semibold text-foreground">{series.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {Number(series.amount).toFixed(2)} {series.currency} · {series.frequency} · {mapStatusLabel(series.status)}
+                          {formatCurrency(Number(series.amount), series.currency as CurrencyEnum)} · {series.frequency} · {mapStatusLabel(series.status)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {t("recurringExpenses.nextDue", { defaultValue: "Next due" })}: {series.next_due_on}

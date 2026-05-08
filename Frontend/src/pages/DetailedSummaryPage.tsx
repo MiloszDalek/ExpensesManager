@@ -14,6 +14,8 @@ import {
   queryKeys,
 } from "@/api";
 import type { ApiExpenseSummaryDrilldownParams } from "@/types";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 import { useSummaryFilters } from "@/hooks/useSummaryFilters";
 import { useSummaryExport } from "@/hooks/useSummaryExport";
@@ -26,7 +28,6 @@ import SummaryExportDialog from "@/components/summary/SummaryExportDialog";
 import MobileSummarySwitcher from "@/components/summary/MobileSummarySwitcher";
 
 const toNumber = (value: number | string | null | undefined) => Number(value ?? 0);
-const formatAmount = (value: number | string | null | undefined) => toNumber(value).toFixed(2);
 
 export default function DetailedSummaryPage() {
   const { t } = useTranslation();
@@ -274,7 +275,7 @@ export default function DetailedSummaryPage() {
   );
 
   const totalLabel = (overview?.totals_by_currency ?? [])
-    .map((item) => `${formatAmount(item.total_amount)} ${item.currency}`)
+    .map((item) => formatCurrency(Number(item.total_amount), item.currency as CurrencyEnum))
     .join(" · ");
 
   const cumulativeTrendData = useMemo(() => {

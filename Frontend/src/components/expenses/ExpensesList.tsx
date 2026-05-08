@@ -25,6 +25,8 @@ import {
   getCategoryVisualStyle,
   resolveCategoryGroup,
 } from "@/utils/category";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 type ExpensesListProps = {
   expenses: ApiPersonalExpenseResponse[];
@@ -150,10 +152,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
 
                     <div className="w-[5.2rem] shrink-0 text-right sm:w-auto">
                       <p className="truncate text-[11px] font-bold text-foreground sm:text-sm">
-                        {Number(expense.amount).toFixed(2)}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground sm:text-xs">
-                        {expense.currency}
+                        {formatCurrency(Number(expense.amount), expense.currency as CurrencyEnum)}
                       </p>
                     </div>
 

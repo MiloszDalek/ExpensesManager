@@ -28,7 +28,8 @@ import { groupsApi } from "@/api/groupsApi";
 import { queryKeys } from "@/api/queryKeys";
 import { receiptsApi } from "@/api/receiptsApi";
 import { getDefaultCategoryId } from "@/utils/category";
-import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
+import { type CurrencyEnum } from "@/types/enums";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import type {
   ApiCategoryResponse,
   ApiExpenseShare,
@@ -842,20 +843,11 @@ export default function ReceiptScannerPage() {
                 {expenseScope === "group" ? (
                   <Input id="receipt-scan-currency" value={selectedGroup?.currency ?? currency} disabled />
                 ) : (
-                  <Select value={currency} onValueChange={(value) => setCurrency(value as CurrencyEnum)}>
-                    <SelectTrigger id="receipt-scan-currency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {SUPPORTED_CURRENCIES.map((item) => (
-                          <SelectItem key={item} value={item}>
-                            {item}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <CurrencyPicker
+                    id="receipt-scan-currency"
+                    selectedCurrency={currency}
+                    onCurrencyChange={setCurrency}
+                  />
                 )}
               </div>
 

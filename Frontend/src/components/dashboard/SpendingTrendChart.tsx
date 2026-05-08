@@ -16,7 +16,7 @@ import {
 import { expensesSummaryApi } from "@/api/expensesSummaryApi";
 import type { CurrencyEnum } from "@/types/enums";
 import { toFiniteNumber } from "@/utils/toFiniteNumber";
-import { formatCurrency, getCurrencySymbol } from "@/utils/currency";
+import { formatCurrency, formatCompactCurrency } from "@/utils/currency";
 import { convertToCumulative } from "@/utils/convertToCumulative";
 
 interface SpendingTrendChartProps {
@@ -227,7 +227,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
               <YAxis
                 tick={{ fontSize: 12 }}
                 className="text-muted-foreground"
-                tickFormatter={(value) => getCurrencySymbol(currency) + value}
+                tickFormatter={(value) => formatCompactCurrency(Number(value), currency)}
               />
               <Tooltip
                 formatter={(value: any, name: any) => {

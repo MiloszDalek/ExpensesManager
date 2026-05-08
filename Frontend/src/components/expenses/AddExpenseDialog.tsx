@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
 import {
@@ -13,31 +13,14 @@ import DatePicker from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { X } from "lucide-react";
 import { format } from "date-fns";
 import type { ApiPersonalExpenseCreate } from "@/types/expense";
 import type { ApiCategoryResponse } from "@/types/category";
 import {
-  SUPPORTED_CURRENCIES,
   type CurrencyEnum,
 } from "@/types/enums";
-import {
-  getCurrenciesWithRecentFirst,
-  getRecentCurrencies,
-  rememberRecentCurrency,
-  removeRecentCurrency,
-} from "@/utils/currency";
 import { getDefaultCategoryId } from "@/utils/category";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import CategoryPicker from "./CategoryPicker";
 import type { CategorySection } from "@/types/enums";
 import DialogInfoButton from "@/components/help/DialogInfoButton";
@@ -74,13 +57,6 @@ export default function AddExpenseDialog({
 }: AddExpenseDialogProps) {
   const { t } = useTranslation();
   const defaultCategoryId = getDefaultCategoryId(categories);
-  const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
-
-  useEffect(() => {
-    if (open) {
-      setRecentCurrencies(getRecentCurrencies());
-    }
-  }, [open]);
 
   useEffect(() => {
     if (!open || categories.length === 0) {
@@ -101,13 +77,6 @@ export default function AddExpenseDialog({
     });
   }, [open, categories, defaultCategoryId]);
 
-  const orderedCurrencies = useMemo(
-    () => getCurrenciesWithRecentFirst(recentCurrencies),
-    [recentCurrencies]
-  );
-
-  const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
-  
   const [formData, setFormData] = useState<FormData>({
     title: '',
     amount: '',
@@ -117,18 +86,15 @@ export default function AddExpenseDialog({
     notes: '',
   });
 
-  // Helper to handle currency change and update recent currencies
-  const handleCurrencyChange = (value: string) => {
+  const handleCurrencyChange = (value: CurrencyEnum) => {
     setFormData((prev) => ({
       ...prev,
-      currency: value as CurrencyEnum,
+      currency: value,
     }));
-    setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
   };
 
   const handleSubmit = () => {
     if (formData.title && formData.amount) {
-      setRecentCurrencies(rememberRecentCurrency(formData.currency));
 
       onSubmit({
         title: formData.title,
@@ -154,10 +120,6 @@ export default function AddExpenseDialog({
         notes: '',
       });
     }
-  };
-
-  const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
-    setRecentCurrencies(removeRecentCurrency(currency));
   };
 
   return (
@@ -200,59 +162,12 @@ export default function AddExpenseDialog({
 
             <div className="space-y-1">
               <Label htmlFor="currency">{t("addExpenseDialog.currency")}</Label>
-              <Select
-                value={formData.currency}
-                onValueChange={handleCurrencyChange}
-              >
-                <SelectTrigger id="currency" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {recentCurrencies.length > 0 && (
-                    <>
-                      <SelectGroup>
-                        <SelectLabel>{t("addExpenseDialog.recentCurrencies")}</SelectLabel>
-                        {orderedCurrencies
-                          .filter((currency) => recentCurrencySet.has(currency))
-                          .map((currency) => (
-                            <SelectItem key={`recent-${currency}`} value={currency} className="group pr-12">
-                              <span>{currency}</span>
-                              <button
-                                type="button"
-                                tabIndex={-1}
-                                aria-label={t("addExpenseDialog.removeRecentCurrency")}
-                                className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100 cursor-pointer"
-                                onPointerDown={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                }}
-                                onPointerUp={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleRemoveRecentCurrency(currency);
-                                }}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </SelectItem>
-                          ))}
-                      </SelectGroup>
-                      <SelectSeparator />
-                    </>
-                  )}
-
-                  <SelectGroup>
-                    {recentCurrencies.length > 0 && (
-                      <SelectLabel>{t("addExpenseDialog.allCurrencies")}</SelectLabel>
-                    )}
-                    {SUPPORTED_CURRENCIES.filter((currency) => !recentCurrencySet.has(currency)).map((currency) => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <CurrencyPicker
+                id="currency"
+                selectedCurrency={formData.currency}
+                onCurrencyChange={handleCurrencyChange}
+                className="w-full"
+              />
             </div>
           </div>
 

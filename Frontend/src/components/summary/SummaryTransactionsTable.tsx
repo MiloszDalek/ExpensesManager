@@ -5,6 +5,8 @@ import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 
 interface TransactionItem {
   scope: string;
@@ -26,8 +28,6 @@ interface SummaryTransactionsTableProps {
   totalCount: number;
   onPageChange: (page: number) => void;
 }
-
-const formatAmount = (value: number | string | null | undefined) => Number(value ?? 0).toFixed(2);
 
 const SortIndicator = memo(function SortIndicator({ active, order }: { active: boolean; order: "asc" | "desc" }) {
   if (!active) return null;
@@ -98,7 +98,7 @@ const SummaryTransactionsTable = memo(function SummaryTransactionsTable({
                     <td className="px-2 py-2">{t(`category.${item.category_name}`, { defaultValue: item.category_name })}</td>
                     <td className="px-2 py-2">{item.group_name || "-"}</td>
                     <td className="px-2 py-2 font-semibold">
-                      {formatAmount(item.user_amount)} {item.currency}
+                      {formatCurrency(Number(item.user_amount), item.currency as CurrencyEnum)}
                     </td>
                   </tr>
                 ))}

@@ -120,3 +120,98 @@ export const getCurrenciesWithRecentFirst = (recentCurrencies: CurrencyEnum[]): 
     ...SUPPORTED_CURRENCIES.filter((currency) => !recentSet.has(currency)),
   ];
 };
+
+/**
+ * Format a signed currency value.
+ * Positive values show no sign by default; pass { showPlus: true } to prepend "+".
+ * Negative values prepend "-". Zero and values that round to zero show no sign.
+ */
+export const formatSignedCurrency = (
+  amount: number,
+  currency: CurrencyEnum,
+  options?: { showPlus?: boolean }
+): string => {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) {
+    return formatCurrency(0, currency);
+  }
+
+  // Treat sub-cent values that round to zero as zero to avoid "-0.00"
+  if (Math.abs(numericAmount) < 0.005) {
+    return formatCurrency(0, currency);
+  }
+
+  const isNegative = numericAmount < 0;
+  const absFormatted = formatCurrency(Math.abs(numericAmount), currency);
+
+  if (isNegative) {
+    return `-${absFormatted}`;
+  }
+
+  if (options?.showPlus) {
+    return `+${absFormatted}`;
+  }
+
+  return absFormatted;
+};
+
+/**
+ * Compact currency formatting for small UI spaces (chart axes, badges, compact summaries).
+ * Uses Intl compact notation for values >= 1000; falls back to standard formatCurrency for smaller amounts.
+ */
+export const formatCompactCurrency = (
+  amount: number,
+  currency: CurrencyEnum
+): string => {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) {
+    return formatCurrency(0, currency);
+  }
+
+  const absAmount = Math.abs(numericAmount);
+
+  // For small amounts use standard formatting
+  if (absAmount < 1000) {
+    return formatCurrency(numericAmount, currency);
+  }
+
+  const compacted = new Intl.NumberFormat(undefined, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(absAmount);
+
+  const symbol = CURRENCY_SYMBOLS[currency];
+  const symbolAfter = ["EUR", "PLN", "CZK", "HUF", "RON", "SEK", "DKK", "NOK"].includes(currency);
+
+  const signedCompacted = numericAmount < 0 ? `-${compacted}` : compacted;
+
+  if (symbolAfter) {
+    return `${signedCompacted} ${symbol}`;
+  }
+
+  return `${symbol}${signedCompacted}`;
+};
+
+/**
+ * Plain numeric formatting without currency symbol.
+ * Useful for chart axes, percentages, or labels where the symbol is rendered separately.
+ */
+export const formatCurrencyNumber = (
+  amount: number,
+  options?: { decimals?: number }
+): string => {
+  const numericAmount = Number(amount);
+  const decimals = options?.decimals ?? 2;
+
+  if (!Number.isFinite(numericAmount)) {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(0);
+  }
+
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(numericAmount);
+};

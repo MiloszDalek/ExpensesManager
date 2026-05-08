@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import DatePicker from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
@@ -7,10 +7,7 @@ import { AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -19,15 +16,9 @@ import type {
   PersonalExpensePeriodPreset,
   PersonalExpensesFiltersState,
 } from "@/types/expense";
-import { SUPPORTED_CURRENCIES, type CurrencyEnum } from "@/types/enums";
-import {
-  getCurrenciesWithRecentFirst,
-  getRecentCurrencies,
-  rememberRecentCurrency,
-  removeRecentCurrency,
-} from "@/utils/currency";
+import { type CurrencyEnum } from "@/types/enums";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import CategoryPicker from "./CategoryPicker";
-import { X } from "lucide-react";
 import type { CategorySection } from "@/types/enums";
 
 type ExpenseFiltersProps = {
@@ -52,38 +43,13 @@ export default function ExpenseFilters({
   onDeleteCustomCategory,
 }: ExpenseFiltersProps) {
   const { t } = useTranslation();
-  const [recentCurrencies, setRecentCurrencies] = useState<CurrencyEnum[]>([]);
-  const [isCurrencySelectOpen, setIsCurrencySelectOpen] = useState(false);
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
-  const ignoredCurrencySelectionRef = useRef<CurrencyEnum | null>(null);
-
-  useEffect(() => {
-    setRecentCurrencies(getRecentCurrencies());
-  }, []);
-
-  const orderedCurrencies = useMemo(
-    () => getCurrenciesWithRecentFirst(recentCurrencies),
-    [recentCurrencies]
-  );
-
-  const recentCurrencySet = useMemo(() => new Set(recentCurrencies), [recentCurrencies]);
 
   const handleCategoryChange = (value: string) => {
     onFilterChange({ ...filters, category: value });
   };
 
-  const handleCurrencyChange = (value: string) => {
-    if (value !== "all" && value === ignoredCurrencySelectionRef.current) {
-      ignoredCurrencySelectionRef.current = null;
-      return;
-    }
-
-    ignoredCurrencySelectionRef.current = null;
-
-    if (value !== "all") {
-      setRecentCurrencies(rememberRecentCurrency(value as CurrencyEnum));
-    }
-
+  const handleCurrencyChange = (value: CurrencyEnum | "all") => {
     onFilterChange({
       ...filters,
       currency: value as PersonalExpensesFiltersState["currency"],
@@ -97,19 +63,6 @@ export default function ExpenseFilters({
     ];
 
     onFilterChange({ ...filters, sortBy, sortOrder });
-  };
-
-  const handleRemoveRecentCurrency = (currency: CurrencyEnum) => {
-    setRecentCurrencies(removeRecentCurrency(currency));
-
-    if (filters.currency === currency) {
-      ignoredCurrencySelectionRef.current = currency;
-      onFilterChange({
-        ...filters,
-        currency: "all",
-      });
-      setIsCurrencySelectOpen(false);
-    }
   };
 
   const handleDateFromChange = (value: string) => {
@@ -162,66 +115,12 @@ export default function ExpenseFilters({
 
         <div className="space-y-1">
           <Label>{t("expenseFilters.currency")}</Label>
-          <Select
-            value={filters.currency}
-            onValueChange={handleCurrencyChange}
-            open={isCurrencySelectOpen}
-            onOpenChange={setIsCurrencySelectOpen}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="all">{t("expenseFilters.allCurrencies")}</SelectItem>
-              </SelectGroup>
-
-              {recentCurrencies.length > 0 && (
-                <>
-                  <SelectGroup>
-                    <SelectLabel>{t("expenseFilters.recentCurrencies")}</SelectLabel>
-                    {orderedCurrencies
-                      .filter((currency) => recentCurrencySet.has(currency))
-                      .map((currency) => (
-                        <SelectItem key={`recent-${currency}`} value={currency} className="group pr-12">
-                          <span>{currency}</span>
-                          <button
-                            type="button"
-                            tabIndex={-1}
-                            aria-label={t("expenseFilters.removeRecentCurrency")}
-                            className="ml-auto mr-4 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus:text-destructive focus:opacity-100 group-hover:opacity-100 cursor-pointer"
-                            onPointerDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            onPointerUp={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleRemoveRecentCurrency(currency);
-                            }}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </SelectItem>
-                      ))}
-                  </SelectGroup>
-                  <SelectSeparator />
-                </>
-              )}
-
-              <SelectGroup>
-                {SUPPORTED_CURRENCIES.filter((currency) => !recentCurrencySet.has(currency)).map((currency) => (
-                  <SelectItem key={currency} value={currency}>
-                    {currency}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <CurrencyPicker<CurrencyEnum | "all">
+            selectedCurrency={filters.currency as CurrencyEnum | "all"}
+            onCurrencyChange={handleCurrencyChange}
+            allowAll
+            className="w-full"
+          />
         </div>
 
         <div className="space-y-1">

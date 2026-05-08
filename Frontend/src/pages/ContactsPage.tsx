@@ -36,6 +36,8 @@ import { queryKeys } from "@/api/queryKeys";
 import { paypalConfig } from "@/config/paypal";
 import { createPageUrl } from "@/utils/url";
 import { formatGroupName } from "@/utils/group";
+import { formatCurrency, formatSignedCurrency } from "@/utils/currency";
+import type { CurrencyEnum } from "@/types/enums";
 import PageInfoButton from "@/components/help/PageInfoButton";
 
 import type {
@@ -516,20 +518,6 @@ export default function ContactsPage() {
     });
   }, [contactRows, contactSearch]);
 
-  const formatSignedCurrencyTotals = (currencyTotals: Record<string, number>) => {
-    const entries = Object.entries(currencyTotals)
-      .filter(([, amount]) => amount !== 0)
-      .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]));
-
-    if (entries.length === 0) {
-      return t("contactsBalancesPage.settled");
-    }
-
-    return entries
-      .map(([currency, amount]) => `${amount > 0 ? "+" : "-"}${Math.abs(amount).toFixed(2)} ${currency}`)
-      .join(" · ");
-  };
-
   const handleSendContactInvite = async () => {
     const normalizedEmail = inviteEmail.trim().toLowerCase();
     if (!normalizedEmail) {
@@ -861,7 +849,11 @@ export default function ContactsPage() {
                       const payableCurrency =
                         Object.keys(row.currencyTotals).find((currency) => (row.currencyTotals[currency] ?? 0) < 0) ?? "PLN";
                       const isExpanded = expandedContactUserId === row.contact.contact_id;
-                      const balanceLabel = formatSignedCurrencyTotals(row.currencyTotals);
+                      const balanceLabel = Object.entries(row.currencyTotals)
+                        .filter(([, amount]) => amount !== 0)
+                        .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
+                        .map(([currency, amount]) => formatSignedCurrency(amount, currency as CurrencyEnum, { showPlus: true }))
+                        .join(" · ");
                       const hasPositive = Object.values(row.currencyTotals).some((amount) => amount > 0);
                       const hasNegative = Object.values(row.currencyTotals).some((amount) => amount < 0);
                       const canSettleTotal = hasNegative && payableGroupCount > 1;
@@ -947,7 +939,7 @@ export default function ContactsPage() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                                          {groupRow.absoluteAmount.toFixed(2)} {groupRow.groupCurrency}
+                                          {formatCurrency(groupRow.absoluteAmount, groupRow.groupCurrency as CurrencyEnum)}
                                         </p>
                                         {groupRow.amount < 0 ? (
                                           <>
@@ -1242,7 +1234,7 @@ export default function ContactsPage() {
                 ? t("contactsBalancesPage.groupSettleConfirmDescription", {
                     contact: groupSettlementTarget.contactUsername,
                     group: groupSettlementTarget.groupName,
-                    amount: groupSettlementTarget.amount.toFixed(2),
+                    amount: formatCurrency(groupSettlementTarget.amount, groupSettlementTarget.currency as CurrencyEnum),
                     currency: groupSettlementTarget.currency,
                   })
                 : ""}
