@@ -394,19 +394,10 @@ export default function DetailedSummaryPage() {
             <Button
               onClick={() => setIsExportDialogOpen(true)}
               disabled={exportMutation.isPending}
-              className="shadow-lg"
+              className="hidden shadow-lg md:flex"
             >
               <Download className="mr-2 h-4 w-4" />
               {pendingExportFormat ? t("summaryPage.exporting") : t("summaryPage.export", { defaultValue: "Export" })}
-            </Button>
-
-            <Button
-              onClick={() => setIsMobileFiltersOpen((previous) => !previous)}
-              variant="outline"
-              className="md:hidden"
-            >
-              <ListFilter className="mr-2 h-4 w-4" />
-              {t("summaryPage.filtersTitle")}
             </Button>
           </div>
         </motion.div>

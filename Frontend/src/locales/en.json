@@ -894,7 +894,11 @@
     "openFilters": "Open filters",
     "closeFilters": "Close filters",
     "groupCategoryHint": "Select a specific group to unlock group category filtering.",
-    "clearDrilldown": "Clear drill-down",
+    "clearDrilldown": "Clear drilldown",
+    "mobile": {
+      "charts": "Charts",
+      "transactions": "Transactions"
+    },
     "scope": "Scope",
     "scopeAll": "All expenses",
     "scopePersonal": "Personal",

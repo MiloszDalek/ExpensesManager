@@ -885,6 +885,10 @@
     "closeFilters": "Zamknij filtry",
     "groupCategoryHint": "Wybierz konkretną grupę, aby filtrować po kategoriach grupowych.",
     "clearDrilldown": "Wyczyść drill-down",
+    "mobile": {
+      "charts": "Wykresy",
+      "transactions": "Transakcje"
+    },
     "scope": "Zakres",
     "scopeAll": "Wszystkie wydatki",
     "scopePersonal": "Osobiste",
