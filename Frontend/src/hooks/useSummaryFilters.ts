@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { format, startOfMonth, subMonths } from "date-fns";
-import type { PersonalExpensePeriodPreset, ExpenseSummaryScope, CurrencyEnum, CategorySection } from "@/types";
+import type { PersonalExpensePeriodPreset, ExpenseSummaryScope, CurrencyEnum } from "@/types";
 
 type SummaryFiltersState = {
   scope: ExpenseSummaryScope;
   groupId: string;
   categoryIds: number[];
-  categorySections: CategorySection[];
   currency: CurrencyEnum;
   periodPreset: PersonalExpensePeriodPreset;
   dateFrom: string;
@@ -44,7 +43,6 @@ const getInitialFilters = (): SummaryFiltersState => {
     scope: "all",
     groupId: "all",
     categoryIds: [],
-    categorySections: [],
     currency: "PLN",
     periodPreset: "this_month",
     dateFrom: thisMonthRange.dateFrom,
@@ -66,7 +64,6 @@ const areFiltersEqual = (first: SummaryFiltersState, second: SummaryFiltersState
     first.scope === second.scope &&
     first.groupId === second.groupId &&
     arraysEqual(first.categoryIds, second.categoryIds) &&
-    arraysEqual(first.categorySections, second.categorySections) &&
     first.currency === second.currency &&
     first.periodPreset === second.periodPreset &&
     first.dateFrom === second.dateFrom &&
@@ -119,7 +116,6 @@ export function useSummaryFilters() {
           scope,
           groupId: "all",
           categoryIds: [],
-          categorySections: [],
         };
       }
 
@@ -127,7 +123,6 @@ export function useSummaryFilters() {
         ...previous,
         scope,
         categoryIds: [],
-        categorySections: [],
       };
     });
   };
@@ -158,8 +153,11 @@ export function useSummaryFilters() {
       ...previous,
       groupId,
       categoryIds: [],
-      categorySections: [],
     }));
+  };
+
+  const setDraftCategoryIds = (categoryIds: number[]) => {
+    setDraftFilters((previous) => ({ ...previous, categoryIds }));
   };
 
   const setDraftDateFrom = (dateFrom: string) => {
@@ -178,51 +176,6 @@ export function useSummaryFilters() {
     }));
   };
 
-  const toggleSection = (
-    section: CategorySection,
-    categoriesBySection: [CategorySection, { id: number }[]][]
-  ) => {
-    const sectionCats = categoriesBySection.find(([s]) => s === section)?.[1] ?? [];
-    const sectionIds = sectionCats.map((c) => c.id);
-
-    setDraftFilters((previous) => {
-      const isSelected = previous.categorySections.includes(section);
-      if (isSelected) {
-        return {
-          ...previous,
-          categoryIds: previous.categoryIds.filter((id) => !sectionIds.includes(id)),
-          categorySections: previous.categorySections.filter((s) => s !== section),
-        };
-      }
-      return {
-        ...previous,
-        categoryIds: Array.from(new Set([...previous.categoryIds, ...sectionIds])),
-        categorySections: [...previous.categorySections, section],
-      };
-    });
-  };
-
-  const toggleCategory = (
-    categoryId: number,
-    section: CategorySection,
-    categoriesBySection: [CategorySection, { id: number }[]][]
-  ) => {
-    const sectionCats = categoriesBySection.find(([s]) => s === section)?.[1] ?? [];
-    const sectionIds = sectionCats.map((c) => c.id);
-
-    setDraftFilters((previous) => {
-      const hasCategory = previous.categoryIds.includes(categoryId);
-      const nextIds = hasCategory
-        ? previous.categoryIds.filter((id) => id !== categoryId)
-        : [...previous.categoryIds, categoryId];
-      const allSectionSelected = sectionIds.every((id) => nextIds.includes(id));
-      const nextSections = allSectionSelected
-        ? Array.from(new Set([...previous.categorySections, section]))
-        : previous.categorySections.filter((s) => s !== section);
-      return { ...previous, categoryIds: nextIds, categorySections: nextSections };
-    });
-  };
-
   return {
     draftFilters,
     appliedFilters,
@@ -239,7 +192,6 @@ export function useSummaryFilters() {
     setDraftGroupId,
     setDraftDateFrom,
     setDraftDateTo,
-    toggleSection,
-    toggleCategory,
+    setDraftCategoryIds,
   };
 }

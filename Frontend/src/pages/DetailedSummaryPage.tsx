@@ -50,8 +50,7 @@ export default function DetailedSummaryPage() {
     setDraftGroupId,
     setDraftDateFrom,
     setDraftDateTo,
-    toggleSection,
-    toggleCategory,
+    setDraftCategoryIds,
   } = useSummaryFilters();
 
   const {
@@ -430,8 +429,7 @@ export default function DetailedSummaryPage() {
             onSortChange={handleSortChange}
             onDateFromChange={setDraftDateFrom}
             onDateToChange={setDraftDateTo}
-            onToggleSection={toggleSection}
-            onToggleCategory={toggleCategory}
+            onCategoryIdsChange={setDraftCategoryIds}
             onApply={handleApplyFilters}
           />
         </div>
@@ -531,8 +529,7 @@ export default function DetailedSummaryPage() {
               onSortChange={handleSortChange}
               onDateFromChange={setDraftDateFrom}
               onDateToChange={setDraftDateTo}
-              onToggleSection={toggleSection}
-              onToggleCategory={toggleCategory}
+              onCategoryIdsChange={setDraftCategoryIds}
               onApply={handleApplyFilters}
             />
           </div>

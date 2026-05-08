@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,13 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DatePicker from "@/components/ui/date-picker";
-import { resolveCategoryGroup } from "@/utils/category";
 import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
+import CategoryPicker from "@/components/expenses/CategoryPicker";
 import type {
   PersonalExpensePeriodPreset,
   ExpenseSummaryScope,
   CurrencyEnum,
-  CategorySection,
 } from "@/types";
 import type { ApiCategoryResponse } from "@/types/category";
 import type { SummaryFiltersState } from "@/hooks/useSummaryFilters";
@@ -40,8 +38,7 @@ interface SummaryFiltersProps {
   onSortChange: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
-  onToggleSection: (section: CategorySection, categoriesBySection: [CategorySection, ApiCategoryResponse[]][]) => void;
-  onToggleCategory: (categoryId: number, section: CategorySection, categoriesBySection: [CategorySection, ApiCategoryResponse[]][]) => void;
+  onCategoryIdsChange: (categoryIds: number[]) => void;
   onApply: () => void;
 }
 
@@ -58,23 +55,10 @@ export default function SummaryFilters({
   onSortChange,
   onDateFromChange,
   onDateToChange,
-  onToggleSection,
-  onToggleCategory,
+  onCategoryIdsChange,
   onApply,
 }: SummaryFiltersProps) {
   const { t } = useTranslation();
-
-  const categoriesBySection = useMemo(() => {
-    const map = new Map<CategorySection, ApiCategoryResponse[]>();
-    for (const cat of categories) {
-      const section = cat.section ?? resolveCategoryGroup(cat);
-      if (!map.has(section)) {
-        map.set(section, []);
-      }
-      map.get(section)!.push(cat);
-    }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [categories]);
 
   return (
     <div className="rounded-xl border border-border bg-card/80 p-4 text-card-foreground backdrop-blur-sm space-y-4">
@@ -180,39 +164,21 @@ export default function SummaryFilters({
 
       <div className="space-y-2">
         <Label>{t("summaryPage.categories", { defaultValue: "Categories" })}</Label>
-        <div className="flex flex-wrap gap-1.5">
-          {categoriesBySection.map(([section]) => (
-            <Button
-              key={section}
-              type="button"
-              variant={draftFilters.categorySections.includes(section) ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => onToggleSection(section, categoriesBySection)}
-            >
-              {t(`categoryGroups.${section}`)}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-md border p-2">
-          {categoriesBySection.map(([section, sectionCats]) =>
-            sectionCats.map((cat) => {
-              const selected = draftFilters.categoryIds.includes(cat.id);
-              return (
-                <Button
-                  key={cat.id}
-                  type="button"
-                  variant={selected ? "default" : "outline"}
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => onToggleCategory(cat.id, section, categoriesBySection)}
-                >
-                  {t(`category.${cat.name}`, { defaultValue: cat.name })}
-                </Button>
-              );
-            })
-          )}
-        </div>
+        <CategoryPicker
+          mode="multiple"
+          showSelectedBadges
+          value={draftFilters.categoryIds.map(String)}
+          onValueChange={(value) => {
+            if (Array.isArray(value)) {
+              onCategoryIdsChange(value.map(Number));
+            }
+          }}
+          categories={categories}
+          allowAllSelection={false}
+          trigger="button"
+          showLabel={false}
+          mobileInset={false}
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -646,7 +646,11 @@
     "categoryNameEmpty": "Category name cannot be empty.",
     "deleteCustomCategory": "Delete custom category",
     "deleteCategoryError": "Could not delete category.",
-    "deleteCategoryAssignedToExpense": "You cannot delete a category that is assigned to an expense."
+    "deleteCategoryAssignedToExpense": "You cannot delete a category that is assigned to an expense.",
+    "nCategoriesSelected": "{{count}} categories selected",
+    "more": "more",
+    "removeCategory": "Remove category",
+    "clear": "Clear"
   },
   "personalExpensesPage": {
     "title": "Personal Expenses",

@@ -636,7 +636,11 @@
     "categoryNameEmpty": "Nazwa kategorii nie może być pusta.",
     "deleteCustomCategory": "Usuń kategorię własną",
     "deleteCategoryError": "Nie udało się usunąć kategorii.",
-    "deleteCategoryAssignedToExpense": "Nie można usunąć kategorii przypisanej do wydatku."
+    "deleteCategoryAssignedToExpense": "Nie można usunąć kategorii przypisanej do wydatku.",
+    "nCategoriesSelected": "{{count}} kategorii wybranych",
+    "more": "więcej",
+    "removeCategory": "Usuń kategorię",
+    "clear": "Wyczyść"
   },
   "personalExpensesPage": {
     "title": "Wydatki Osobiste",

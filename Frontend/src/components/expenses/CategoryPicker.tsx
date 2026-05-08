@@ -27,20 +27,33 @@ import {
   type CategoryVisualGroup,
 } from "@/utils/category";
 import { getRecentCategoryIds, rememberRecentCategoryId } from "@/utils/categoryRecent";
-import { CircleQuestionMark, Trash2 } from "lucide-react";
+import { CircleQuestionMark, Trash2, X } from "lucide-react";
 
-type CategoryPickerProps = {
-  value: string; // "all" lub id kategorii jako string
-  onValueChange: (value: string) => void;
+type CommonCategoryPickerProps = {
   categories: ApiCategoryResponse[];
   onCreateCustomCategory?: (payload: { name: string; section: CategoryVisualGroup }) => Promise<ApiCategoryResponse>;
   onDeleteCustomCategory?: (categoryId: number) => Promise<void>;
-  allowAllSelection?: boolean; // czy pokazywać i pozwalać wybrać "All categories"
-  trigger?: "button" | "select"; // jaki typ triggera użyć
-  showLabel?: boolean; // czy wyświetlać "Category: " label w triggerze
-  mobileInset?: boolean; // czy dodać boczny odstęp na wąskich ekranach
-  showSelectedGroupPrefix?: boolean; // czy pokazywać format "Grupa: Kategoria" w triggerze
+  allowAllSelection?: boolean;
+  trigger?: "button" | "select";
+  showLabel?: boolean;
+  mobileInset?: boolean;
+  showSelectedGroupPrefix?: boolean;
 };
+
+type SingleCategoryPickerProps = CommonCategoryPickerProps & {
+  mode?: "single";
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
+type MultipleCategoryPickerProps = CommonCategoryPickerProps & {
+  mode: "multiple";
+  value: string[];
+  onValueChange: (value: string[]) => void;
+  showSelectedBadges?: boolean;
+};
+
+type CategoryPickerProps = SingleCategoryPickerProps | MultipleCategoryPickerProps;
 
 type CategoryGroupId =
   | "all"
@@ -75,19 +88,24 @@ const CATEGORY_SECTION_OPTIONS: CategoryVisualGroup[] = [
   "other",
 ];
 
-export default function CategoryPicker({
-  value,
-  onValueChange,
-  categories,
-  onCreateCustomCategory,
-  onDeleteCustomCategory,
-  allowAllSelection = false,
-  trigger = "button",
-  showLabel = true,
-  mobileInset = false,
-  showSelectedGroupPrefix = true,
-}: CategoryPickerProps) {
+export default function CategoryPicker(props: CategoryPickerProps) {
+  const {
+    value,
+    onValueChange,
+    mode = "single",
+    categories,
+    onCreateCustomCategory,
+    onDeleteCustomCategory,
+    allowAllSelection = false,
+    trigger = "button",
+    showLabel = true,
+    mobileInset = false,
+    showSelectedGroupPrefix = true,
+    showSelectedBadges = false,
+  } = props as CategoryPickerProps & { showSelectedBadges?: boolean };
+
   const { t } = useTranslation();
+  const isMulti = mode === "multiple";
 
   function mapKnownCategoryErrorMessage(message: string): string {
     const normalizedMessage = message.trim();
@@ -149,6 +167,7 @@ export default function CategoryPicker({
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deleteCustomCategoryError, setDeleteCustomCategoryError] = useState<string | null>(null);
   const [recentCategoryIds, setRecentCategoryIds] = useState<number[]>([]);
+  const [draftSelectedValues, setDraftSelectedValues] = useState<string[]>([]);
 
   const groupedCategories = useMemo(() => {
     const grouped: Record<CategoryBucketGroupId, ApiCategoryResponse[]> = {
@@ -177,13 +196,31 @@ export default function CategoryPicker({
     [groupedCategories]
   );
 
-  const selectedCategory = useMemo(
-    () => categories.find((category) => category.id.toString() === value) ?? null,
-    [categories, value]
-  );
+  const selectedCategory = useMemo(() => {
+    if (isMulti) return null;
+    return categories.find((category) => category.id.toString() === (value as string)) ?? null;
+  }, [categories, value, isMulti]);
 
   const selectedCategoryLabel = useMemo(() => {
-    if (value === "all") {
+    if (isMulti) {
+      const ids = value as string[];
+      if (ids.length === 0) {
+        return t("expenseFilters.allCategories");
+      }
+      if (ids.length <= 2) {
+        return ids
+          .map((id) => {
+            const cat = categories.find((c) => c.id.toString() === id);
+            return cat ? getCategoryLabel(cat) : "";
+          })
+          .filter(Boolean)
+          .join(", ");
+      }
+      return t("expenseFilters.nCategoriesSelected", { count: ids.length });
+    }
+
+    const singleValue = value as string;
+    if (singleValue === "all") {
       return t("categoryGroups.all");
     }
 
@@ -198,20 +235,21 @@ export default function CategoryPicker({
 
     const group = resolveCategoryGroup(selectedCategory);
     return `${getCategoryGroupLabel(group)}: ${categoryLabel}`;
-  }, [selectedCategory, value, t, showSelectedGroupPrefix, getCategoryGroupLabel, getCategoryLabel]);
+  }, [selectedCategory, value, t, showSelectedGroupPrefix, getCategoryGroupLabel, getCategoryLabel, isMulti, categories]);
 
   const SelectedCategoryIcon = useMemo(() => {
-    if (!selectedCategory) {
+    if (isMulti || !selectedCategory) {
       return null;
     }
-
     return getCategoryIcon(selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, isMulti]);
 
-  const selectedCategoryStyle = useMemo(
-    () => getCategoryVisualStyle(selectedCategory),
-    [selectedCategory]
-  );
+  const selectedCategoryStyle = useMemo(() => {
+    if (isMulti || !selectedCategory) {
+      return getCategoryVisualStyle(null);
+    }
+    return getCategoryVisualStyle(selectedCategory);
+  }, [selectedCategory, isMulti]);
 
   const categoriesInSelectedGroup = useMemo(() => {
     let cats: ApiCategoryResponse[];
@@ -266,27 +304,45 @@ export default function CategoryPicker({
     }
 
     setRecentCategoryIds(getRecentCategoryIds());
-  }, [isDialogOpen]);
+    if (isMulti) {
+      setDraftSelectedValues([...(value as string[])]);
+    }
+  }, [isDialogOpen, isMulti, value]);
 
   useEffect(() => {
     setSearch("");
   }, [selectedGroup]);
 
   useEffect(() => {
-    if (!isDialogOpen) {
+    if (!isDialogOpen || isMulti) {
       return;
     }
 
-    if (value === "all") {
+    const singleValue = value as string;
+    if (singleValue === "all") {
       setSelectedGroup("all");
       return;
     }
 
-    const selectedCategory = categories.find((category) => category.id.toString() === value);
-    setSelectedGroup(selectedCategory ? resolveCategoryGroup(selectedCategory) : "all");
-  }, [categories, value, isDialogOpen]);
+    const activeCategory = categories.find((category) => category.id.toString() === singleValue);
+    setSelectedGroup(activeCategory ? resolveCategoryGroup(activeCategory) : "all");
+  }, [categories, value, isDialogOpen, isMulti]);
 
   const handleCategoryChange = (newValue: string) => {
+    if (isMulti) {
+      setDraftSelectedValues((prev) => {
+        const next = prev.includes(newValue)
+          ? prev.filter((id) => id !== newValue)
+          : [...prev, newValue];
+        return next;
+      });
+      const categoryId = Number(newValue);
+      if (Number.isInteger(categoryId) && categoryId > 0) {
+        setRecentCategoryIds(rememberRecentCategoryId(categoryId));
+      }
+      return;
+    }
+
     if (newValue === "all" && !allowAllSelection) {
       return;
     }
@@ -298,7 +354,7 @@ export default function CategoryPicker({
       }
     }
 
-    onValueChange(newValue);
+    (onValueChange as (value: string) => void)(newValue);
     setIsDialogOpen(false);
   };
 
@@ -322,8 +378,13 @@ export default function CategoryPicker({
       setIsCreateCategoryDialogOpen(false);
       setSelectedGroup(createdCategory.section ?? customCategorySection);
       setRecentCategoryIds(rememberRecentCategoryId(createdCategory.id));
-      onValueChange(createdCategory.id.toString());
-      setIsDialogOpen(false);
+
+      if (isMulti) {
+        setDraftSelectedValues((prev) => [...prev, createdCategory.id.toString()]);
+      } else {
+        (onValueChange as (value: string) => void)(createdCategory.id.toString());
+        setIsDialogOpen(false);
+      }
     } catch (error) {
       setCreateCustomCategoryError(getApiErrorMessage(error, t("expenseFilters.createCategoryError")));
     } finally {
@@ -343,9 +404,18 @@ export default function CategoryPicker({
 
     try {
       await onDeleteCustomCategory(category.id);
+      const catIdStr = category.id.toString();
 
-      if (value === category.id.toString()) {
-        onValueChange("all");
+      if (isMulti) {
+        setDraftSelectedValues((prev) => prev.filter((id) => id !== catIdStr));
+        const committed = value as string[];
+        if (committed.includes(catIdStr)) {
+          (onValueChange as (value: string[]) => void)(committed.filter((id) => id !== catIdStr));
+        }
+      } else {
+        if ((value as string) === catIdStr) {
+          (onValueChange as (value: string) => void)("all");
+        }
       }
     } catch (error) {
       setDeleteCustomCategoryError(getApiErrorMessage(error, t("expenseFilters.deleteCategoryError")));
@@ -362,7 +432,7 @@ export default function CategoryPicker({
         <div className={mobileInset ? "sm:px-0" : ""}>
           <Button
             variant="outline"
-            className={value === "all" ? "w-full justify-between" : "w-full justify-between pl-1"}
+            className={!isMulti && (value as string) === "all" ? "w-full justify-between" : "w-full justify-between pl-1"}
             onClick={() => setIsDialogOpen(true)}
           >
             <span className="flex min-w-0 items-center gap-2">
@@ -376,6 +446,45 @@ export default function CategoryPicker({
             </span>
             <span className="text-xs text-muted-foreground">{t("expenseFilters.change")}</span>
           </Button>
+
+          {isMulti && showSelectedBadges && (value as string[]).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {(value as string[]).slice(0, 5).map((catId) => {
+                const cat = categories.find((c) => c.id.toString() === catId);
+                if (!cat) return null;
+                const Icon = getCategoryIcon(cat);
+                const style = getCategoryVisualStyle(cat);
+                return (
+                  <span
+                    key={catId}
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs ${style.badgeClass}`}
+                  >
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm ${style.badgeClass}`}>
+                      <Icon className="h-3 w-3" />
+                    </span>
+                    <span className="truncate max-w-[120px]">{getCategoryLabel(cat)}</span>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const next = (value as string[]).filter((id) => id !== catId);
+                        (onValueChange as (value: string[]) => void)(next);
+                      }}
+                      className="ml-1 rounded-sm hover:bg-muted inline-flex items-center justify-center"
+                      aria-label={t("expenseFilters.removeCategory", { defaultValue: "Remove category" })}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+              {(value as string[]).length > 6 && (
+                <span className="inline-flex items-center rounded-md border px-2 py-1 text-xs text-muted-foreground">
+                  +{(value as string[]).length - 5} {t("expenseFilters.more", { defaultValue: "more" })}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -432,10 +541,10 @@ export default function CategoryPicker({
               />
 
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                {allowAllSelection ? (
+                {allowAllSelection && !isMulti ? (
                   <Button
                     type="button"
-                    variant={value === "all" ? "default" : "outline"}
+                    variant={(value as string) === "all" ? "default" : "outline"}
                     className="w-full justify-start"
                     onClick={() => handleCategoryChange("all")}
                   >
@@ -448,13 +557,16 @@ export default function CategoryPicker({
                   const style = getCategoryVisualStyle(category);
                   const isScopedCategory = category.user_id != null || category.group_id != null;
                   const isDeleting = deletingCategoryId === category.id;
+                  const isSelected = isMulti
+                    ? draftSelectedValues.includes(category.id.toString())
+                    : (value as string) === category.id.toString();
 
                   if (isScopedCategory && onDeleteCustomCategory) {
                     return (
                       <div key={category.id} className="group relative">
                         <Button
                           type="button"
-                          variant={value === category.id.toString() ? "default" : "outline"}
+                          variant={isSelected ? "default" : "outline"}
                           className="w-full justify-start gap-2 pl-1 pr-10"
                           onClick={() => handleCategoryChange(category.id.toString())}
                         >
@@ -489,7 +601,7 @@ export default function CategoryPicker({
                     <Button
                       key={category.id}
                       type="button"
-                      variant={value === category.id.toString() ? "default" : "outline"}
+                      variant={isSelected ? "default" : "outline"}
                       className="w-full justify-start gap-2 pl-1"
                       onClick={() => handleCategoryChange(category.id.toString())}
                     >
@@ -513,6 +625,34 @@ export default function CategoryPicker({
               </div>
             </div>
           </div>
+
+          {isMulti && (
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDraftSelectedValues([])}
+              >
+                {t("expenseFilters.clear", { defaultValue: "Clear" })}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+              >
+                {t("addExpenseDialog.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  (onValueChange as (value: string[]) => void)(draftSelectedValues);
+                  setIsDialogOpen(false);
+                }}
+              >
+                {t("expenseFilters.apply", { defaultValue: "Apply" })}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
