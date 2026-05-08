@@ -75,6 +75,7 @@ export default function DetailedSummaryPage() {
   const [showComparePrevious, setShowComparePrevious] = useState(false);
   const [mobileView, setMobileView] = useState<"charts" | "transactions">("charts");
   const [page, setPage] = useState(1);
+  const [accumulatedTransactions, setAccumulatedTransactions] = useState<typeof transactions | null>(null);
   const PAGE_SIZE = 20;
 
   const handleToggleComparePrevious = useCallback(() => {
@@ -242,7 +243,22 @@ export default function DetailedSummaryPage() {
 
   useEffect(() => {
     setPage(1);
+    setAccumulatedTransactions(null);
   }, [appliedFilters]);
+
+  useEffect(() => {
+    if (page > 1 && transactions) {
+      setAccumulatedTransactions((prev) => {
+        const existingItems = prev?.items ?? [];
+        return {
+          ...transactions,
+          items: [...existingItems, ...transactions.items],
+        };
+      });
+    } else if (page === 1 && transactions) {
+      setAccumulatedTransactions(transactions);
+    }
+  }, [page, transactions]);
 
   useEffect(() => {
     if (!isMobileFiltersOpen) {
@@ -452,6 +468,7 @@ export default function DetailedSummaryPage() {
             pageSize={PAGE_SIZE}
             totalCount={transactions?.total_count ?? 0}
             onPageChange={handlePageChange}
+            accumulatedItems={accumulatedTransactions?.items}
           />
         </div>
       </div>
