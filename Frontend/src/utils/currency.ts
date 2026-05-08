@@ -158,10 +158,13 @@ export const formatSignedCurrency = (
 /**
  * Compact currency formatting for small UI spaces (chart axes, badges, compact summaries).
  * Uses Intl compact notation for values >= 1000; falls back to standard formatCurrency for smaller amounts.
+ * @param options - Optional configuration
+ * @param options.noDecimals - If true, removes decimal places (e.g., "1k" instead of "1.5k")
  */
 export const formatCompactCurrency = (
   amount: number,
-  currency: CurrencyEnum
+  currency: CurrencyEnum,
+  options?: { noDecimals?: boolean }
 ): string => {
   const numericAmount = Number(amount);
   if (!Number.isFinite(numericAmount)) {
@@ -172,12 +175,15 @@ export const formatCompactCurrency = (
 
   // For small amounts use standard formatting
   if (absAmount < 1000) {
+    if (options?.noDecimals) {
+      return formatCurrencyNumber(numericAmount, { decimals: 0 }) + (["EUR", "PLN", "CZK", "HUF", "RON", "SEK", "DKK", "NOK"].includes(currency) ? ` ${CURRENCY_SYMBOLS[currency]}` : `${CURRENCY_SYMBOLS[currency]}`);
+    }
     return formatCurrency(numericAmount, currency);
   }
 
   const compacted = new Intl.NumberFormat(undefined, {
     notation: "compact",
-    maximumFractionDigits: 1,
+    maximumFractionDigits: options?.noDecimals ? 0 : 1,
   }).format(absAmount);
 
   const symbol = CURRENCY_SYMBOLS[currency];

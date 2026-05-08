@@ -110,6 +110,8 @@
       "current": "Bieżący",
       "previous": "Poprzedni",
       "cumulative": "Skumulowane",
+      "currentCumulative": "Bieżący okres (skumulowane)",
+      "previousCumulative": "Poprzedni okres (skumulowane)",
       "chartNote": "Zainstaluj Recharts dla zaawansowanej wizualizacji wykresów"
     },
     "settlementsSummary": {
@@ -924,6 +926,9 @@
     "charts": {
       "trendTitle": "Trend dzienny",
       "trendSubtitle": "Kliknij punkt, aby filtrować listę dla wybranego dnia",
+      "comparePrevious": "Porównaj z poprzednim okresem",
+      "currentCumulative": "Bieżący okres (skumulowane)",
+      "previousCumulative": "Poprzedni okres (skumulowane)",
       "granularityDaily": "Dziennie",
       "granularityWeekly": "Tygodniowo",
       "granularityMonthly": "Miesięcznie",

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, BarChart3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   AreaChart,
@@ -12,6 +13,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { expensesSummaryApi } from "@/api/expensesSummaryApi";
 import type { CurrencyEnum } from "@/types/enums";
@@ -115,14 +117,14 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
   }
 
   function alignByDayIndex(
-    current: { value: number }[],
-    previous: { value: number }[]
-  ): { day: number; current: number; previous: number }[] {
+    current: { date: string; value: number }[],
+    previous: { date: string; value: number }[]
+  ): { date: string; current: number; previous: number }[] {
     const maxLen = Math.max(current.length, previous.length);
-    const result: { day: number; current: number; previous: number }[] = [];
+    const result: { date: string; current: number; previous: number }[] = [];
     for (let i = 0; i < maxLen; i++) {
       result.push({
-        day: i + 1,
+        date: current[i]?.date || previous[i]?.date || '',
         current: current[i]?.value ?? 0,
         previous: previous[i]?.value ?? 0,
       });
@@ -156,78 +158,85 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
 
   const chartData = compare
     ? alignByDayIndex(currentCumulative, previousCumulativeTrimmed)
-    : currentCumulative.map((d, i) => ({ day: i + 1, current: d.value, previous: 0 }));
+    : currentCumulative.map((d) => ({ date: d.date, current: d.value, previous: 0 }));
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>{t("dashboard.spendingTrend.title")}</CardTitle>
-          <CardDescription>
-            {t("dashboard.spendingTrend.cumulativeDescription", { currency })}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-3">
-          <label
-            className={`flex items-center gap-2 text-sm ${
-              !previousRange
-                ? "text-muted-foreground opacity-50 cursor-not-allowed"
-                : "cursor-pointer"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={compare}
-              onChange={(e) => setCompare(e.target.checked)}
-              disabled={!previousRange}
-              className="rounded border-border"
-            />
-            {t("dashboard.spendingTrend.comparePrevious")}
-          </label>
-          <Select
-            value={range}
-            onValueChange={(val) => {
-              onRangeChange(val);
-              if (!PREVIOUS_RANGE_MAP[val]) setCompare(false);
-            }}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder={t("range.select")} />
-            </SelectTrigger>
-            <SelectContent>
-              {RANGE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <CardHeader>
+        <div className="flex flex-row items-start justify-between gap-1">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              {t("dashboard.spendingTrend.title")}
+            </CardTitle>
+            <CardDescription>
+              {t("dashboard.spendingTrend.cumulativeDescription", { currency })}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Select
+              value={range}
+              onValueChange={(val) => {
+                onRangeChange(val);
+                if (!PREVIOUS_RANGE_MAP[val]) setCompare(false);
+              }}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder={t("range.select")} />
+              </SelectTrigger>
+              <SelectContent>
+                {RANGE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {t(opt.labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <label
+              className={`flex items-center gap-2 text-sm ${
+                !previousRange
+                  ? "text-muted-foreground opacity-50 cursor-not-allowed"
+                  : "cursor-pointer"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={compare}
+                onChange={(e) => setCompare(e.target.checked)}
+                disabled={!previousRange}
+                className="rounded border-border"
+              />
+              {t("dashboard.spendingTrend.comparePrevious")}
+            </label>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+      <CardContent className="px-0 sm:px-6">
+        <div className={`sm:h-[325px] h-[200px] w-full ${compare ? 'sm:h-[350px] h-[230px]' : ''}`}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={compare ? 230 : 200}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="trendColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.35}/>
+                  <stop offset="15%" stopColor="#16a34a" stopOpacity={0.35}/>
                   <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="prevTrendColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.3}/>
+                  <stop offset="15%" stopColor="#eab308" stopOpacity={0.3}/>
                   <stop offset="95%" stopColor="#eab308" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
-                dataKey="day"
+                dataKey="date"
                 tick={{ fontSize: 12 }}
+                tickFormatter={(date: string) => format(parseISO(date), "dd.MM")}
+                interval="preserveStartEnd"
                 className="text-muted-foreground"
               />
               <YAxis
                 tick={{ fontSize: 12 }}
                 className="text-muted-foreground"
-                tickFormatter={(value) => formatCompactCurrency(Number(value), currency)}
+                tickFormatter={(value) => formatCompactCurrency(Number(value), currency, { noDecimals: true })}
               />
               <Tooltip
                 formatter={(value: any, name: any) => {
@@ -243,9 +252,11 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
                   borderRadius: "6px",
                 }}
               />
+              <Legend />
               <Area
                 type="monotone"
                 dataKey="current"
+                name={t("dashboard.spendingTrend.currentCumulative", { defaultValue: "Current period (cumulative)" })}
                 stroke="#16a34a"
                 strokeWidth={2.5}
                 fillOpacity={1}
@@ -255,6 +266,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
                 <Area
                   type="monotone"
                   dataKey="previous"
+                  name={t("dashboard.spendingTrend.previousCumulative", { defaultValue: "Previous period (cumulative)" })}
                   stroke="#eab308"
                   strokeWidth={2}
                   fillOpacity={1}

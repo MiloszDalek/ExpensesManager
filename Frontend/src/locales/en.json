@@ -120,6 +120,8 @@
       "current": "Current",
       "previous": "Previous",
       "cumulative": "Cumulative",
+      "currentCumulative": "Current period (cumulative)",
+      "previousCumulative": "Previous period (cumulative)",
       "chartNote": "Install Recharts for advanced chart visualization"
     },
     "settlementsSummary": {
@@ -934,6 +936,9 @@
     "charts": {
       "trendTitle": "Daily trend",
       "trendSubtitle": "Click a point to filter drill-down to that day",
+      "comparePrevious": "Compare previous period",
+      "currentCumulative": "Current period (cumulative)",
+      "previousCumulative": "Previous period (cumulative)",
       "granularityDaily": "Daily",
       "granularityWeekly": "Weekly",
       "granularityMonthly": "Monthly",

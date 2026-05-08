@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { formatCurrency } from "@/utils/currency";
+import { formatCompactCurrency, formatCurrency } from "@/utils/currency";
 import type { CurrencyEnum } from "@/types/enums";
 import { BarChart3 } from "lucide-react";
 import { format, parseISO } from "date-fns";
@@ -24,7 +24,7 @@ interface TrendPoint {
 
 interface SummaryTrendChartProps {
   data: TrendPoint[];
-  currency: string;
+  currency: CurrencyEnum;
   showComparePrevious: boolean;
   onToggleComparePrevious: () => void;
 }
@@ -39,8 +39,8 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
 
   return (
     <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm lg:col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between gap-2">
-        <div>
+      <CardHeader>
+        <div className="flex flex-row items-start justify-between gap-1">
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             {t("summaryPage.charts.trendTitle")}
@@ -59,31 +59,34 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
           {t("summaryPage.charts.comparePrevious", { defaultValue: "Compare previous period" })}
         </label>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0 sm:px-6">
         {data.length === 0 ? (
           <p className="py-10 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
         ) : (
-          <div className="min-h-[320px] h-80">
-            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={280}>
+          <div className={`sm:h-[325px] h-[220px] w-full ${showComparePrevious ? 'sm:h-[350px] h-[250px]' : ''}`}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={showComparePrevious ? 250 : 220}>
               <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="currentFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.35} />
+                    <stop offset="15%" stopColor="#16a34a" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="previousFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
+                    <stop offset="15%" stopColor="#eab308" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 12 }}
                   tickFormatter={(date: string) => format(parseISO(date), "dd.MM")}
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 12 }} />
+                <YAxis 
+                  tick={{ fontSize: 12 }} 
+                  className="text-muted-foreground"
+                  tickFormatter={(value) => formatCompactCurrency(Number(value), currency, { noDecimals: true })}/>
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload || !payload.length) return null;
@@ -93,7 +96,7 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
                         <p className="text-sm font-medium mb-1">{formattedDate}</p>
                         {payload.map((entry) => (
                           <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
-                            {entry.name}: {formatCurrency(Number(entry.value ?? 0), currency as CurrencyEnum)}
+                            {entry.name}: {formatCurrency(Number(entry.value ?? 0), currency)}
                           </p>
                         ))}
                       </div>
