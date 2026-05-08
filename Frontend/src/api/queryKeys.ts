@@ -1,8 +1,5 @@
 import type {
   ApiIncomeListParams,
-  ApiExpenseSummaryDrilldownParams,
-  ApiExpenseSummaryOverviewParams,
-  ApiExpenseSummaryTrendsParams,
   ApiPersonalExpenseListParams,
   NotificationSeverity,
   NotificationStatus,
@@ -72,12 +69,37 @@ export const queryKeys = {
   },
 
   summaries: {
-    overview: (params?: ApiExpenseSummaryOverviewParams) =>
-      ["expenses", "summary", "overview", params ?? {}] as const,
-    trends: (params?: ApiExpenseSummaryTrendsParams) =>
-      ["expenses", "summary", "trends", params ?? {}] as const,
-    drilldown: (params?: ApiExpenseSummaryDrilldownParams) =>
-      ["expenses", "summary", "drilldown", params ?? {}] as const,
+    overview: (
+      dateFrom: string,
+      dateTo: string,
+      scope: string,
+      groupId: string | number,
+      currency: string,
+      comparePrevious: boolean,
+      categoryIdsKey: string
+    ) =>
+      ["expenses", "summary", "overview", dateFrom, dateTo, scope, String(groupId), currency, comparePrevious, categoryIdsKey] as const,
+    trends: (
+      dateFrom: string,
+      dateTo: string,
+      scope: string,
+      groupId: string | number,
+      currency: string,
+      comparePrevious: boolean,
+      categoryIdsKey: string
+    ) =>
+      ["expenses", "summary", "trends", dateFrom, dateTo, scope, String(groupId), currency, comparePrevious, categoryIdsKey] as const,
+    drilldown: (
+      dateFrom: string,
+      dateTo: string,
+      scope: string,
+      groupId: string | number,
+      currency: string,
+      sortBy: string,
+      sortOrder: string,
+      categoryIdsKey: string
+    ) =>
+      ["expenses", "summary", "drilldown", dateFrom, dateTo, scope, String(groupId), currency, sortBy, sortOrder, categoryIdsKey] as const,
   },
 
   categories: {
