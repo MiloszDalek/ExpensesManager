@@ -22,13 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import { getDefaultCategoryId } from "@/utils/category";
 import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 import type { ApiCategoryResponse } from "@/types/category";
 import type { ApiRecurringPersonalExpenseCreate } from "@/types/expense";
 import type { CategorySection, CurrencyEnum, RecurrenceFrequency } from "@/types/enums";
-import { SUPPORTED_CURRENCIES } from "@/types/enums";
 
 type AddRecurringExpenseDialogProps = {
   open: boolean;
@@ -175,26 +175,17 @@ export default function AddRecurringExpenseDialog({
 
             <div className="space-y-1">
               <Label htmlFor="recurring-create-currency">{t("addExpenseDialog.currency")}</Label>
-              <Select
-                value={formData.currency}
-                onValueChange={(value) =>
+              <CurrencyPicker
+                id="recurring-create-currency"
+                selectedCurrency={formData.currency}
+                onCurrencyChange={(value) =>
                   setFormData((previous) => ({
                     ...previous,
-                    currency: value as CurrencyEnum,
+                    currency: value,
                   }))
                 }
-              >
-                <SelectTrigger id="recurring-create-currency" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="w-full"
+              />
             </div>
           </div>
 

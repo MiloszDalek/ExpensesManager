@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import DialogInfoButton from "@/components/help/DialogInfoButton";
 import { getDefaultCategoryId } from "@/utils/category";
 
@@ -587,7 +588,13 @@ export default function AddGroupExpenseDialog({
 
             <div className="space-y-1">
               <Label htmlFor="group-expense-currency">{t("addGroupExpenseDialog.currency")}</Label>
-              <Input id="group-expense-currency" value={groupCurrency} disabled />
+              <CurrencyPicker
+                id="group-expense-currency"
+                selectedCurrency={groupCurrency}
+                onCurrencyChange={() => {}}
+                disabled
+                className="w-full"
+              />
             </div>
           </div>
 

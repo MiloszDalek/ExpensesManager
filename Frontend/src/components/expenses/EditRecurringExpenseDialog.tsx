@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
+import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import DialogInfoButton from "@/components/help/DialogInfoButton";
 
 import type { ApiCategoryResponse } from "@/types/category";
@@ -193,11 +194,17 @@ export default function EditRecurringExpenseDialog({
 
             <div className="space-y-1">
               <Label htmlFor="recurring-edit-currency">{t("addExpenseDialog.currency")}</Label>
-              <Input
+              <CurrencyPicker
                 id="recurring-edit-currency"
-                value={formData.currency}
-                disabled
-                readOnly
+                selectedCurrency={formData.currency}
+                onCurrencyChange={(value) =>
+                  setFormData((previous) => ({
+                    ...previous,
+                    currency: value,
+                  }))
+                }
+                disabled={recurringExpense?.group_id !== null}
+                className="w-full"
               />
             </div>
           </div>
