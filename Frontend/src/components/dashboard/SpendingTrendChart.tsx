@@ -70,7 +70,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>{t("dashboard.spendingTrend.title")}</CardTitle>
           <CardDescription>{t("dashboard.spendingTrend.description")}</CardDescription>
@@ -84,7 +84,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
 
   if (!currentData) {
     return (
-      <Card>
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>{t("dashboard.spendingTrend.title")}</CardTitle>
         </CardHeader>
@@ -161,7 +161,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
     : currentCumulative.map((d) => ({ date: d.date, current: d.value, previous: 0 }));
 
   return (
-    <Card>
+    <Card className="lg:col-span-3">
       <CardHeader>
         <div className="flex flex-row items-start justify-between gap-1">
           <div>

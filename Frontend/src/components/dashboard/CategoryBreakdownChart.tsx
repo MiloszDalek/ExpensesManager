@@ -50,7 +50,7 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
           <CardDescription>{t("dashboard.categoryBreakdown.description")}</CardDescription>
@@ -64,7 +64,7 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
 
   if (error) {
     return (
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
         </CardHeader>
@@ -82,7 +82,7 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
 
   if (!data || data.categories.length === 0) {
     return (
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
           <CardDescription>{t("dashboard.categoryBreakdown.description")}</CardDescription>
@@ -133,7 +133,7 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
   };
 
   return (
-    <Card>
+    <Card className="lg:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PieChart className="h-5 w-5 text-primary" />

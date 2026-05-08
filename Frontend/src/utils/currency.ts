@@ -176,7 +176,14 @@ export const formatCompactCurrency = (
   // For small amounts use standard formatting
   if (absAmount < 1000) {
     if (options?.noDecimals) {
-      return formatCurrencyNumber(numericAmount, { decimals: 0 }) + (["EUR", "PLN", "CZK", "HUF", "RON", "SEK", "DKK", "NOK"].includes(currency) ? ` ${CURRENCY_SYMBOLS[currency]}` : `${CURRENCY_SYMBOLS[currency]}`);
+      const symbol = CURRENCY_SYMBOLS[currency];
+      const symbolAfter = ["EUR", "PLN", "CZK", "HUF", "RON", "SEK", "DKK", "NOK"].includes(currency);
+      const formattedAmount = formatCurrencyNumber(numericAmount, { decimals: 0 });
+
+      if (symbolAfter) {
+        return `${formattedAmount} ${symbol}`;
+      }
+      return `${symbol}${formattedAmount}`;
     }
     return formatCurrency(numericAmount, currency);
   }

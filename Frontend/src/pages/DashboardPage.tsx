@@ -52,14 +52,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Top Row: Trend (60%) + Category (40%) */}
+        {/* Top Row: Trend + Category */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3">
-            <SpendingTrendChart currency={selectedCurrency} range={range} onRangeChange={setRange} />
-          </div>
-          <div className="lg:col-span-2">
-            <CategoryBreakdownChart currency={selectedCurrency} range={range} />
-          </div>
+          <SpendingTrendChart currency={selectedCurrency} range={range} onRangeChange={setRange} />
+          <CategoryBreakdownChart currency={selectedCurrency} range={range} />
         </div>
 
         {/* Bottom Row: Upcoming Recurring + Settlements Summary */}
