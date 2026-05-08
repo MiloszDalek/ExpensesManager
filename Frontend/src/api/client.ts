@@ -76,6 +76,22 @@ const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL as string | 
 const client = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
+  paramsSerializer: {
+    serialize: (params) => {
+      const searchParams = new URLSearchParams();
+      for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === null) continue;
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            searchParams.append(key, String(item));
+          }
+        } else {
+          searchParams.append(key, String(value));
+        }
+      }
+      return searchParams.toString();
+    },
+  },
 });
 
 let refreshPromise: Promise<string> | null = null;

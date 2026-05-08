@@ -181,10 +181,7 @@ export default function SummaryFilters({
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-muted-foreground">
-          {t("summaryPage.filtersHint")}
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button onClick={onApply} disabled={!hasPendingFilters || hasInvalidDraftDateRange}>
             {t("expenseFilters.apply")}

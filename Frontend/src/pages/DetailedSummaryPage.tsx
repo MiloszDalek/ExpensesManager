@@ -104,27 +104,27 @@ export default function DetailedSummaryPage() {
       "categories",
       "available",
       "summary",
-      draftFilters.scope,
-      draftFilters.groupId,
+      appliedFilters.scope,
+      appliedFilters.groupId,
     ],
     queryFn: async () => {
-      if (draftFilters.scope === "personal") {
+      if (appliedFilters.scope === "personal") {
         return categoriesApi.getAvailablePersonal();
       }
 
-      if (draftFilters.scope === "group") {
-        if (draftFilters.groupId === "all") {
+      if (appliedFilters.scope === "group") {
+        if (appliedFilters.groupId === "all") {
           return categoriesApi.getAvailableAllGroups();
         }
 
-        return categoriesApi.getAvailableGroup(Number(draftFilters.groupId));
+        return categoriesApi.getAvailableGroup(Number(appliedFilters.groupId));
       }
 
       const [personalCategories, groupCategories] = await Promise.all([
         categoriesApi.getAvailablePersonal(),
-        draftFilters.groupId === "all"
+        appliedFilters.groupId === "all"
           ? categoriesApi.getAvailableAllGroups()
-          : categoriesApi.getAvailableGroup(Number(draftFilters.groupId)),
+          : categoriesApi.getAvailableGroup(Number(appliedFilters.groupId)),
       ]);
 
       const mergedCategories = new Map<number, (typeof personalCategories)[number]>();
