@@ -63,3 +63,8 @@ export interface ApiGroupMemberResponse {
   role: GroupMemberRole;
   status: GroupMemberStatus;
 }
+
+export interface ApiGroupSpendingTrendItem {
+  label: string;
+  amount: DecimalLike;
+}

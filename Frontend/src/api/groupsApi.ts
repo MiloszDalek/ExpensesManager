@@ -3,6 +3,7 @@ import type {
   ApiGroupCreate,
   ApiGroupMemberResponse,
   ApiGroupResponse,
+  ApiGroupSpendingTrendItem,
   ApiGroupUpdate,
 } from "@/types";
 
@@ -45,5 +46,16 @@ export const groupsApi = {
 
   leaveGroup: async (groupId: number): Promise<void> => {
     await client.delete(`/groups/${groupId}/members/me`);
+  },
+
+  spendingTrend: async (
+    groupId: number,
+    interval: "daily" | "weekly" | "monthly"
+  ): Promise<ApiGroupSpendingTrendItem[]> => {
+    const { data } = await client.get<ApiGroupSpendingTrendItem[]>(
+      `/groups/${groupId}/spending-trend`,
+      { params: { interval } }
+    );
+    return data;
   },
 };

@@ -768,12 +768,15 @@ export default function ContactsPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
-            <PageInfoButton pageKey="contacts" autoOpen={true} />
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t("contactsBalancesPage.title")}</h1>
+              <PageInfoButton pageKey="contacts" autoOpen={true} className="lg:hidden" />
+            </div>
+            <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
           </div>
-          <p className="mt-2 text-muted-foreground">{t("contactsBalancesPage.subtitle")}</p>
+          <PageInfoButton pageKey="contacts" autoOpen={true} className="hidden lg:inline-flex" />
         </div>
 
         <div className="mb-4 lg:hidden">

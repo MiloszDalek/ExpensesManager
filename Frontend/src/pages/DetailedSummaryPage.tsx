@@ -42,7 +42,6 @@ export default function DetailedSummaryPage() {
     hasPendingFilters,
     hasInvalidDraftDateRange,
     appliedGroupId,
-    handlePeriodPresetChange,
     handleScopeChange,
     handleApplyFilters,
     handleSortChange,
@@ -398,7 +397,7 @@ export default function DetailedSummaryPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
               <PageInfoButton pageKey="summaries" autoOpen={true} />
             </div>
@@ -433,7 +432,6 @@ export default function DetailedSummaryPage() {
             onScopeChange={handleScopeChange}
             onGroupChange={setDraftGroupId}
             onCurrencyChange={setDraftCurrency}
-            onPeriodPresetChange={handlePeriodPresetChange}
             onSortChange={handleSortChange}
             onDateFromChange={setDraftDateFrom}
             onDateToChange={setDraftDateTo}
@@ -534,7 +532,6 @@ export default function DetailedSummaryPage() {
               onScopeChange={handleScopeChange}
               onGroupChange={setDraftGroupId}
               onCurrencyChange={setDraftCurrency}
-              onPeriodPresetChange={handlePeriodPresetChange}
               onSortChange={handleSortChange}
               onDateFromChange={setDraftDateFrom}
               onDateToChange={setDraftDateTo}

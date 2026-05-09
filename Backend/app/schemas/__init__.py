@@ -6,7 +6,7 @@ from .user_schemas import (
     UserAdminActivityStatsResponse,
 )
 from .token_schemas import Token, TokenData
-from .group_schemas import GroupCreate, GroupResponse, GroupUpdate
+from .group_schemas import GroupCreate, GroupResponse, GroupUpdate, GroupSpendingTrendItem
 from .group_member_schemas import GroupMemberResponse
 from .expense_schemas import (
     PersonalExpenseCreate,

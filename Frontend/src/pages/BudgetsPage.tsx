@@ -664,11 +664,11 @@ export default function BudgetsPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold text-foreground md:text-4xl">
                 {t("budgets.title", { defaultValue: "Budget Manager" })}
               </h1>
-              <PageInfoButton pageKey="budgets" autoOpen={true} />
+              <PageInfoButton pageKey="budgets" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="mt-2 text-muted-foreground">
               {t("budgets.subtitle", {
@@ -676,6 +676,7 @@ export default function BudgetsPage() {
               })}
             </p>
           </div>
+          <PageInfoButton pageKey="budgets" autoOpen={true} className="hidden lg:inline-flex" />
         </motion.div>
 
         {errorMessage ? (

@@ -864,7 +864,7 @@
     }
   },
   "summaryPage": {
-    "title": "Szczegółowe Podsumowania",
+    "title": "Podsumowania",
     "subtitle": "Analizuj wydatki osobiste i grupowe w jednym miejscu",
     "total": "Suma",
     "export": "Eksport",
@@ -1150,6 +1150,17 @@
       "descriptionTooLong": "Opis grupy jest za długi (maks. 500 znaków).",
       "createFailed": "Nie udało się utworzyć grupy."
     }
+  },
+  "groupSpendingTrend": {
+    "title": "Trend wydatków grupy",
+    "intervalDaily": "Dziennie",
+    "intervalWeekly": "Tygodniowo",
+    "intervalMonthly": "Miesięcznie",
+    "noData": "Brak danych o wydatkach",
+    "amountLabel": "Kwota",
+    "descriptionDaily": "Ostatnie 30 dni",
+    "descriptionWeekly": "Ostatnie 12 tygodni",
+    "descriptionMonthly": "Ostatnie 6 miesięcy"
   },
   "groupDetailPage": {
     "backToGroups": "Powrót do listy grup",

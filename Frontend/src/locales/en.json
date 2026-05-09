@@ -1161,6 +1161,17 @@
       "createFailed": "Could not create group."
     }
   },
+  "groupSpendingTrend": {
+    "title": "Group spending trend",
+    "intervalDaily": "Daily",
+    "intervalWeekly": "Weekly",
+    "intervalMonthly": "Monthly",
+    "noData": "No spending data yet",
+    "amountLabel": "Amount",
+    "descriptionDaily": "Last 30 days",
+    "descriptionWeekly": "Last 12 weeks",
+    "descriptionMonthly": "Last 6 months"
+  },
   "groupDetailPage": {
     "backToGroups": "Back to group list",
     "invalidGroupTitle": "Invalid group id",

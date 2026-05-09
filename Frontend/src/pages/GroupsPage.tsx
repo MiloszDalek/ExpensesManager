@@ -180,13 +180,15 @@ export default function GroupsPage() {
           className="mb-8 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:items-center md:text-left"
         >
           <div>
-            <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("groupsPage.title")}</h1>
+            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
+              <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("groupsPage.title")}</h1>
+              <PageInfoButton pageKey="groups" autoOpen={true} />
+            </div>
             <p className="text-muted-foreground mt-2">
               {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <PageInfoButton pageKey="groups" autoOpen={true} />
             <Button
               onClick={() => setShowCreateDialog(true)}
               className="hidden shadow-lg md:inline-flex"

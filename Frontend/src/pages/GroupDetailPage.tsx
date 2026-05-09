@@ -33,6 +33,7 @@ import SpeedDial from "@/components/ui/speed-dial";
 import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
 import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
+import { GroupSpendingTrendChart } from "@/components/groups/GroupSpendingTrendChart";
 import AddGroupMemberDialog from "@/components/groups/AddGroupMemberDialog";
 import AddGroupExpenseDialog from "@/components/groups/AddGroupExpenseDialog";
 import AddGroupRecurringExpenseDialog from "@/components/groups/AddGroupRecurringExpenseDialog";
@@ -785,46 +786,6 @@ export default function GroupDetailPage() {
     return settlements.filter((settlement) => settlement.status === "completed");
   }, [settlements]);
 
-  const groupSpendChart = useMemo(() => {
-    const now = new Date();
-    const buckets = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      return {
-        key: monthKey,
-        label: format(date, "MMM"),
-        amount: 0,
-      };
-    });
-
-    const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
-
-    expenses.forEach((expense) => {
-      const date = new Date(expense.expense_date);
-      if (Number.isNaN(date.getTime())) {
-        return;
-      }
-
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const bucket = bucketByKey.get(monthKey);
-      if (!bucket) {
-        return;
-      }
-
-      bucket.amount += Number(expense.amount) || 0;
-    });
-
-    const maxAmount = Math.max(...buckets.map((bucket) => bucket.amount), 1);
-
-    return {
-      maxAmount,
-      bars: buckets.map((bucket) => ({
-        ...bucket,
-        heightPercent: bucket.amount > 0 ? Math.max((bucket.amount / maxAmount) * 100, 10) : 4,
-      })),
-    };
-  }, [expenses]);
-
   const getMemberDisplayName = (userId: number) => {
     if (userId === user?.id) {
       return t("groupDetailPage.youLabel");
@@ -958,92 +919,71 @@ export default function GroupDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12"
         >
-          <div className="min-w-0 lg:col-span-8">
-            <div className="flex max-w-full flex-wrap items-center gap-2">
-              <h1 className="max-w-full break-all text-3xl font-bold text-foreground md:text-4xl">
-                {formatGroupName(group.name)}
-              </h1>
+          <div className="min-w-0 lg:col-span-7 lg:col-start-2">
+            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h1 className="max-w-full break-all text-3xl font-bold text-foreground md:text-4xl">
+                  {formatGroupName(group.name)}
+                </h1>
 
-              {isCurrentUserAdmin ? (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => setShowEditGroupDialog(true)}
-                  aria-label={t("groupDetailPage.editGroup")}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              ) : null}
+                {isCurrentUserAdmin ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => setShowEditGroupDialog(true)}
+                    aria-label={t("groupDetailPage.editGroup")}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                ) : null}
+              </div>
+              <PageInfoButton pageKey="groupDetail" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="mt-2 max-w-3xl text-muted-foreground [overflow-wrap:anywhere]">
               {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-start justify-start gap-2 lg:col-span-4 lg:justify-end">
-            <PageInfoButton pageKey="groupDetail" autoOpen={true} />
-            <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex">
-              <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
-                <ScanSearch className="mr-2 h-4 w-4" />
-                {t("groupDetailPage.scanReceipt")}
-              </Link>
-            </Button>
-            <Button size="sm" className="hidden sm:inline-flex" onClick={() => setShowAddExpenseDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t("groupDetailPage.addExpense")}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="hidden sm:inline-flex"
-              onClick={() => setShowAddRecurringExpenseDialog(true)}
-            >
-              <Repeat2 className="mr-2 h-4 w-4" />
-              {t("groupDetailPage.addRecurringExpense", { defaultValue: "Add recurring" })}
-            </Button>
+          <div className="flex flex-row items-start justify-end gap-2 lg:col-span-4">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <Button size="sm" className="hidden sm:inline-flex" onClick={() => setShowAddExpenseDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.addExpense")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hidden sm:inline-flex border border-border bg-card/80"
+                onClick={() => setShowAddRecurringExpenseDialog(true)}
+              >
+                <Repeat2 className="mr-2 h-4 w-4" />
+                {t("groupDetailPage.addRecurringExpense", { defaultValue: "Add recurring" })}
+              </Button>
+              <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex border border-border bg-card/80">
+                <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
+                  <ScanSearch className="mr-2 h-4 w-4" />
+                  {t("groupDetailPage.scanReceipt")}
+                </Link>
+              </Button>
+            </div>
+            <PageInfoButton pageKey="groupDetail" autoOpen={true} className="hidden lg:inline-flex" />
           </div>
         </motion.div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-12">
-          <Card className="order-2 border border-border bg-card/80 shadow-sm backdrop-blur-sm lg:order-1 lg:col-span-8">
-            <CardContent className="p-4 md:p-5">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {t("groupDetailPage.chartTitle", { defaultValue: "Group chart" })}
-                </h2>
-                <span className="text-xs text-muted-foreground">{group.currency}</span>
-              </div>
-
-              <div className="h-56 rounded-lg border border-border bg-background/50 p-4">
-                <div className="flex h-full items-end gap-3">
-                  {groupSpendChart.bars.map((bar) => (
-                    <div key={bar.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                      <div className="flex h-full w-full items-end">
-                        <div className="w-full rounded-md bg-primary/70" style={{ height: `${bar.heightPercent}%` }} />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">{bar.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <p className="mt-3 text-sm text-muted-foreground">
-                {t("groupDetailPage.chartDescription", {
-                  defaultValue: "Monthly group expenses from the last 6 months.",
-                })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t("groupDetailPage.chartPeak", { defaultValue: "Peak month" })}: {formatCurrency(groupSpendChart.maxAmount, group.currency as CurrencyEnum)}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="order-2 lg:order-1 lg:col-span-8">
+            <GroupSpendingTrendChart
+              groupId={groupId}
+              currency={group.currency as CurrencyEnum}
+            />
+          </div>
 
           <div className="order-1 lg:order-2 lg:col-span-4">
             <div className="grid grid-cols-4 gap-1.5 sm:gap-3 lg:grid-cols-2">
               <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
                     <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
                       {t("groupDetailPage.summaryMembers")}
                     </p>
@@ -1059,7 +999,7 @@ export default function GroupDetailPage() {
 
               <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
                     <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
                       {t("groupDetailPage.summaryExpenses")}
                     </p>
@@ -1075,7 +1015,7 @@ export default function GroupDetailPage() {
 
               <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
                     <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
                       {t("groupDetailPage.summaryTotal")}
                     </p>
@@ -1086,9 +1026,6 @@ export default function GroupDetailPage() {
                       <p className="text-[clamp(0.95rem,4.6vw,1.5rem)] font-bold leading-none text-foreground sm:text-2xl md:text-4xl">
                         {formatCurrency(Number(group.total_amount ?? 0), group.currency as CurrencyEnum)}
                       </p>
-                      <p className="mt-1 text-[10px] font-medium text-muted-foreground sm:text-xs md:mt-2 md:text-sm">
-                        {group.currency}
-                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -1096,7 +1033,7 @@ export default function GroupDetailPage() {
 
               <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2">
+                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
                     <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
                       {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
                     </p>
@@ -1119,7 +1056,9 @@ export default function GroupDetailPage() {
               type="button"
               size="sm"
               variant={mobileSection === "expenses" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-1 text-[11px] border border-border ${
+                mobileSection === "expenses" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("expenses")}
             >
               {t("groupDetailPage.mobileTabExpenses", { defaultValue: "Expenses" })}
@@ -1128,7 +1067,9 @@ export default function GroupDetailPage() {
               type="button"
               size="sm"
               variant={mobileSection === "balances" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-1 text-[11px] border border-border ${
+                mobileSection === "balances" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("balances")}
             >
               {t("groupDetailPage.mobileTabBalances", { defaultValue: "Balances" })}
@@ -1137,7 +1078,9 @@ export default function GroupDetailPage() {
               type="button"
               size="sm"
               variant={mobileSection === "recurring" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-1 text-[11px] border border-border ${
+                mobileSection === "recurring" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("recurring")}
             >
               {t("groupDetailPage.mobileTabRecurring", { defaultValue: "Recurring" })}
@@ -1146,7 +1089,9 @@ export default function GroupDetailPage() {
               type="button"
               size="sm"
               variant={mobileSection === "members" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-1 text-[11px] border border-border ${
+                mobileSection === "members" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("members")}
             >
               {t("groupDetailPage.mobileTabMembers", { defaultValue: "Members" })}
@@ -1415,7 +1360,7 @@ export default function GroupDetailPage() {
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
                   variant="outline"
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto border border-border bg-card/80"
                 >
                   {isFetchingNextPage ? t("groupDetailPage.loadingMore") : t("groupDetailPage.loadMore")}
                 </Button>

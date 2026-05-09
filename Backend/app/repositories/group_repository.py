@@ -1,6 +1,5 @@
 from decimal import Decimal
-
-from sqlalchemy import func, select
+from sqlalchemy import func, select, literal_column, select
 from sqlalchemy.orm import Session, selectinload, aliased
 from sqlalchemy.exc import IntegrityError
 from app.models import Group, GroupMember
@@ -198,6 +197,74 @@ class GroupRepository:
             .first()
             is not None
         )
+
+
+    def get_spending_trend(self, group_id: int, interval: str) -> list[dict]:
+        if interval == "daily":
+            start = func.date_trunc("day", func.now() - literal_column("INTERVAL '30 days'"))
+            end = func.date_trunc("day", func.now())
+            step = literal_column("INTERVAL '1 day'")
+            trunc_expr = func.date_trunc("day", Expense.expense_date)
+            since_interval = "INTERVAL '30 days'"
+            label_expr = func.to_char(trunc_expr, "YYYY-MM-DD")
+        elif interval == "weekly":
+            start = func.date_trunc("week", func.now() - literal_column("INTERVAL '12 weeks'"))
+            end = func.date_trunc("week", func.now())
+            step = literal_column("INTERVAL '1 week'")
+            trunc_expr = func.date_trunc("week", Expense.expense_date)
+            since_interval = "INTERVAL '12 weeks'"
+            label_expr = func.to_char(func.min(Expense.expense_date), 'IYYY"-W"IW')
+        else:  # monthly
+            start = func.date_trunc("month", func.now() - literal_column("INTERVAL '6 months'"))
+            end = func.date_trunc("month", func.now())
+            step = literal_column("INTERVAL '1 month'")
+            trunc_expr = func.date_trunc("month", Expense.expense_date)
+            since_interval = "INTERVAL '6 months'"
+            label_expr = func.to_char(trunc_expr, "YYYY-MM")
+
+        # Generate series of all periods in the range
+        series_cte = (
+            select(func.generate_series(start, end, step).label("period"))
+            .cte("series")
+        )
+        series = aliased(series_cte)
+
+        # Aggregate expenses by period
+        since = func.now() - literal_column(since_interval)
+        expense_agg = (
+            select(
+                trunc_expr.label("period"),
+                func.coalesce(func.sum(Expense.amount), 0).label("amount"),
+            )
+            .filter(
+                Expense.group_id == group_id,
+                Expense.expense_date >= since,
+            )
+            .group_by(trunc_expr)
+            .cte("expense_agg")
+        )
+        agg = aliased(expense_agg)
+
+        # Left join series with expenses to include zero-amount periods
+        if interval == "weekly":
+            label_expr = func.to_char(series.c.period, 'IYYY"-W"IW')
+        elif interval == "monthly":
+            label_expr = func.to_char(series.c.period, "YYYY-MM")
+        else:
+            label_expr = func.to_char(series.c.period, "YYYY-MM-DD")
+
+        rows = (
+            self.db.query(
+                label_expr.label("label"),
+                func.coalesce(agg.c.amount, 0).label("amount"),
+            )
+            .select_from(series)
+            .outerjoin(agg, series.c.period == agg.c.period)
+            .order_by(series.c.period.asc())
+            .all()
+        )
+
+        return [{"label": row.label, "amount": row.amount} for row in rows]
 
 
     def get_counts_for_group(self, group_id: int) -> tuple[int, int, Decimal]:

@@ -160,6 +160,11 @@ class GroupService:
         self.group_repo.save_all()
 
 
+    def get_spending_trend(self, group_id: int, user_id: int, interval: str) -> list[dict]:
+        self.get_group(group_id, user_id)
+        return self.group_repo.get_spending_trend(group_id, interval)
+
+
     def update_group(self, group_id: int, group_in: GroupUpdate, user_id: int) -> Group:
         group = self.get_group(group_id, user_id)
 

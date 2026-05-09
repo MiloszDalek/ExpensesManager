@@ -55,7 +55,7 @@ export default function PageInfoButton({ pageKey, variant = "full", className, a
   }, [pageKey, t]);
 
   const baseClassName =
-    "text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+    "text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10 rounded-full cursor-pointer p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

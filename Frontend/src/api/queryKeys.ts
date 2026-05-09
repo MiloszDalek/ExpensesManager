@@ -14,6 +14,8 @@ export const queryKeys = {
     all: ["groups", "all"] as const,
     byId: (groupId: number) => ["groups", "byId", groupId] as const,
     members: (groupId: number) => ["groups", "members", groupId] as const,
+    spendingTrend: (groupId: number, interval: string) =>
+      ["group-spending-trend", groupId, interval] as const,
   },
 
   groupExpenses: {

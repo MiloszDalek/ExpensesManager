@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.services import GroupService
 from app.database import get_db
-from app.schemas import GroupResponse, GroupCreate, GroupUpdate, GroupMemberResponse
+from app.schemas import GroupResponse, GroupCreate, GroupUpdate, GroupMemberResponse, GroupSpendingTrendItem
 from app.models import User
 from app.utils.auth_dependencies import get_current_active_user
 
@@ -87,3 +89,13 @@ def remove_member(
     current_user: User = Depends(get_current_active_user)
 ):
     service.remove_member(group_id, user_id, current_user.id)
+
+
+@group_router.get("/{group_id}/spending-trend", response_model=list[GroupSpendingTrendItem])
+def get_group_spending_trend(
+    group_id: int,
+    interval: Literal["daily", "weekly", "monthly"] = Query(default="monthly"),
+    service: GroupService = Depends(get_group_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.get_spending_trend(group_id, current_user.id, interval)

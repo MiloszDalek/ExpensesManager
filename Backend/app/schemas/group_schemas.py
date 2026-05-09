@@ -30,6 +30,11 @@ class GroupResponse(GroupBase):
     members_count: int = 0
     expenses_count: int = 0
     total_amount: Decimal = Decimal("0")
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+
+class GroupSpendingTrendItem(BaseModel):
+    label: str
+    amount: Decimal
 

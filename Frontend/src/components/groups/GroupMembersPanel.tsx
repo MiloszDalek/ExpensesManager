@@ -174,10 +174,10 @@ export default function GroupMembersPanel({
         })}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex justify-center">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" disabled={leavePending}>
+            <Button variant="outline" size="sm" disabled={leavePending} className="border border-border bg-card/80">
               {t("groupMembersPanel.leaveGroup")}
             </Button>
           </AlertDialogTrigger>
