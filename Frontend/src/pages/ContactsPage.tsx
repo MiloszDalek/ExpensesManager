@@ -1121,7 +1121,7 @@ export default function ContactsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="w-[170px] h-[34px] rounded-sm"
+              className="flex-1 h-[34px] rounded-sm"
               disabled={
                 !groupSettlementOptionsTarget ||
                 (settleGroupCashMutation.isPending &&
@@ -1143,7 +1143,7 @@ export default function ContactsPage() {
             </Button>
 
             {isPayPalButtonEnabled ? (
-              <div className="w-[170px]">
+              <div className="flex-1">
                 <PayPalCurrencyButtons
                   currency={groupSettlementOptionsTarget?.currency ?? "PLN"}
                   fundingSource="paypal"
