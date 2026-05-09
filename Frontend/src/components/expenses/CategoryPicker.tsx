@@ -432,7 +432,7 @@ export default function CategoryPicker(props: CategoryPickerProps) {
         <div className={mobileInset ? "sm:px-0" : ""}>
           <Button
             variant="outline"
-            className={!isMulti && (value as string) === "all" ? "w-full justify-between" : "w-full justify-between pl-1"}
+            className={!isMulti && (value as string) === "all" ? "w-full justify-between pl-3" : "w-full justify-between pl-3"}
             onClick={() => setIsDialogOpen(true)}
           >
             <span className="flex min-w-0 items-center gap-2">
@@ -537,7 +537,6 @@ export default function CategoryPicker(props: CategoryPickerProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="mb-2"
-                autoFocus
               />
 
               <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
@@ -649,7 +648,7 @@ export default function CategoryPicker(props: CategoryPickerProps) {
                   setIsDialogOpen(false);
                 }}
               >
-                {t("expenseFilters.apply", { defaultValue: "Apply" })}
+                {t("expenseFilters.applyCategories", { defaultValue: "Apply" })}
               </Button>
             </div>
           )}

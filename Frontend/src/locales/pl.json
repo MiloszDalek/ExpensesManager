@@ -72,7 +72,12 @@
   "common": {
     "error": "Nie udało się załadować danych.",
     "errorLoadingData": "Błąd ładowania danych",
-    "somethingWentWrong": "Coś poszło nie tak"
+    "somethingWentWrong": "Coś poszło nie tak",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "pageOf": "Strona {{page}} z {{total}}",
+    "loadMore": "Załaduj więcej",
+    "cancel": "Anuluj"
   },
   "range": {
     "select": "Wybierz zakres",
@@ -614,6 +619,7 @@
     "from": "Od",
     "to": "Do",
     "apply": "Filtruj",
+    "applyCategories": "Zastosuj",
     "recentCurrencies": "Ostatnio używane",
     "removeRecentCurrency": "Usuń z ostatnio używanych",
     "change": "Zmień",
@@ -898,10 +904,17 @@
     "group": "Grupa",
     "groupAll": "Wszystkie grupy",
     "category": "Kategoria",
+    "categories": "Kategorie",
     "categoryAll": "Wszystkie kategorie",
     "currency": "Waluta",
     "amount": "Kwota",
     "otherCategory": "Inne",
+    "sorting": "Sortowanie",
+    "sortNewest": "Najnowsze",
+    "sortOldest": "Najstarsze",
+    "sortHighest": "Najwyższa kwota",
+    "sortLowest": "Najniższa kwota",
+    "apply": "Filtruj",
     "budgetVsActualTitle": "Budżet vs wykonanie",
     "budgetVsActualSubtitle": "Alokacja, wydane i pozostałe dla każdej puli budżetowej",
     "noActiveBudget": "Brak aktywnego budżetu.",
@@ -933,7 +946,7 @@
     },
     "charts": {
       "trendTitle": "Trend dzienny",
-      "trendSubtitle": "Kliknij punkt, aby filtrować listę dla wybranego dnia",
+      "trendSubtitle": "Całkowite wydatki skumulowane dzień po dniu",
       "comparePrevious": "Porównaj z poprzednim okresem",
       "currentCumulative": "Bieżący okres (skumulowane)",
       "previousCumulative": "Poprzedni okres (skumulowane)",

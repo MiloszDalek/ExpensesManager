@@ -82,7 +82,12 @@
   "common": {
     "error": "Failed to load data.",
     "errorLoadingData": "Error Loading Data",
-    "somethingWentWrong": "Something went wrong"
+    "somethingWentWrong": "Something went wrong",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{total}}",
+    "loadMore": "Load more",
+    "cancel": "Cancel"
   },
   "range": {
     "select": "Select range",
@@ -624,6 +629,7 @@
     "from": "From",
     "to": "To",
     "apply": "Apply filters",
+    "applyCategories": "Apply",
     "recentCurrencies": "Recently used",
     "removeRecentCurrency": "Remove from recently used",
     "change": "Change",
@@ -908,10 +914,17 @@
     "group": "Group",
     "groupAll": "All groups",
     "category": "Category",
+    "categories": "Categories",
     "categoryAll": "All categories",
     "currency": "Currency",
     "amount": "Amount",
     "otherCategory": "Other",
+    "sorting": "Sorting",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
+    "sortHighest": "Highest amount",
+    "sortLowest": "Lowest amount",
+    "apply": "Apply",
     "budgetVsActualTitle": "Budget vs actual",
     "budgetVsActualSubtitle": "Allocated, spent and remaining per budget pool",
     "noActiveBudget": "No active budget available.",
@@ -943,7 +956,7 @@
     },
     "charts": {
       "trendTitle": "Daily trend",
-      "trendSubtitle": "Click a point to filter drill-down to that day",
+      "trendSubtitle": "Total spending accumulated day by day",
       "comparePrevious": "Compare previous period",
       "currentCumulative": "Current period (cumulative)",
       "previousCumulative": "Previous period (cumulative)",

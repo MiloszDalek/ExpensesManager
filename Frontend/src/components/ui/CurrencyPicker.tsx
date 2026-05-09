@@ -104,7 +104,7 @@ export function CurrencyPicker<TValue extends CurrencyEnum | "all" = CurrencyEnu
             <SelectGroup>
               <SelectItem value="all">
                 <div className="flex items-center justify-between gap-2 w-full">
-                  <span className="font-medium">All</span>
+                  <span className="font-medium">{t("expenseFilters.allCurrencies")}</span>
                   <span className="text-muted-foreground">—</span>
                 </div>
               </SelectItem>

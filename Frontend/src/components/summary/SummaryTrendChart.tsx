@@ -45,8 +45,8 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
             <BarChart3 className="h-5 w-5 text-primary" />
             {t("summaryPage.charts.trendTitle")}
           </CardTitle>
-          <CardDescription>
-            {t("summaryPage.charts.trendSubtitle", { defaultValue: "Total spending accumulated day by day" })}
+          <CardDescription className="sm:block hidden">
+            {t("summaryPage.charts.trendSubtitle")}
           </CardDescription>
         </div>
         <label className="flex items-center gap-2 text-sm cursor-pointer">

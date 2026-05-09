@@ -12,7 +12,6 @@ import DatePicker from "@/components/ui/date-picker";
 import { CurrencyPicker } from "@/components/ui/CurrencyPicker";
 import CategoryPicker from "@/components/expenses/CategoryPicker";
 import type {
-  PersonalExpensePeriodPreset,
   ExpenseSummaryScope,
   CurrencyEnum,
 } from "@/types";
@@ -34,7 +33,6 @@ interface SummaryFiltersProps {
   onScopeChange: (scope: ExpenseSummaryScope) => void;
   onGroupChange: (groupId: string) => void;
   onCurrencyChange: (currency: CurrencyEnum) => void;
-  onPeriodPresetChange: (preset: PersonalExpensePeriodPreset) => void;
   onSortChange: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
@@ -51,7 +49,6 @@ export default function SummaryFilters({
   onScopeChange,
   onGroupChange,
   onCurrencyChange,
-  onPeriodPresetChange,
   onSortChange,
   onDateFromChange,
   onDateToChange,
@@ -61,8 +58,8 @@ export default function SummaryFilters({
   const { t } = useTranslation();
 
   return (
-    <div className="rounded-xl border border-border bg-card/80 p-4 text-card-foreground backdrop-blur-sm space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div className="rounded-xl border border-border bg-card/80 p-4 sm:px-20 text-card-foreground backdrop-blur-sm space-y-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-1">
           <Label>{t("summaryPage.scope")}</Label>
           <Select value={draftFilters.scope} onValueChange={(value) => onScopeChange(value as ExpenseSummaryScope)}>
@@ -108,20 +105,6 @@ export default function SummaryFilters({
         </div>
 
         <div className="space-y-1">
-          <Label>{t("expenseFilters.period")}</Label>
-          <Select value={draftFilters.periodPreset} onValueChange={(value) => onPeriodPresetChange(value as PersonalExpensePeriodPreset)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="this_month">{t("expenseFilters.thisMonth")}</SelectItem>
-              <SelectItem value="previous_month">{t("expenseFilters.previousMonth")}</SelectItem>
-              <SelectItem value="custom">{t("expenseFilters.customRange")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1">
           <Label>{t("summaryPage.sorting", { defaultValue: "Sorting" })}</Label>
           <Select
             value={`${draftFilters.sortBy}-${draftFilters.sortOrder}`}
@@ -140,51 +123,49 @@ export default function SummaryFilters({
         </div>
       </div>
 
-      {draftFilters.periodPreset === "custom" ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
-            <DatePicker
-              id="summary-date-from"
-              value={draftFilters.dateFrom}
-              onChange={onDateFromChange}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="summary-date-to">{t("expenseFilters.to")}</Label>
-            <DatePicker
-              id="summary-date-to"
-              value={draftFilters.dateTo}
-              onChange={onDateToChange}
-            />
-          </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="space-y-1">
+          <Label htmlFor="summary-date-from">{t("expenseFilters.from")}</Label>
+          <DatePicker
+            id="summary-date-from"
+            value={draftFilters.dateFrom}
+            onChange={onDateFromChange}
+          />
         </div>
-      ) : null}
 
-      <div className="space-y-2">
-        <Label>{t("summaryPage.categories", { defaultValue: "Categories" })}</Label>
-        <CategoryPicker
-          mode="multiple"
-          showSelectedBadges
-          value={draftFilters.categoryIds.map(String)}
-          onValueChange={(value) => {
-            if (Array.isArray(value)) {
-              onCategoryIdsChange(value.map(Number));
-            }
-          }}
-          categories={categories}
-          allowAllSelection={false}
-          trigger="button"
-          showLabel={false}
-          mobileInset={false}
-        />
+        <div className="space-y-1">
+          <Label htmlFor="summary-date-to">{t("expenseFilters.to")}</Label>
+          <DatePicker
+            id="summary-date-to"
+            value={draftFilters.dateTo}
+            onChange={onDateToChange}
+          />
+        </div>
+
+        <div className="space-y-1 md:col-start-3">
+          <Label>{t("summaryPage.categories", { defaultValue: "Categories" })}</Label>
+          <CategoryPicker
+            mode="multiple"
+            showSelectedBadges
+            value={draftFilters.categoryIds.map(String)}
+            onValueChange={(value) => {
+              if (Array.isArray(value)) {
+                onCategoryIdsChange(value.map(Number));
+              }
+            }}
+            categories={categories}
+            allowAllSelection={false}
+            trigger="button"
+            showLabel={false}
+            mobileInset={false}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <div className="flex gap-2">
           <Button onClick={onApply} disabled={!hasPendingFilters || hasInvalidDraftDateRange}>
-            {t("expenseFilters.apply")}
+            {t("summaryPage.apply")}
           </Button>
         </div>
       </div>
