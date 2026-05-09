@@ -1545,7 +1545,7 @@
     "youOweContact": "You owe",
     "settled": "Settled",
     "settle": "Settle",
-    "settleOutsideGroup": "Outside group",
+    "settleOutsideGroup": "Outside application",
     "loadingBreakdown": "Loading group breakdown...",
     "errorBreakdown": "Could not load group breakdown.",
     "noGroupRows": "No unsettled balances in groups.",

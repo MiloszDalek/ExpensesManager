@@ -1111,17 +1111,17 @@ export default function ContactsPage() {
             <DialogDescription>
               {groupSettlementOptionsTarget
                 ? t("contactsBalancesPage.groupSettleDialogDescription", {
-                    defaultValue: "Choose how to settle in group {{group}}.",
                     group: groupSettlementOptionsTarget.groupName,
                   })
                 : ""}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
+          <div className="flex flex-row gap-2">
             <Button
               size="sm"
               variant="outline"
+              className="w-[170px] h-[34px] rounded-sm"
               disabled={
                 !groupSettlementOptionsTarget ||
                 (settleGroupCashMutation.isPending &&
