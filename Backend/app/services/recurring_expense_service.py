@@ -760,6 +760,7 @@ class RecurringExpenseService:
                     "currency": expense.currency,
                     "next_due_on": expense.next_due_on,
                     "is_group": expense.group_id is not None,
+                    "group_id": expense.group_id,
                     "group_name": group_name,
                 }
             )

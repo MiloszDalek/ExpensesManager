@@ -357,6 +357,7 @@ export interface ApiDashboardUpcomingRecurringItem {
   currency: CurrencyEnum;
   next_due_on: string;
   is_group: boolean;
+  group_id: number | null;
   group_name: string | null;
 }
 

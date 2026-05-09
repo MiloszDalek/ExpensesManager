@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Repeat2, ScanSearch } from "lucide-react";
 import { motion } from "framer-motion";
@@ -93,10 +93,13 @@ const areFiltersEqual = (
 
 export default function PersonalExpensesPage() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddRecurringDialog, setShowAddRecurringDialog] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const [mobileSection, setMobileSection] = useState<"expenses" | "recurring">("expenses");
+  const [mobileSection, setMobileSection] = useState<"expenses" | "recurring">(
+    searchParams.get("tab") === "recurring" ? "recurring" : "expenses"
+  );
   const [editingExpense, setEditingExpense] = useState<ApiPersonalExpenseResponse | null>(null);
   const [editingRecurringExpense, setEditingRecurringExpense] = useState<ApiRecurringExpenseResponse | null>(null);
   const [draftFilters, setDraftFilters] = useState<PersonalExpensesFiltersState>(getInitialFilters);

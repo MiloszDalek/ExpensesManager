@@ -145,6 +145,7 @@ class DashboardUpcomingRecurringItem(BaseModel):
     currency: CurrencyEnum
     next_due_on: date
     is_group: bool
+    group_id: int | None
     group_name: str | None
 
 

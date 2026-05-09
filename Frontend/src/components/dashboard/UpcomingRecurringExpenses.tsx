@@ -9,6 +9,7 @@ import { toFiniteNumber } from "@/utils/toFiniteNumber";
 import { cn } from "@/lib/utils";
 import type { CurrencyEnum } from "@/types/enums";
 import type { ApiDashboardUpcomingRecurringItem } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 interface UpcomingRecurringExpensesProps {
   currency: CurrencyEnum;
@@ -16,6 +17,7 @@ interface UpcomingRecurringExpensesProps {
 
 export function UpcomingRecurringExpenses({ currency }: UpcomingRecurringExpensesProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["recurring-expenses", "upcoming", currency],
@@ -91,7 +93,14 @@ export function UpcomingRecurringExpenses({ currency }: UpcomingRecurringExpense
             return (
               <div
                 key={item.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => {
+                  if (item.is_group && item.group_id) {
+                    navigate(`/groups/${item.group_id}?tab=recurring`);
+                  } else {
+                    navigate("/personal?tab=recurring");
+                  }
+                }}
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <div className={cn(

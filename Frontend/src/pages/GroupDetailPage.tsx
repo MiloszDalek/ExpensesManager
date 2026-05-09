@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -85,6 +85,7 @@ const getErrorStatus = (error: unknown): number | undefined =>
 export default function GroupDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { id } = useParams();
@@ -94,7 +95,12 @@ export default function GroupDetailPage() {
   const [showEditGroupDialog, setShowEditGroupDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
   const [editingRecurringExpense, setEditingRecurringExpense] = useState<ApiRecurringExpenseResponse | null>(null);
-  const [mobileSection, setMobileSection] = useState<"expenses" | "balances" | "recurring" | "members">("expenses");
+  const [mobileSection, setMobileSection] = useState<"expenses" | "balances" | "recurring" | "members">(
+    searchParams.get("tab") === "recurring" ? "recurring" :
+    searchParams.get("tab") === "balances" ? "balances" :
+    searchParams.get("tab") === "members" ? "members" :
+    "expenses"
+  );
   const [settlementDialogTarget, setSettlementDialogTarget] = useState<{
     userId: number;
     memberName: string;
