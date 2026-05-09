@@ -17,7 +17,7 @@ const MobileSummarySwitcher = memo(function MobileSummarySwitcher({ view, onView
           type="button"
           size="sm"
           variant={view === "charts" ? "default" : "outline"}
-          className="h-8 px-1 text-[11px]"
+          className={`h-8 px-2 text-sm ${view !== "charts" ? "border border-border bg-card/80" : ""}`}
           onClick={() => onViewChange("charts")}
         >
           {t("summaryPage.mobile.charts", { defaultValue: "Charts" })}
@@ -26,7 +26,7 @@ const MobileSummarySwitcher = memo(function MobileSummarySwitcher({ view, onView
           type="button"
           size="sm"
           variant={view === "transactions" ? "default" : "outline"}
-          className="h-8 px-1 text-[11px]"
+          className={`h-8 px-2 text-sm ${view !== "transactions" ? "border border-border bg-card/80" : ""}`}
           onClick={() => onViewChange("transactions")}
         >
           {t("summaryPage.mobile.transactions", { defaultValue: "Transactions" })}

@@ -6,6 +6,7 @@ import { dashboardApi } from "@/api/dashboardApi";
 import { formatCurrency } from "@/utils/currency";
 import { toFiniteNumber } from "@/utils/toFiniteNumber";
 import type { CurrencyEnum } from "@/types/enums";
+import { useNavigate } from "react-router-dom";
 
 interface SettlementsSummaryProps {
   currency: CurrencyEnum;
@@ -13,6 +14,7 @@ interface SettlementsSummaryProps {
 
 export function SettlementsSummary({ currency }: SettlementsSummaryProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard", "settlements-summary", currency],
@@ -85,7 +87,10 @@ export function SettlementsSummary({ currency }: SettlementsSummaryProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-3">
+          <div
+            className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => navigate("/contacts")}
+          >
             <span className="text-sm text-muted-foreground">
               {t("dashboard.settlementsSummary.othersOweYou", { defaultValue: "Others owe you" })}
             </span>
@@ -93,7 +98,10 @@ export function SettlementsSummary({ currency }: SettlementsSummaryProps) {
               {formatCurrency(owedToMe, currency)}
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-lg border p-3">
+          <div
+            className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => navigate("/contacts")}
+          >
             <span className="text-sm text-muted-foreground">
               {t("dashboard.settlementsSummary.youOwe", { defaultValue: "You owe" })}
             </span>

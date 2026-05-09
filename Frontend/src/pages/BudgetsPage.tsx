@@ -776,7 +776,7 @@ export default function BudgetsPage() {
                 type="button"
                 size="sm"
                 variant={mobileSection === "periods" ? "default" : "outline"}
-                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                className={`h-8 px-1 text-[12px] md:h-10 md:px-3 md:text-sm ${mobileSection !== "periods" ? "border border-border bg-card/80" : ""}`}
                 onClick={() => setMobileSection("periods")}
               >
                 {t("budgets.tabs.periods", { defaultValue: "Periods" })}
@@ -785,7 +785,7 @@ export default function BudgetsPage() {
                 type="button"
                 size="sm"
                 variant={mobileSection === "income" ? "default" : "outline"}
-                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                className={`h-8 px-1 text-[12px] md:h-10 md:px-3 md:text-sm ${mobileSection !== "income" ? "border border-border bg-card/80" : ""}`}
                 onClick={() => setMobileSection("income")}
               >
                 {t("budgets.tabs.income", { defaultValue: "Income" })}
@@ -794,7 +794,7 @@ export default function BudgetsPage() {
                 type="button"
                 size="sm"
                 variant={mobileSection === "pools" ? "default" : "outline"}
-                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                className={`h-8 px-1 text-[12px] md:h-10 md:px-3 md:text-sm ${mobileSection !== "pools" ? "border border-border bg-card/80" : ""}`}
                 onClick={() => setMobileSection("pools")}
               >
                 {t("budgets.tabs.pools", { defaultValue: "Pools" })}
@@ -803,7 +803,7 @@ export default function BudgetsPage() {
                 type="button"
                 size="sm"
                 variant={mobileSection === "goals" ? "default" : "outline"}
-                className="h-8 px-1 text-[11px] md:h-10 md:px-3 md:text-sm"
+                className={`h-8 px-1 text-[12px] md:h-10 md:px-3 md:text-sm ${mobileSection !== "goals" ? "border border-border bg-card/80" : ""}`}
                 onClick={() => setMobileSection("goals")}
               >
                 {t("budgets.tabs.goals", { defaultValue: "Goals" })}

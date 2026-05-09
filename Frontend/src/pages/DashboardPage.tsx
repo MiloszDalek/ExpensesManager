@@ -27,7 +27,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8 relative">
+      <PageInfoButton pageKey="dashboard" autoOpen={true} className="absolute top-4 right-4 lg:hidden" />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -39,7 +40,13 @@ export default function DashboardPage() {
                   username: user.username?.split(" ")[0] || "there"
                 })}
               </h1>
-              <PageInfoButton pageKey="dashboard" autoOpen={true} className="lg:hidden" />
+              <div className="flex items-center gap-2">
+                <CurrencyPicker
+                  selectedCurrency={selectedCurrency}
+                  onCurrencyChange={setSelectedCurrency}
+                  className="w-32 md:hidden"
+                />
+              </div>
             </div>
             <p className="text-muted-foreground mt-2">
               {t("dashboard.subtitle", { defaultValue: "Your financial overview at a glance" })}
@@ -49,7 +56,7 @@ export default function DashboardPage() {
             <CurrencyPicker
               selectedCurrency={selectedCurrency}
               onCurrencyChange={setSelectedCurrency}
-              className="w-40"
+              className="w-40 hidden md:block"
             />
             <PageInfoButton pageKey="dashboard" autoOpen={true} className="hidden lg:inline-flex" />
           </div>

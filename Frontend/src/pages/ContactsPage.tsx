@@ -785,7 +785,7 @@ export default function ContactsPage() {
               type="button"
               size="sm"
               variant={mobileSection === "contacts" ? "default" : "outline"}
-              className="h-8 px-2 text-[11px]"
+              className={`h-8 px-2 text-sm ${mobileSection !== "contacts" ? "border border-border bg-card/80" : ""}`}
               onClick={() => setMobileSection("contacts")}
             >
               {t("contactsBalancesPage.mobileTabContacts")}
@@ -794,7 +794,7 @@ export default function ContactsPage() {
               type="button"
               size="sm"
               variant={mobileSection === "invitations" ? "default" : "outline"}
-              className="h-8 px-2 text-[11px]"
+              className={`h-8 px-2 text-sm ${mobileSection !== "invitations" ? "border border-border bg-card/80" : ""}`}
               onClick={() => setMobileSection("invitations")}
             >
               {t("contactsBalancesPage.mobileTabInvitations")}

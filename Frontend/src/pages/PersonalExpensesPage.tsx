@@ -546,7 +546,9 @@ export default function PersonalExpensesPage() {
               type="button"
               size="sm"
               variant={mobileSection === "expenses" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-2 text-sm border border-border ${
+                mobileSection === "expenses" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("expenses")}
             >
               {t("personalExpensesPage.expenseCount", { defaultValue: "Expenses" })}
@@ -555,7 +557,9 @@ export default function PersonalExpensesPage() {
               type="button"
               size="sm"
               variant={mobileSection === "recurring" ? "default" : "outline"}
-              className="h-8 px-1 text-[11px]"
+              className={`h-8 px-2 text-sm border border-border ${
+                mobileSection === "recurring" ? "bg-primary text-primary-foreground" : "bg-card/80"
+              }`}
               onClick={() => setMobileSection("recurring")}
             >
               {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
@@ -634,7 +638,7 @@ export default function PersonalExpensesPage() {
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
                   variant="outline"
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto border border-border bg-card/80"
                 >
                   {isFetchingNextPage ? (
                     <LoadingSpinner className="mr-2 h-4 w-4" />
