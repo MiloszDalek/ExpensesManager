@@ -1377,7 +1377,7 @@ export default function GroupDetailPage() {
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-xl font-semibold text-foreground hidden md:block">{t("groupDetailPage.membersSection")}</h2>
               {isCurrentUserAdmin && (
-                <Button size="sm" variant="outline" onClick={() => setShowAddMemberDialog(true)}>
+                <Button size="sm" variant="outline" onClick={() => setShowAddMemberDialog(true)} className="border border-border bg-card/80">
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t("groupDetailPage.addMember")}
                 </Button>
