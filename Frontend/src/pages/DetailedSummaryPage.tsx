@@ -6,6 +6,7 @@ import { Download, ListFilter, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import PageInfoButton from "@/components/help/PageInfoButton";
 import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
@@ -390,7 +391,7 @@ export default function DetailedSummaryPage() {
 
   return (
     <div className="min-h-screen p-4 pb-24 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-2">
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -399,10 +400,11 @@ export default function DetailedSummaryPage() {
           <div>
             <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
-              <PageInfoButton pageKey="summaries" autoOpen={true} />
+              <PageInfoButton pageKey="summaries" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="mt-2 text-muted-foreground">
-              {t("summaryPage.subtitle")} · {t("summaryPage.total")}: <span className="font-semibold text-primary">{totalLabel || "0.00"}</span>
+              {t("summaryPage.subtitle")}
+               {/* · {t("summaryPage.total")}: <span className="font-semibold text-primary">{totalLabel || "0.00"}</span> */}
             </p>
           </div>
 
@@ -415,8 +417,18 @@ export default function DetailedSummaryPage() {
               <Download className="mr-2 h-4 w-4" />
               {pendingExportFormat ? t("summaryPage.exporting") : t("summaryPage.export", { defaultValue: "Export" })}
             </Button>
+            <PageInfoButton pageKey="summaries" autoOpen={true} className="hidden lg:inline-flex" />
           </div>
         </motion.div>
+
+        <div className="md:hidden">
+          <Card className="mb-8 py-2 border border-border bg-card/80">
+            <CardContent className="text-center">
+              <p className="text-sm text-muted-foreground mb-1">{t("summaryPage.total")}:</p>
+              <p className="text-2xl font-bold text-primary">{totalLabel || "0.00"}</p>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="hidden md:block">
           <h2 className="mb-3 flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -439,6 +451,15 @@ export default function DetailedSummaryPage() {
             onApply={handleApplyFilters}
           />
         </div>
+
+          <div className="justify-center hidden md:flex mt-4">
+            <Card className="mb-6 py-3 border border-border bg-card/80 min-w-lg">
+              <CardContent className="text-center">
+                <p className="text-md text-muted-foreground mb-1">{t("summaryPage.total")}:</p>
+                <p className="text-2xl font-bold text-primary">{totalLabel || "0.00"}</p>
+              </CardContent>
+            </Card>
+          </div>
 
         <MobileSummarySwitcher view={mobileView} onViewChange={setMobileView} />
 

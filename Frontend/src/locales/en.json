@@ -877,7 +877,7 @@
     "title": "Detailed Summaries",
     "subtitle": "Analyze your personal and group spending in one place",
     "transactionsTitle": "Transactions",
-    "total": "Total",
+    "total": "Sum in selected period",
     "export": "Export",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export XLSX",

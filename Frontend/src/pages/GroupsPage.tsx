@@ -182,7 +182,7 @@ export default function GroupsPage() {
           <div>
             <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("groupsPage.title")}</h1>
-              <PageInfoButton pageKey="groups" autoOpen={true} />
+              <PageInfoButton pageKey="groups" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="text-muted-foreground mt-2">
               {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>
@@ -196,6 +196,7 @@ export default function GroupsPage() {
               <Plus className="w-4 h-4 mr-2" />
               {t("groupsPage.createGroup")}
             </Button>
+            <PageInfoButton pageKey="groups" autoOpen={true} className="hidden lg:inline-flex" />
           </div>
         </motion.div>
 
