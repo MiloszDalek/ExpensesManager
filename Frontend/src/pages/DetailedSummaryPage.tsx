@@ -390,8 +390,11 @@ export default function DetailedSummaryPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 pb-24 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-2">
+    <div className="min-h-screen p-4 pb-24 md:p-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2 md:hidden">
+        <PageInfoButton pageKey="summaries" autoOpen={true} />
+      </div>
+      <div className="mx-auto max-w-7xl space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -400,7 +403,6 @@ export default function DetailedSummaryPage() {
           <div>
             <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold md:text-4xl">{t("summaryPage.title")}</h1>
-              <PageInfoButton pageKey="summaries" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="mt-2 text-muted-foreground">
               {t("summaryPage.subtitle")}

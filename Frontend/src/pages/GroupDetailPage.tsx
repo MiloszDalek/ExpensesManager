@@ -918,17 +918,20 @@ export default function GroupDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2 md:hidden">
+        <PageInfoButton pageKey="groupDetail" autoOpen={true} />
+      </div>
       <div className="mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12"
         >
-          <div className="min-w-0 lg:col-span-7 lg:col-start-2">
+          <div className="min-w-0 lg:col-span-7 lg:col-start-2 pr-12 md:pr-0">
             <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <h1 className="max-w-full break-all text-3xl font-bold text-foreground md:text-4xl">
+                <h1 className="max-w-full break-words text-3xl font-bold text-foreground md:text-4xl">
                   {formatGroupName(group.name)}
                 </h1>
 
@@ -944,7 +947,6 @@ export default function GroupDetailPage() {
                   </Button>
                 ) : null}
               </div>
-              <PageInfoButton pageKey="groupDetail" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="mt-2 max-w-3xl text-muted-foreground [overflow-wrap:anywhere]">
               {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}

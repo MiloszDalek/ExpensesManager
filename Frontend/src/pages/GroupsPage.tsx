@@ -172,7 +172,10 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 pb-24 md:p-8 md:pb-8">
+    <div className="min-h-screen p-4 pb-24 md:p-8 md:pb-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2 md:hidden">
+        <PageInfoButton pageKey="groups" autoOpen={true} />
+      </div>
       <div className="mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -182,7 +185,6 @@ export default function GroupsPage() {
           <div>
             <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
               <h1 className="text-3xl font-bold text-foreground md:text-4xl">{t("groupsPage.title")}</h1>
-              <PageInfoButton pageKey="groups" autoOpen={true} className="lg:hidden" />
             </div>
             <p className="text-muted-foreground mt-2">
               {t("groupsPage.subtitle")} · {t("groupsPage.total")}: <span className="font-semibold text-primary">{groups.length}</span>

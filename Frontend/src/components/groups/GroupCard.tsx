@@ -32,7 +32,7 @@ export default function GroupCard({ group, index }: GroupCardProps) {
         <CardContent className="flex min-h-[230px] md:min-h-[270px] min-w-0 flex-col overflow-hidden md:p-5">
           <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="overflow-hidden break-all text-lg font-semibold leading-tight text-foreground">
+              <h3 className="overflow-hidden break-words text-lg font-semibold leading-tight text-foreground">
                 {formatGroupName(group.name)}
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
