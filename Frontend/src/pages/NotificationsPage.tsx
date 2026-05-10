@@ -9,7 +9,7 @@ import { queryKeys } from "@/api/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
+import { LoadingSpinner, LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
 import {
   Select,
   SelectContent,
@@ -333,8 +333,8 @@ export default function NotificationsPage() {
           </CardHeader>
           <CardContent className="pt-6">
             {isLoading ? (
-              <div className="py-10 text-center text-sm text-muted-foreground">
-                {t("notifications.loading")}
+              <div className="py-10 flex items-center justify-center">
+                <LoadingSpinner className="h-8 w-8" />
               </div>
             ) : isError ? (
               <div className="py-10 text-center text-sm text-destructive">
