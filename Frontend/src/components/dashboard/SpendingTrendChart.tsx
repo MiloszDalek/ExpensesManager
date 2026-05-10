@@ -212,13 +212,13 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
         </div>
       </CardHeader>
       <CardContent className="px-0 sm:px-6">
-        <div className={`sm:h-[325px] h-[200px] w-full ${compare ? 'h-[230px]' : ''}`}>
+        <div className="sm:h-[325px] h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%" minHeight={200}>
             <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="trendColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="15%" stopColor="#16a34a" stopOpacity={0.35}/>
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                  <stop offset="15%" stopColor="var(--primary)" stopOpacity={0.35}/>
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="prevTrendColor" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="15%" stopColor="#eab308" stopOpacity={0.3}/>
@@ -239,11 +239,10 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
                 tickFormatter={(value) => formatCompactCurrency(Number(value), currency, { noDecimals: true })}
               />
               <Tooltip
-                formatter={(value: any, name: any) => {
-                  const label =
-                    name === "current"
-                      ? t("dashboard.spendingTrend.current") || "Current"
-                      : t("dashboard.spendingTrend.previous") || "Previous";
+                formatter={(value: any, _name: any, props: any) => {
+                  const label = props.dataKey === "current"
+                    ? t("dashboard.spendingTrend.current") || "Current"
+                    : t("dashboard.spendingTrend.previous") || "Previous";
                   return [formatCurrency(value || 0, currency), label];
                 }}
                 contentStyle={{
@@ -257,7 +256,7 @@ export function SpendingTrendChart({ currency, range, onRangeChange }: SpendingT
                 type="monotone"
                 dataKey="current"
                 name={t("dashboard.spendingTrend.currentCumulative", { defaultValue: "Current period (cumulative)" })}
-                stroke="#16a34a"
+                stroke="var(--primary)"
                 strokeWidth={2.5}
                 fillOpacity={1}
                 fill="url(#trendColor)"

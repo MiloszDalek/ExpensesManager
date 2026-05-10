@@ -125,8 +125,8 @@
       "current": "Current",
       "previous": "Previous",
       "cumulative": "Cumulative",
-      "currentCumulative": "Current period (cumulative)",
-      "previousCumulative": "Previous period (cumulative)",
+      "currentCumulative": "Current period",
+      "previousCumulative": "Previous period",
       "chartNote": "Install Recharts for advanced chart visualization"
     },
     "settlementsSummary": {
@@ -959,8 +959,9 @@
       "trendTitle": "Daily trend",
       "trendSubtitle": "Total spending accumulated day by day",
       "comparePrevious": "Compare previous period",
-      "currentCumulative": "Current period (cumulative)",
-      "previousCumulative": "Previous period (cumulative)",
+      "current": "Current period",
+      "currentCumulative": "Current period",
+      "previousCumulative": "Previous period",
       "granularityDaily": "Daily",
       "granularityWeekly": "Weekly",
       "granularityMonthly": "Monthly",

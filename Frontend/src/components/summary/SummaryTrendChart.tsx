@@ -63,13 +63,13 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
         {data.length === 0 ? (
           <p className="py-10 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
         ) : (
-          <div className={`sm:h-[325px] h-[220px] w-full ${showComparePrevious ? 'h-[250px]' : ''}`}>
+          <div className="sm:h-[325px] h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={220}>
               <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="currentFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="15%" stopColor="#16a34a" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                    <stop offset="15%" stopColor="var(--primary)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="previousFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="15%" stopColor="#eab308" stopOpacity={0.3} />
@@ -88,27 +88,20 @@ const SummaryTrendChart = memo(function SummaryTrendChart({
                   className="text-muted-foreground"
                   tickFormatter={(value) => formatCompactCurrency(Number(value), currency, { noDecimals: true })}/>
                 <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload || !payload.length) return null;
-                    const formattedDate = label ? format(parseISO(label as string), "yyyy-MM-dd") : "";
-                    return (
-                      <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                        <p className="text-sm font-medium mb-1">{formattedDate}</p>
-                        {payload.map((entry) => (
-                          <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
-                            {entry.name}: {formatCurrency(Number(entry.value ?? 0), currency)}
-                          </p>
-                        ))}
-                      </div>
-                    );
+                  formatter={(value: any, _name: any, props: any) => {
+                    const label = props.dataKey === "current"
+                      ? t("summaryPage.charts.current") || "Current"
+                      : t("summaryPage.charts.previous") || "Previous";
+                    return [formatCurrency(value || 0, currency), label];
                   }}
+                  contentStyle={{ backgroundColor: "transparent", border: "none" }}
                 />
                 <Legend />
                 <Area
                   type="monotone"
                   dataKey="current"
                   name={t("summaryPage.charts.currentCumulative", { defaultValue: "Current period (cumulative)" })}
-                  stroke="#16a34a"
+                  stroke="var(--primary)"
                   strokeWidth={2.5}
                   fill="url(#currentFill)"
                 />

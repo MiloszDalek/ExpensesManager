@@ -115,8 +115,8 @@
       "current": "Bieżący",
       "previous": "Poprzedni",
       "cumulative": "Skumulowane",
-      "currentCumulative": "Bieżący okres (skumulowane)",
-      "previousCumulative": "Poprzedni okres (skumulowane)",
+      "currentCumulative": "Bieżący okres",
+      "previousCumulative": "Poprzedni okres",
       "chartNote": "Zainstaluj Recharts dla zaawansowanej wizualizacji wykresów"
     },
     "settlementsSummary": {
@@ -949,8 +949,9 @@
       "trendTitle": "Trend dzienny",
       "trendSubtitle": "Całkowite wydatki skumulowane dzień po dniu",
       "comparePrevious": "Porównaj z poprzednim okresem",
-      "currentCumulative": "Bieżący okres (skumulowane)",
-      "previousCumulative": "Poprzedni okres (skumulowane)",
+      "current": "Bieżący okres",
+      "currentCumulative": "Bieżący okres",
+      "previousCumulative": "Poprzedni okres",
       "granularityDaily": "Dziennie",
       "granularityWeekly": "Tygodniowo",
       "granularityMonthly": "Miesięcznie",
