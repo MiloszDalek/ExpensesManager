@@ -515,31 +515,33 @@ export default function PersonalExpensesPage() {
             </p>
           </div>
 
-          <div className="hidden md:flex md:flex-col md:items-end md:gap-2">
+          <div className="hidden md:flex md:flex-row md:items-start md:justify-end md:gap-2">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <Button
+                onClick={() => setShowAddDialog(true)}
+                className="inline-flex w-full justify-center shadow-lg md:w-36"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {t("personalExpensesPage.addExpense")}
+              </Button>
+              <Button
+                variant="outline"
+                className="inline-flex w-full justify-center md:w-36 border border-border bg-card/80"
+                onClick={() => setShowAddRecurringDialog(true)}
+              >
+                <Repeat2 className="w-4 h-4 mr-2" />
+                {t("personalExpensesPage.addRecurringExpense", { defaultValue: "Add recurring" })}
+              </Button>
+              <Button
+                variant="outline"
+                className="inline-flex w-full justify-center md:w-36 border border-border bg-card/80"
+                onClick={() => navigate("/receipt-scan")}
+              >
+                <ScanSearch className="w-4 h-4 mr-2" />
+                {t("personalExpensesPage.scanReceipt")}
+              </Button>
+            </div>
             <PageInfoButton pageKey="personal" autoOpen={true} className="hidden lg:inline-flex" />
-            <Button
-              onClick={() => setShowAddDialog(true)}
-              className="inline-flex w-full justify-center shadow-lg md:w-36"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t("personalExpensesPage.addExpense")}
-            </Button>
-            <Button
-              variant="outline"
-              className="inline-flex w-full justify-center md:w-36"
-              onClick={() => setShowAddRecurringDialog(true)}
-            >
-              <Repeat2 className="w-4 h-4 mr-2" />
-              {t("personalExpensesPage.addRecurringExpense", { defaultValue: "Add recurring" })}
-            </Button>
-            <Button
-              variant="outline"
-              className="inline-flex w-full justify-center md:w-36"
-              onClick={() => navigate("/receipt-scan")}
-            >
-              <ScanSearch className="w-4 h-4 mr-2" />
-              {t("personalExpensesPage.scanReceipt")}
-            </Button>
           </div>
         </motion.div>
 

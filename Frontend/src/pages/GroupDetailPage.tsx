@@ -1113,7 +1113,7 @@ export default function GroupDetailPage() {
           >
             <div className={mobileSection === "recurring" ? "hidden md:block" : ""}>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="text-xl font-semibold text-foreground hidden md:block">
                   {t("groupDetailPage.balanceBreakdownTitle")}
                 </h2>
               </div>
@@ -1185,32 +1185,31 @@ export default function GroupDetailPage() {
                                 <p className="truncate text-sm font-medium text-foreground">{row.memberName}</p>
                                 <p className="truncate text-xs text-muted-foreground">{row.relationLabel}</p>
                               </div>
-                              <p
-                                className={`whitespace-nowrap text-sm font-semibold ${
-                                  row.amount > 0 ? "text-emerald-700" : row.amount < 0 ? "text-rose-700" : "text-foreground"
-                                }`}
-                              >
-                                {formatCurrency(row.absoluteAmount, group.currency as CurrencyEnum)}
-                              </p>
-                            </div>
-
-                            {row.amount < 0 ? (
-                              <div className="flex">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSettlementDialogTarget({
-                                      userId: row.userId,
-                                      memberName: row.memberName,
-                                      absoluteAmount: row.absoluteAmount,
-                                    });
-                                  }}
+                              <div className="flex items-center gap-2">
+                                {row.amount < 0 ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSettlementDialogTarget({
+                                        userId: row.userId,
+                                        memberName: row.memberName,
+                                        absoluteAmount: row.absoluteAmount,
+                                      });
+                                    }}
+                                  >
+                                    {t("groupDetailPage.settle", { defaultValue: "Settle" })}
+                                  </Button>
+                                ) : null}
+                                <p
+                                  className={`whitespace-nowrap text-sm font-semibold ${
+                                    row.amount > 0 ? "text-emerald-700" : row.amount < 0 ? "text-rose-700" : "text-foreground"
+                                  }`}
                                 >
-                                  {t("groupDetailPage.settle", { defaultValue: "Settle" })}
-                                </Button>
+                                  {formatCurrency(row.absoluteAmount, group.currency as CurrencyEnum)}
+                                </p>
                               </div>
-                            ) : null}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1260,7 +1259,7 @@ export default function GroupDetailPage() {
 
             <div className={mobileSection === "balances" ? "hidden md:block" : ""}>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h3 className="text-base font-semibold text-foreground">
+                <h3 className="text-base font-semibold text-foreground hidden md:block">
                   {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -1334,7 +1333,7 @@ export default function GroupDetailPage() {
 
           <div className={`order-1 md:col-span-2 lg:order-2 lg:col-span-6 ${mobileSection !== "expenses" ? "hidden md:block" : ""}`}>
             <div className="mx-auto mb-3 flex w-full max-w-xl items-center justify-between gap-2 md:max-w-2xl lg:max-w-5xl">
-              <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.expensesSection")}</h2>
+              <h2 className="text-xl font-semibold text-foreground hidden md:block">{t("groupDetailPage.expensesSection")}</h2>
             </div>
             <div className="mx-auto w-full max-w-xl md:max-w-2xl lg:max-w-5xl">
               <GroupExpensesList
@@ -1376,7 +1375,7 @@ export default function GroupDetailPage() {
 
           <div className={`order-3 space-y-4 md:col-span-1 lg:col-span-3 ${mobileSection !== "members" ? "hidden md:block" : ""}`}>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-foreground">{t("groupDetailPage.membersSection")}</h2>
+              <h2 className="text-xl font-semibold text-foreground hidden md:block">{t("groupDetailPage.membersSection")}</h2>
               {isCurrentUserAdmin && (
                 <Button size="sm" variant="outline" onClick={() => setShowAddMemberDialog(true)}>
                   <UserPlus className="mr-2 h-4 w-4" />
@@ -1491,17 +1490,17 @@ export default function GroupDetailPage() {
             <DialogDescription>
               {settlementDialogTarget
                 ? t("groupDetailPage.settlementDialogDescription", {
-                    defaultValue: "Choose how to settle with {{member}}.",
                     member: settlementDialogTarget.memberName,
                   })
                 : ""}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
+          <div className="flex flex-row gap-2">
             <Button
               size="sm"
               variant="outline"
+              className="flex-1 h-[34px] rounded-sm"
               disabled={
                 !settlementDialogTarget ||
                 (settleGroupCashMutation.isPending &&
@@ -1525,7 +1524,7 @@ export default function GroupDetailPage() {
             </Button>
 
             {isPayPalButtonEnabled ? (
-              <div className="w-[165px]">
+              <div className="flex-1">
                 <PayPalCurrencyButtons
                   currency={group.currency}
                   fundingSource="paypal"

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import DialogInfoButton from "@/components/help/DialogInfoButton";
 import {
   Dialog,
   DialogContent,
@@ -938,9 +939,6 @@ export default function ContactsPage() {
                                         </p>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                                          {formatCurrency(groupRow.absoluteAmount, groupRow.groupCurrency as CurrencyEnum)}
-                                        </p>
                                         {groupRow.amount < 0 ? (
                                           <>
                                             <Button
@@ -961,6 +959,9 @@ export default function ContactsPage() {
                                             </Button>
                                           </>
                                         ) : null}
+                                        <p className={`whitespace-nowrap text-sm font-semibold ${groupRow.amount > 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                                          {formatCurrency(groupRow.absoluteAmount, groupRow.groupCurrency as CurrencyEnum)}
+                                        </p>
                                       </div>
                                     </div>
                                   ))}
@@ -1107,7 +1108,10 @@ export default function ContactsPage() {
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t("contactsBalancesPage.settle", { defaultValue: "Settle" })}</DialogTitle>
+            <div className="flex items-center gap-2">
+              <DialogTitle>{t("contactsBalancesPage.settle", { defaultValue: "Settle" })}</DialogTitle>
+              <DialogInfoButton dialogKey="groupSettlement" autoOpen={true} />
+            </div>
             <DialogDescription>
               {groupSettlementOptionsTarget
                 ? t("contactsBalancesPage.groupSettleDialogDescription", {

@@ -1202,6 +1202,7 @@
     "settleCash": "Settle cash",
     "settlingCash": "Settling...",
     "settleOutsideApp": "Settle outside app",
+    "settlementDialogDescription": "Choose how to settle with {{member}}.",
     "settlementOutsideConfirmTitle": "Record settlement outside the app?",
     "settlementOutsideConfirmDescription": "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
     "settlementOutsideConfirmAction": "Record settlement",

@@ -1192,6 +1192,7 @@
     "settleCash": "Rozlicz gotówką",
     "settlingCash": "Rozliczanie...",
     "settleOutsideApp": "Rozlicz poza aplikacją",
+    "settlementDialogDescription": "Wybierz sposób rozliczenia z {{member}}.",
     "settlementOutsideConfirmTitle": "Zapisać rozliczenie poza aplikacją?",
     "settlementOutsideConfirmDescription": "Czy na pewno chcesz zapisać rozliczenie poza aplikacją na kwotę {{amount}} {{currency}}?",
     "settlementOutsideConfirmAction": "Zapisz rozliczenie",
