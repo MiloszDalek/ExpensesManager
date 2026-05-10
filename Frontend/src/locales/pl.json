@@ -77,7 +77,21 @@
     "next": "Następna",
     "pageOf": "Strona {{page}} z {{total}}",
     "loadMore": "Załaduj więcej",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "months": {
+      "jan": "Sty",
+      "feb": "Lut",
+      "mar": "Mar",
+      "apr": "Kwi",
+      "may": "Maj",
+      "jun": "Cze",
+      "jul": "Lip",
+      "aug": "Sie",
+      "sep": "Wrz",
+      "oct": "Paź",
+      "nov": "Lis",
+      "dec": "Gru"
+    }
   },
   "range": {
     "select": "Wybierz zakres",

@@ -54,9 +54,88 @@ export function GroupSpendingTrendChart({
     amount: toFiniteNumber(item.amount),
   })) ?? [];
 
+  // Format labels for monthly, daily, and weekly intervals to show month names
+  const formatLabel = (label: string) => {
+    const monthNames = [
+      t("common.months.jan", { defaultValue: "Jan" }),
+      t("common.months.feb", { defaultValue: "Feb" }),
+      t("common.months.mar", { defaultValue: "Mar" }),
+      t("common.months.apr", { defaultValue: "Apr" }),
+      t("common.months.may", { defaultValue: "May" }),
+      t("common.months.jun", { defaultValue: "Jun" }),
+      t("common.months.jul", { defaultValue: "Jul" }),
+      t("common.months.aug", { defaultValue: "Aug" }),
+      t("common.months.sep", { defaultValue: "Sep" }),
+      t("common.months.oct", { defaultValue: "Oct" }),
+      t("common.months.nov", { defaultValue: "Nov" }),
+      t("common.months.dec", { defaultValue: "Dec" }),
+    ];
+
+    if (interval === "monthly") {
+      // Try to parse as YYYY-MM format and format as month name
+      const parts = label.split("-");
+      if (parts.length === 2) {
+        const year = parts[0];
+        const month = parts[1];
+        const monthIndex = parseInt(month, 10) - 1;
+        if (monthIndex >= 0 && monthIndex < 12) {
+          return `${monthNames[monthIndex]} ${year.slice(-2)}`;
+        }
+      }
+    } else if (interval === "daily") {
+      // Try to parse as YYYY-MM-DD format and format as day and month name
+      const parts = label.split("-");
+      if (parts.length === 3) {
+        const day = parseInt(parts[2], 10);
+        const month = parseInt(parts[1], 10);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          return `${day} ${monthNames[month - 1]}`;
+        }
+      }
+    } else if (interval === "weekly") {
+      // Try to parse as YYYY-W## format and format as month name and week in month
+      const match = label.match(/(\d{4})-W(\d+)/);
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const weekNumber = parseInt(match[2], 10);
+        // Calculate the date of the first day of the given week (Monday)
+        const janFirst = new Date(year, 0, 1);
+        const firstDayOfYear = janFirst.getDay();
+        const firstThursday = new Date(year, 0, 1 + ((4 - firstDayOfYear + 7) % 7));
+        const weekStart = new Date(firstThursday);
+        weekStart.setDate(firstThursday.getDate() - 3 + (weekNumber - 1) * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+
+        // Determine which month to use based on where most of the week falls
+        const weekMidpoint = new Date(weekStart);
+        weekMidpoint.setDate(weekStart.getDate() + 3);
+        const primaryMonthIndex = weekMidpoint.getMonth();
+
+        return `${monthNames[primaryMonthIndex]}-${weekNumber}`;
+      }
+    }
+    return label;
+  };
+
+  const formattedChartData = chartData.map((item) => ({
+    ...item,
+    label: formatLabel(item.label),
+  }));
+
   // Trim leading zeros: find first non-zero amount and slice from there
-  const firstNonZeroIndex = chartData.findIndex((d) => d.amount > 0);
-  const trimmedData = firstNonZeroIndex >= 0 ? chartData.slice(firstNonZeroIndex) : chartData;
+  // Always trim, but ensure at least 3 data points remain
+  const firstNonZeroIndex = formattedChartData.findIndex((d) => d.amount > 0);
+  let trimmedData = formattedChartData;
+  if (firstNonZeroIndex >= 0) {
+    const remainingAfterFirstNonZero = formattedChartData.length - firstNonZeroIndex;
+    if (remainingAfterFirstNonZero >= 3) {
+      trimmedData = formattedChartData.slice(firstNonZeroIndex);
+    } else if (formattedChartData.length >= 3) {
+      // Trim to leave exactly 3 data points
+      trimmedData = formattedChartData.slice(formattedChartData.length - 3);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -142,9 +221,9 @@ export function GroupSpendingTrendChart({
                   tick={{ fontSize: 12 }}
                   interval="preserveStartEnd"
                   className="text-muted-foreground"
-                  angle={interval === "daily" ? -45 : 0}
-                  textAnchor={interval === "daily" ? "end" : "middle"}
-                  height={interval === "daily" ? 60 : 30}
+                  angle={interval === "daily" || interval === "weekly" || interval === "monthly" ? -45 : 0}
+                  textAnchor={interval === "daily" || interval === "weekly" || interval === "monthly" ? "end" : "middle"}
+                  height={interval === "daily" || interval === "weekly" || interval === "monthly" ? 60 : 30}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
