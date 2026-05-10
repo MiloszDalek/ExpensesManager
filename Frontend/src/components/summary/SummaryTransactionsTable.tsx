@@ -177,7 +177,7 @@ const SummaryTransactionsTable = memo(function SummaryTransactionsTable({
                   variant="outline"
                   size="sm"
                   onClick={() => onPageChange(page + 1)}
-                  className="w-full"
+                  className="w-full border border-border bg-card/80"
                 >
                   {t("common.loadMore", { defaultValue: "Load more" })}
                 </Button>

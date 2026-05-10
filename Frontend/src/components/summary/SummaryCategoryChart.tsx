@@ -79,7 +79,10 @@ const SummaryCategoryChart = memo(function SummaryCategoryChart({
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <p className="py-10 text-center text-muted-foreground">{t("summaryPage.noData")}</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <PieChartIcon className="h-12 w-12 text-muted-foreground/50 mb-3" />
+            <p className="text-sm text-muted-foreground">{t("summaryPage.noData")}</p>
+          </div>
         ) : (
           <div className="sm:min-h-[320px] sm:h-80 h-[450px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={450}>

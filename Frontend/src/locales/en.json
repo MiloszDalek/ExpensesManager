@@ -876,6 +876,7 @@
   "summaryPage": {
     "title": "Detailed Summaries",
     "subtitle": "Analyze your personal and group spending in one place",
+    "transactionsTitle": "Transactions",
     "total": "Total",
     "export": "Export",
     "exportCsv": "Export CSV",

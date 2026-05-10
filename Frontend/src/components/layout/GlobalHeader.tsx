@@ -398,18 +398,18 @@ export default function GlobalHeader() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-3 w-full"
+                className="mt-3 w-full border border-border bg-card/80"
                 onClick={() => setIsNavInfoOpen(true)}
                 aria-label={t("help.navInfo.buttonLabel")}
               >
-                <Info className="h-4 w-4" />
-                {/* <span>{t("help.navInfo.buttonLabel")}</span> */}
+                <Info className="h-4 w-4 mr-2" />
+                <span>{t("help.navInfo.buttonLabel")}</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-2 w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="mt-2 w-full border-destructive/40 bg-red-50 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   logout();
@@ -423,7 +423,7 @@ export default function GlobalHeader() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="mt-2 w-full"
+                className="mt-2 w-full border border-border bg-card/80"
               >
                 <a
                   href={feedbackFormUrl}

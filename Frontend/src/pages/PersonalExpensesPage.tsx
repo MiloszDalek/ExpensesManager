@@ -657,7 +657,7 @@ export default function PersonalExpensesPage() {
           <div className={`order-3 lg:col-span-3 ${mobileSection !== "recurring" ? "hidden md:block" : ""}`}>
             <div className="p-1">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-semibold text-foreground hidden md:block">
                   {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
                 </h2>
                 <p className="text-xs text-muted-foreground">

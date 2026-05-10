@@ -84,7 +84,10 @@ export function CategoryBreakdownChart({ currency, range }: CategoryBreakdownCha
     return (
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>{t("dashboard.categoryBreakdown.title")}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-primary" />
+            {t("dashboard.categoryBreakdown.title")}
+          </CardTitle>
           <CardDescription>{t("dashboard.categoryBreakdown.description")}</CardDescription>
         </CardHeader>
         <CardContent>
