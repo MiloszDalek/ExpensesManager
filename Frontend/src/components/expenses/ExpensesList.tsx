@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Wallet } from "lucide-react";
 import { format } from "date-fns";
+import { enUS, pl } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import "@/lib/i18n";
@@ -38,7 +39,8 @@ type ExpensesListProps = {
 
 
 export default function ExpensesList({ expenses, categories, isLoading, onDelete, onEdit }: ExpensesListProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === "pl" ? pl : enUS;
   const [expandedExpenseId, setExpandedExpenseId] = useState<number | null>(null);
 
   const toggleExpandedExpense = (expenseId: number) => {
@@ -110,7 +112,15 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
               className="min-w-0 max-w-full"
             >
               <Card className="group w-full max-w-full overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md" style={{ maxWidth: '100%', width: '100%' }}>
-                <CardContent className="overflow-hidden w-full min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-2" style={{ maxWidth: '100%' }}>
+                <CardContent className="relative overflow-hidden w-full min-w-0 px-2.5 py-1.5 pt-3 px-5 sm:px-10 sm:py-2" style={{ maxWidth: '100%' }}>
+                  <div className="pointer-events-none absolute left-2.5 top-0 flex items-center gap-2 text-[10px] font-semibold tracking-wide text-muted-foreground left-5 sm:left-10">
+                    <span>{format(new Date(expense.expense_date), "MMM d", { locale: dateLocale }).replace(".", "").toUpperCase()}</span>
+                    {expense.recurring_expense_id ? (
+                      <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
+                        {t("expensesList.recurring", { defaultValue: "Recurring" })}
+                      </span>
+                    ) : null}
+                  </div>
                   <div
                     role="button"
                     tabIndex={0}
@@ -125,38 +135,27 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                     aria-expanded={isExpanded}
                     aria-label={isExpanded ? t("expensesList.collapse") : t("expensesList.expand")}
                   >
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
+                    <span className={`mt-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
                       <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
                     <div className="min-w-0 flex-1 max-w-36 sm:max-w-none">
-                      <p className="truncate text-[12px] font-semibold leading-tight text-foreground sm:text-[13px]">{expense.title}</p>
-                      <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden text-[11px] text-muted-foreground">
-                        <span className="shrink-0">{format(new Date(expense.expense_date), "MMM d, yyyy")}</span>
-                        <span className="text-muted-foreground/50">•</span>
+                      <p className="truncate text-[12px] font-semibold leading-tight text-foreground sm:text-sm">{expense.title}</p>
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 overflow-hidden text-[11px] text-muted-foreground sm:text-xs">
                         <span className="truncate">{categoryGroupLabel}</span>
-                        {expense.recurring_expense_id ? (
-                          <>
-                            <span className="text-muted-foreground/50">•</span>
-                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                              {t("expensesList.recurring", { defaultValue: "Recurring" })}
-                            </span>
-                          </>
-                        ) : null}
-                        <>
-                          <span className="hidden text-muted-foreground/50 sm:inline">/</span>
-                          <span className="hidden truncate sm:inline">{categoryName}</span>
-                        </>
+                        <span className="text-muted-foreground/50">/</span>
+                        <span className="truncate">{categoryName}</span>
                       </div>
                     </div>
 
                     <div className="w-[5.2rem] shrink-0 text-right sm:w-auto">
-                      <p className="truncate text-[11px] font-bold text-foreground sm:text-sm">
+                      <p className="truncate text-[13px] font-bold text-foreground sm:text-base">
                         {formatCurrency(Number(expense.amount), expense.currency as CurrencyEnum)}
                       </p>
                     </div>
 
-                    <AlertDialog>
+                    <div className="h-7 w-7 shrink-0">
+                      <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="ghost"
@@ -188,6 +187,7 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   </div>
 
                   <AnimatePresence initial={false}>
@@ -202,30 +202,18 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                         style={{ width: '100%' }}
                       >
                         <div className="mt-2.5 w-full min-w-0 max-w-full border-t border-border pt-2.5" style={{ maxWidth: '100%', width: '100%' }}>
-                          <div className="mb-2 flex items-start justify-between gap-2 w-full min-w-0">
-                            <div className="grid gap-1 text-xs text-muted-foreground min-w-0">
-                              <p>
-                                <span className="font-medium">{t("expensesList.mainCategory")}: </span>
-                                <span>{categoryGroupLabel}</span>
-                              </p>
-                              <p>
-                                <span className="font-medium">{t("expensesList.categoryLabel")}: </span>
-                                <span>{categoryName}</span>
-                              </p>
-                            </div>
-
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8 shrink-0 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-                              onClick={() => onEdit(expense)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              {t("expensesList.edit")}
-                            </Button>
+                          <div className="grid gap-1 text-sm text-muted-foreground min-w-0">
+                            <p>
+                              <span className="font-medium">{t("expensesList.mainCategory")}: </span>
+                              <span>{categoryGroupLabel}</span>
+                            </p>
+                            <p>
+                              <span className="font-medium">{t("expensesList.categoryLabel")}: </span>
+                              <span>{categoryName}</span>
+                            </p>
                           </div>
 
-                          <p className="text-xs font-medium text-muted-foreground">{t("addExpenseDialog.titleLabel")}</p>
+                          <p className="mt-2 text-xs font-medium text-muted-foreground">{t("addExpenseDialog.titleLabel")}</p>
                           <p className="mt-1 text-sm text-foreground break-words overflow-wrap-anywhere whitespace-normal" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                             {expense.title}
                           </p>
@@ -235,6 +223,18 @@ export default function ExpensesList({ expenses, categories, isLoading, onDelete
                             <p className="text-sm text-foreground" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal', width: '100%' }}>
                               {hasNotes ? expense.notes : t("expensesList.noNotes")}
                             </p>
+                          </div>
+
+                          <div className="mt-5 flex justify-center">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 shrink-0 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                              onClick={() => onEdit(expense)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              {t("expensesList.edit")}
+                            </Button>
                           </div>
                         </div>
                       </motion.div>

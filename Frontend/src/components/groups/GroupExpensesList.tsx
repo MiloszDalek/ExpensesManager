@@ -144,8 +144,8 @@ export default function GroupExpensesList({
               transition={{ delay: index * 0.04 }}
             >
               <Card className="group overflow-hidden border border-border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-                <CardContent className="relative px-2.5 py-2 sm:px-3">
-                  <div className="pointer-events-none absolute left-2.5 top-1 flex items-center gap-1 text-[10px] font-semibold tracking-wide text-muted-foreground sm:left-3">
+                <CardContent className="relative px-2.5 py-2 pt-3 sm:px-10">
+                  <div className="pointer-events-none absolute left-2.5 top-0 sm:px-8 flex items-center gap-2 text-[10px] font-semibold tracking-wide text-muted-foreground sm:left-3">
                     <span>{expenseDateLabel}</span>
                     {expense.recurring_expense_id ? (
                       <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
@@ -167,21 +167,21 @@ export default function GroupExpensesList({
                     }}
                     aria-expanded={isExpanded}
                   >
-                    <span className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
+                    <span className={`mt-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10 ${visualStyle.badgeClass}`}>
                       <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </span>
 
                     <div className="min-w-0 flex-1 max-w-[6.5rem] sm:max-w-[9.5rem] md:max-w-none">
                       <p className="truncate text-[13px] font-semibold text-foreground sm:text-sm">{expense.title}</p>
-                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground sm:text-sm">
                         <span className="truncate">{categoryName}</span>
                       </div>
                     </div>
 
                     <div className="w-[74px] shrink-0 text-right sm:w-[88px]">
-                      <p className="truncate text-[10px] text-muted-foreground">{payerLabel}</p>
+                      <p className="truncate text-[10px] text-muted-foreground sm:text-xs">{payerLabel}</p>
                       {expense.user_id !== currentUserId ? (
-                        <p className="truncate text-[10px] text-muted-foreground">{payerName}</p>
+                        <p className="truncate text-[10px] text-muted-foreground sm:text-xs">{payerName}</p>
                       ) : null}
                       <p className="truncate text-[12px] font-bold text-foreground sm:text-sm">
                         {formatCurrency(totalAmount, displayCurrency as CurrencyEnum)}
@@ -189,54 +189,56 @@ export default function GroupExpensesList({
                     </div>
 
                     <div className="w-[70px] shrink-0 text-right sm:w-[84px]">
-                      <p className="truncate text-[10px] text-muted-foreground">{secondaryLabel}</p>
+                      <p className="truncate text-[10px] text-muted-foreground sm:text-xs">{secondaryLabel}</p>
                       <p className={`truncate text-[12px] font-bold ${secondaryAmountClass} sm:text-sm`}>
                         {secondaryAmountText}
                       </p>
                     </div>
 
-                    {canManage && onDelete ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t("groupExpensesList.delete")}
-                            className="h-7 w-7 shrink-0 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                            onPointerDown={(event) => {
-                              event.stopPropagation();
-                            }}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{t("groupExpensesList.deleteTitle")}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t("groupExpensesList.deleteDescription")}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={(event) => event.stopPropagation()}>
-                              {t("groupExpensesList.cancel")}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
+                    <div className="h-7 w-7 shrink-0">
+                      {canManage && onDelete ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={t("groupExpensesList.delete")}
+                              className="h-7 w-7 shrink-0 opacity-100 text-muted-foreground transition-opacity hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                              onPointerDown={(event) => {
+                                event.stopPropagation();
+                              }}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                onDelete(expense.id);
                               }}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              {t("groupExpensesList.delete")}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    ) : null}
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("groupExpensesList.deleteTitle")}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("groupExpensesList.deleteDescription")}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={(event) => event.stopPropagation()}>
+                                {t("groupExpensesList.cancel")}
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onDelete(expense.id);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {t("groupExpensesList.delete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : null}
+                    </div>
                   </div>
 
                   <AnimatePresence initial={false}>
@@ -249,9 +251,38 @@ export default function GroupExpensesList({
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="mt-2.5 border-t border-border pt-2.5 text-xs text-muted-foreground">
+                        <div className="mt-2.5 border-t border-border pt-2.5 px-4 text-sm text-muted-foreground">
+                          <p>
+                            <span className="font-medium">{t("groupExpensesList.paidBy")}: </span>
+                            <span>{memberNameById[expense.user_id] ?? `${t("groupExpensesList.userPrefix")}#${expense.user_id}`}</span>
+                          </p>
+                          <p className="mt-1">
+                            <span className="font-medium">{t("groupExpensesList.splitType")}: </span>
+                            <span>{t(`groupExpensesList.split.${expense.split_type}`)}</span>
+                          </p>
+
+                          <div className="mt-2">
+                            <p className="font-medium">{t("groupExpensesList.shares")}:</p>
+                            <div className="mt-1 space-y-1">
+                              {expense.shares.map((share) => (
+                                <div key={`${expense.id}-${share.user_id}`} className="flex items-center gap-2">
+                                  <span className="truncate w-20">
+                                    {memberNameById[share.user_id] ?? `${t("groupExpensesList.userPrefix")}#${share.user_id}`}
+                                  </span>
+                                  <span className="font-medium text-foreground whitespace-nowrap">
+                                    {formatCurrency(Number(share.share_amount), displayCurrency as CurrencyEnum)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <p className="mt-2 text-sm text-foreground break-words">
+                            {hasNotes ? expense.notes : t("groupExpensesList.noNotes")}
+                          </p>
+
                           {canManage && onEdit ? (
-                            <div className="mb-2 flex justify-end">
+                            <div className="mt-5 flex justify-center">
                               <Button
                                 variant="default"
                                 size="sm"
@@ -263,35 +294,6 @@ export default function GroupExpensesList({
                               </Button>
                             </div>
                           ) : null}
-
-                          <p>
-                            <span className="font-medium">{t("groupExpensesList.paidBy")}: </span>
-                            <span>{memberNameById[expense.user_id] ?? `${t("groupExpensesList.userPrefix")}#${expense.user_id}`}</span>
-                          </p>
-                          <p className="mt-1">
-                            <span className="font-medium">{t("groupExpensesList.splitType")}: </span>
-                            <span>{t(`groupExpensesList.split.${expense.split_type}`)}</span>
-                          </p>
-
-                          <div className="mt-2">
-                            <p className="font-medium">{t("groupExpensesList.shares")}</p>
-                            <div className="mt-1 space-y-1">
-                              {expense.shares.map((share) => (
-                                <div key={`${expense.id}-${share.user_id}`} className="flex items-center justify-between gap-2">
-                                  <span className="truncate">
-                                    {memberNameById[share.user_id] ?? `${t("groupExpensesList.userPrefix")}#${share.user_id}`}
-                                  </span>
-                                  <span className="font-medium text-foreground">
-                                    {formatCurrency(Number(share.share_amount), displayCurrency as CurrencyEnum)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <p className="mt-2 text-sm text-foreground break-words">
-                            {hasNotes ? expense.notes : t("groupExpensesList.noNotes")}
-                          </p>
                         </div>
                       </motion.div>
                     )}
