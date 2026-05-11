@@ -87,7 +87,8 @@ class InvitationService:
                 user_id=to_user.id,
                 type=NotificationType.INVITATION,
                 reference_id=invitation.id,
-                message="You received a new invitation",
+                message_key="invitation_received",
+                context={},
                 action_url="/contacts"
             )
 
@@ -147,7 +148,8 @@ class InvitationService:
                 user_id=to_user.id,
                 type=NotificationType.INVITATION,
                 reference_id=invitation.id,
-                message="You received a new invitation to group",
+                message_key="invitation_received_group",
+                context={},
                 action_url="/groups"
             )
                 

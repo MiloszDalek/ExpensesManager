@@ -247,6 +247,30 @@ export default function NotificationsPage() {
     setNotificationToArchive(null);
   };
 
+  const translateNotificationMessage = (notification: ApiNotificationResponse): string => {
+    if (notification.message_key && notification.context) {
+      let key = `notifications.messages.${notification.message_key}`;
+      const context = notification.context as Record<string, any>;
+
+      // Handle pluralization for recurring_due_soon
+      if (notification.message_key === "recurring_due_soon") {
+        const days = context.days_until_due;
+        if (days === 1) {
+          key = "notifications.messages.recurring_due_soon_one";
+        } else {
+          key = "notifications.messages.recurring_due_soon_other";
+        }
+      }
+
+      // @ts-ignore - i18next complex return types with context
+      return String(t(key, context));
+    }
+    if (notification.message_key) {
+      return String(t(`notifications.messages.${notification.message_key}`));
+    }
+    return notification.message || t("notifications.noMessage");
+  };
+
   if (!user) {
     return <LoadingSpinnerWrapper className="h-screen" />;
   }
@@ -430,7 +454,7 @@ export default function NotificationsPage() {
                               : "text-muted-foreground"
                           )}
                         >
-                          {notification.message || t("notifications.noMessage")}
+                          {translateNotificationMessage(notification)}
                         </p>
                       </div>
                     </div>

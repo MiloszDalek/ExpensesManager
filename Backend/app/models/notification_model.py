@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.enums import NotificationSeverity, NotificationType, NotificationContextType, NotificationStatus
+import json
 
 
 class Notification(Base):
@@ -14,6 +15,8 @@ class Notification(Base):
     reference_id = Column(Integer, nullable=True)
     reference_type = Column(Enum(NotificationContextType, name="notification_context_type"), nullable=True)
     message = Column(Text, nullable=True)
+    message_key = Column(Text, nullable=True)
+    context = Column(Text, nullable=True)
     status = Column(Enum(NotificationStatus, name="notification_status"), default=NotificationStatus.UNREAD, nullable=False)
     severity = Column(Enum(NotificationSeverity, name="notification_severity"), default=NotificationSeverity.INFO)
     action_url = Column(Text, nullable=True)
@@ -25,4 +28,12 @@ class Notification(Base):
         Index("ix_notifications_user_created", "user_id", "created_at"),
         Index("ix_notifications_user_status", "user_id", "status"),
     )
-    
+
+    @property
+    def context_dict(self):
+        if self.context is None:
+            return None
+        try:
+            return json.loads(self.context)
+        except (json.JSONDecodeError, TypeError):
+            return None

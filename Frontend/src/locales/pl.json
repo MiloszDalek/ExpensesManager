@@ -1557,6 +1557,21 @@
       "invitation": "Zaproszenie",
       "budget_overspending": "Przekroczenie budżetu",
       "upcoming_recurring_expense": "Nadchodzący wydatek cykliczny"
+    },
+    "messages": {
+      "budget_near_limit": "Twój budżet {{category_name}} to {{usage_percentage}}% ({{spent_amount}}/{{allocated_amount}})",
+      "budget_exceeded": "Przekroczyłeś budżet {{category_name}}: {{spent_amount}}/{{allocated_amount}}",
+      "recurring_due_soon_one": "{{recurring_name}} upływa za {{days_until_due}} dzień",
+      "recurring_due_soon_other": "{{recurring_name}} upływa za {{days_until_due}} dni",
+      "recurring_executed": "Wydatek cykliczny {{recurring_name}} o wartości {{amount}} został automatycznie dodany",
+      "recurring_failed": "Nie udało się utworzyć wydatku cyklicznego {{recurring_name}}: {{error_message}}",
+      "settlement_pending": "Dłużysz {{amount}} użytkownikowi {{creditor_name}}",
+      "settlement_completed": "Użytkownik {{debtor_name}} rozliczył się z tobą kwotą {{amount}}",
+      "expense_added": "Użytkownik {{payer_name}} dodał wydatek {{amount}} w grupie {{group_name}}{{#description}}: {{description}}{{/description}}",
+      "goal_progress": "Jesteś {{progress_percentage}}% bliżej celu {{goal_name}}!",
+      "goal_completed": "Gratulacje! Osiągnąłeś cel {{goal_name}}!",
+      "invitation_received": "Otrzymałeś nowe zaproszenie",
+      "invitation_received_group": "Otrzymałeś nowe zaproszenie do grupy"
     }
   },
   "contactsBalancesPage": {

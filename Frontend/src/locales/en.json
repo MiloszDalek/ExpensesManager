@@ -1567,6 +1567,21 @@
       "invitation": "Invitation",
       "budget_overspending": "Budget overspending",
       "upcoming_recurring_expense": "Upcoming recurring expense"
+    },
+    "messages": {
+      "budget_near_limit": "Your {{category_name}} budget is at {{usage_percentage}}% ({{spent_amount}}/{{allocated_amount}})",
+      "budget_exceeded": "You've exceeded your {{category_name}} budget: {{spent_amount}}/{{allocated_amount}}",
+      "recurring_due_soon_one": "{{recurring_name}} is due in {{days_until_due}} day",
+      "recurring_due_soon_other": "{{recurring_name}} is due in {{days_until_due}} days",
+      "recurring_executed": "{{recurring_name}} expense of {{amount}} has been automatically added",
+      "recurring_failed": "Failed to create recurring expense {{recurring_name}}: {{error_message}}",
+      "settlement_pending": "You owe {{amount}} to {{creditor_name}}",
+      "settlement_completed": "{{debtor_name}} has settled {{amount}} with you",
+      "expense_added": "{{payer_name}} added {{amount}} expense in {{group_name}}{{#description}}: {{description}}{{/description}}",
+      "goal_progress": "You're {{progress_percentage}}% towards your {{goal_name}} goal!",
+      "goal_completed": "Congratulations! You've reached your {{goal_name}} goal!",
+      "invitation_received": "You received a new invitation",
+      "invitation_received_group": "You received a new invitation to group"
     }
   },
   "contactsBalancesPage": {

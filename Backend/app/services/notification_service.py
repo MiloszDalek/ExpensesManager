@@ -108,9 +108,12 @@ class NotificationService:
         reference_id: int | None = None,
         reference_type: NotificationContextType | None = None,
         message: str | None = None,
+        message_key: str | None = None,
+        context: dict | None = None,
         action_url: str | None = None,
         severity: NotificationSeverity | None = None,
     ) -> Notification:
+        import json
         if severity is None:
             severity = self.determine_severity(type)
         
@@ -120,6 +123,8 @@ class NotificationService:
             reference_id=reference_id,
             reference_type=reference_type,
             message=message,
+            message_key=message_key,
+            context=json.dumps(context) if context else None,
             action_url=action_url,
             severity=severity,
             status=NotificationStatus.UNREAD,
@@ -162,7 +167,13 @@ class NotificationService:
         ):
             return None
         
-        message = f"Your {category_name} budget is at {usage_percentage:.1f}% ({spent_amount:.2f}/{allocated_amount:.2f})"
+        message_key = "budget_near_limit"
+        context = {
+            "category_name": category_name,
+            "usage_percentage": usage_percentage,
+            "spent_amount": spent_amount,
+            "allocated_amount": allocated_amount
+        }
         action_url = f"/budgets?budget_id={budget_id}"
         
         return self.create_notification(
@@ -170,7 +181,8 @@ class NotificationService:
             type=NotificationType.BUDGET_NEAR_LIMIT,
             reference_id=pool_id,
             reference_type=NotificationContextType.BUDGET,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -188,7 +200,12 @@ class NotificationService:
         ):
             return None
         
-        message = f"You've exceeded your {category_name} budget: {spent_amount:.2f}/{allocated_amount:.2f}"
+        message_key = "budget_exceeded"
+        context = {
+            "category_name": category_name,
+            "spent_amount": spent_amount,
+            "allocated_amount": allocated_amount
+        }
         action_url = f"/budgets?budget_id={budget_id}"
         
         return self.create_notification(
@@ -196,7 +213,8 @@ class NotificationService:
             type=NotificationType.BUDGET_EXCEEDED,
             reference_id=pool_id,
             reference_type=NotificationContextType.BUDGET,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -214,7 +232,11 @@ class NotificationService:
         ):
             return None
         
-        message = f"{recurring_name} is due in {days_until_due} day{'s' if days_until_due != 1 else ''}"
+        message_key = "recurring_due_soon"
+        context = {
+            "recurring_name": recurring_name,
+            "days_until_due": days_until_due
+        }
         action_url = "/personal?tab=recurring"
         
         return self.create_notification(
@@ -222,7 +244,8 @@ class NotificationService:
             type=NotificationType.RECURRING_DUE_SOON,
             reference_id=recurring_id,
             reference_type=NotificationContextType.RECURRING,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -233,7 +256,11 @@ class NotificationService:
         recurring_name: str,
         amount: float
     ):
-        message = f"{recurring_name} expense of {amount:.2f} has been automatically added"
+        message_key = "recurring_executed"
+        context = {
+            "recurring_name": recurring_name,
+            "amount": amount
+        }
         action_url = "/personal"
         
         return self.create_notification(
@@ -241,7 +268,8 @@ class NotificationService:
             type=NotificationType.RECURRING_EXECUTED,
             reference_id=recurring_id,
             reference_type=NotificationContextType.RECURRING,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -252,7 +280,11 @@ class NotificationService:
         recurring_name: str,
         error_message: str
     ):
-        message = f"Failed to create recurring expense {recurring_name}: {error_message}"
+        message_key = "recurring_failed"
+        context = {
+            "recurring_name": recurring_name,
+            "error_message": error_message
+        }
         action_url = "/personal?tab=recurring"
         
         return self.create_notification(
@@ -260,7 +292,8 @@ class NotificationService:
             type=NotificationType.RECURRING_FAILED,
             reference_id=recurring_id,
             reference_type=NotificationContextType.RECURRING,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -273,7 +306,11 @@ class NotificationService:
         amount: float,
         creditor_name: str
     ):
-        message = f"You owe {amount:.2f} to {creditor_name}"
+        message_key = "settlement_pending"
+        context = {
+            "amount": amount,
+            "creditor_name": creditor_name
+        }
         action_url = f"/groups?settlement_id={settlement_id}"
         
         return self.create_notification(
@@ -281,7 +318,8 @@ class NotificationService:
             type=NotificationType.SETTLEMENT_PENDING,
             reference_id=settlement_id,
             reference_type=NotificationContextType.SETTLEMENT,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -292,7 +330,11 @@ class NotificationService:
         amount: float,
         debtor_name: str
     ):
-        message = f"{debtor_name} has settled {amount:.2f} with you"
+        message_key = "settlement_completed"
+        context = {
+            "debtor_name": debtor_name,
+            "amount": amount
+        }
         action_url = "/groups"
         
         return self.create_notification(
@@ -300,7 +342,8 @@ class NotificationService:
             type=NotificationType.SETTLEMENT_COMPLETED,
             reference_id=settlement_id,
             reference_type=NotificationContextType.SETTLEMENT,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -316,8 +359,13 @@ class NotificationService:
         group_name: str,
         description: str | None = None
     ):
-        desc_part = f": {description}" if description else ""
-        message = f"{payer_name} added {amount:.2f} expense in {group_name}{desc_part}"
+        message_key = "expense_added"
+        context = {
+            "payer_name": payer_name,
+            "amount": amount,
+            "group_name": group_name,
+            "description": description
+        }
         action_url = f"/groups/{group_id}"
         
         return self.create_notification(
@@ -325,7 +373,8 @@ class NotificationService:
             type=NotificationType.NEW_EXPENSE_ADDED,
             reference_id=expense_id,
             reference_type=NotificationContextType.EXPENSE,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -338,7 +387,11 @@ class NotificationService:
         goal_name: str,
         progress_percentage: float
     ):
-        message = f"You're {progress_percentage:.0f}% towards your {goal_name} goal!"
+        message_key = "goal_progress"
+        context = {
+            "progress_percentage": progress_percentage,
+            "goal_name": goal_name
+        }
         action_url = "/budgets?tab=goals"
         
         return self.create_notification(
@@ -346,7 +399,8 @@ class NotificationService:
             type=NotificationType.GOAL_PROGRESS,
             reference_id=goal_id,
             reference_type=NotificationContextType.GOAL,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 
@@ -356,7 +410,10 @@ class NotificationService:
         goal_id: int,
         goal_name: str
     ):
-        message = f"Congratulations! You've reached your {goal_name} goal!"
+        message_key = "goal_completed"
+        context = {
+            "goal_name": goal_name
+        }
         action_url = "/budgets?tab=goals"
         
         return self.create_notification(
@@ -364,7 +421,8 @@ class NotificationService:
             type=NotificationType.GOAL_COMPLETED,
             reference_id=goal_id,
             reference_type=NotificationContextType.GOAL,
-            message=message,
+            message_key=message_key,
+            context=context,
             action_url=action_url,
         )
 

@@ -8,6 +8,8 @@ export interface ApiNotificationResponse {
   reference_id?: number | null;
   reference_type?: NotificationContextType | null;
   message?: string | null;
+  message_key?: string | null;
+  context?: Record<string, any> | null;
   status: NotificationStatus;
   severity: NotificationSeverity;
   action_url?: string | null;
