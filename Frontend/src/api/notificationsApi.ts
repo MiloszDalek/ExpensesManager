@@ -5,6 +5,7 @@ import type {
   ApiMarkAllReadResponse,
   NotificationStatus,
   NotificationType,
+  NotificationSeverity,
 } from "@/types";
 
 export const notificationsApi = {
@@ -16,6 +17,8 @@ export const notificationsApi = {
   listFiltered: async (params?: {
     status?: NotificationStatus;
     type?: NotificationType;
+    types?: NotificationType[];
+    severity?: NotificationSeverity;
     limit?: number;
     offset?: number;
   }): Promise<ApiNotificationResponse[]> => {
@@ -44,9 +47,9 @@ export const notificationsApi = {
     return data;
   },
 
-  archive: async (notificationId: number): Promise<ApiNotificationResponse> => {
-    const { data } = await client.patch<ApiNotificationResponse>(
-      `/notifications/${notificationId}/archive`
+  delete: async (notificationId: number): Promise<ApiNotificationResponse> => {
+    const { data } = await client.delete<ApiNotificationResponse>(
+      `/notifications/${notificationId}`
     );
     return data;
   },

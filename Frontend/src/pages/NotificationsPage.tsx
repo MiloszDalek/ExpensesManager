@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { pl, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { Trash2 } from "lucide-react";
 
 import { notificationsApi } from "@/api/notificationsApi";
 import { queryKeys } from "@/api/queryKeys";
@@ -10,6 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner, LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -88,18 +100,17 @@ const getSeverityColor = (severity: NotificationSeverity) => {
   }
 };
 
-const formatNotificationType = (value: string) =>
-  value
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-
 export default function NotificationsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [draftFilters, setDraftFilters] = useState<NotificationFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<NotificationFilters>(DEFAULT_FILTERS);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [notificationToArchive, setNotificationToArchive] = useState<ApiNotificationResponse | null>(null);
+
+  const dateLocale = i18n.language === "pl" ? pl : enUS;
 
   const { data: unreadData } = useQuery({
     queryKey: queryKeys.notifications.unreadCount,
@@ -107,7 +118,24 @@ export default function NotificationsPage() {
     enabled: !!user,
   });
 
-  const queryKeyParams = useMemo(() => ({}), []);
+  const queryKeyParams = useMemo(() => {
+    const params: {
+      severity?: NotificationSeverity;
+      types?: NotificationType[];
+    } = {};
+    if (appliedFilters.severity !== "all") {
+      params.severity = appliedFilters.severity;
+    }
+    if (appliedFilters.group !== "all") {
+      const matchGroup = NOTIFICATION_TYPE_GROUPS.find(
+        (group) => group.key === appliedFilters.group
+      );
+      if (matchGroup) {
+        params.types = matchGroup.items;
+      }
+    }
+    return params;
+  }, [appliedFilters]);
 
   const {
     data,
@@ -116,10 +144,12 @@ export default function NotificationsPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useInfiniteQuery<ApiNotificationResponse[]>({
     queryKey: queryKeys.notifications.list(queryKeyParams),
     queryFn: ({ pageParam = 0 }) =>
-      notificationsApi.list({
+      notificationsApi.listFiltered({
+        ...queryKeyParams,
         limit: PAGE_LIMIT,
         offset: pageParam as number,
       }),
@@ -135,26 +165,6 @@ export default function NotificationsPage() {
   );
   const unreadCount = unreadData?.count ?? 0;
   const hasUnread = unreadCount > 0;
-
-  const visibleNotifications = useMemo(() => {
-    let items = notifications;
-
-    if (appliedFilters.group !== "all") {
-      const matchGroup = NOTIFICATION_TYPE_GROUPS.find(
-        (group) => group.key === appliedFilters.group
-      );
-
-      if (matchGroup) {
-        items = items.filter((notification) => matchGroup.items.includes(notification.type));
-      }
-    }
-
-    if (appliedFilters.severity !== "all") {
-      items = items.filter((notification) => notification.severity === appliedFilters.severity);
-    }
-
-    return items;
-  }, [notifications, appliedFilters]);
 
   const hasPendingFilters =
     draftFilters.severity !== appliedFilters.severity ||
@@ -175,9 +185,29 @@ export default function NotificationsPage() {
     onSuccess: invalidateNotifications,
   });
 
-  const archiveMutation = useMutation({
-    mutationFn: (notificationId: number) => notificationsApi.archive(notificationId),
-    onSuccess: invalidateNotifications,
+  const deleteMutation = useMutation({
+    mutationFn: (notificationId: number) => notificationsApi.delete(notificationId),
+    onMutate: (notificationId) => {
+      const notification = notifications.find(n => n.id === notificationId);
+      if (!notification) return;
+
+      queryClient.setQueryData(
+        queryKeys.notifications.list(queryKeyParams),
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: ApiNotificationResponse[]) =>
+              page.filter((n) => n.id !== notificationId)
+            ),
+          };
+        }
+      );
+    },
+    onSuccess: async () => {
+      await invalidateNotifications();
+      refetch();
+    },
   });
 
   const markAllReadMutation = useMutation({
@@ -202,6 +232,19 @@ export default function NotificationsPage() {
     if (notification.action_url) {
       navigate(notification.action_url);
     }
+  };
+
+  const handleDeleteClick = (notification: ApiNotificationResponse) => {
+    setNotificationToArchive(notification);
+    setArchiveDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (notificationToArchive) {
+      deleteMutation.mutate(notificationToArchive.id);
+    }
+    setArchiveDialogOpen(false);
+    setNotificationToArchive(null);
   };
 
   if (!user) {
@@ -297,9 +340,7 @@ export default function NotificationsPage() {
                     </SelectItem>
                     {NOTIFICATION_TYPE_GROUPS.map((group) => (
                       <SelectItem key={group.key} value={group.key}>
-                        {t(`notifications.typeGroups.${group.key}`, {
-                          defaultValue: formatNotificationType(group.key),
-                        })}
+                        {t(`notifications.typeGroups.${group.key}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -326,9 +367,7 @@ export default function NotificationsPage() {
           <CardHeader className="border-b border-border">
             <CardTitle>{t("notifications.title")}</CardTitle>
             <CardDescription>
-              {t("notifications.listSubtitle", {
-                defaultValue: "Your most recent updates and alerts.",
-              })}
+              {t("notifications.listSubtitle")}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -340,26 +379,49 @@ export default function NotificationsPage() {
               <div className="py-10 text-center text-sm text-destructive">
                 {t("common.errorLoadingData")}
               </div>
-            ) : visibleNotifications.length === 0 ? (
+            ) : notifications.length === 0 ? (
               <div className="py-10 text-center text-sm text-muted-foreground">
                 {t("notifications.empty")}
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {visibleNotifications.map((notification) => (
+                {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={cn(
-                      "flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between",
+                      "relative flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start cursor-pointer hover:bg-accent/50",
                       notification.status === "unread" && "bg-accent/10"
                     )}
+                    onClick={() => handleOpenNotification(notification)}
                   >
-                    <div className="flex min-w-0 gap-3">
+                    <div className="flex min-w-0 flex-1 gap-3">
                       {notification.status === "unread" && (
                         <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                       )}
 
                       <div className="min-w-0 space-y-2">
+                        <span className="text-xs text-muted-foreground">
+                          {(() => {
+                            const formatted = format(new Date(notification.created_at), "MMM d, HH:mm", { locale: dateLocale });
+                            return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                          })()}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <Badge
+                            variant="outline"
+                            className={cn("capitalize", getSeverityColor(notification.severity))}
+                          >
+                            {t(`notifications.severity.${notification.severity}`)}
+                          </Badge>
+                          <Badge variant="secondary">
+                            {t(`notifications.types.${notification.type}`)}
+                          </Badge>
+                          {notification.status === "archived" && (
+                            <Badge variant="outline">
+                              {t("notifications.status.archived")}
+                            </Badge>
+                          )}
+                        </div>
                         <p
                           className={cn(
                             "text-sm",
@@ -370,63 +432,33 @@ export default function NotificationsPage() {
                         >
                           {notification.message || t("notifications.noMessage")}
                         </p>
-
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <Badge
-                            variant="outline"
-                            className={cn("capitalize", getSeverityColor(notification.severity))}
-                          >
-                            {t(`notifications.severity.${notification.severity}`)}
-                          </Badge>
-                          <Badge variant="secondary">
-                            {t(`notifications.types.${notification.type}`, {
-                              defaultValue: formatNotificationType(notification.type),
-                            })}
-                          </Badge>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">
-                            {format(new Date(notification.created_at), "MMM d, HH:mm")}
-                          </span>
-                          {notification.status === "archived" && (
-                            <Badge variant="outline">
-                              {t("notifications.status.archived")}
-                            </Badge>
-                          )}
-                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      {notification.action_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenNotification(notification)}
-                        >
-                          {t("notifications.actions.open")}
-                        </Button>
-                      )}
-                      {notification.status === "unread" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => markAsReadMutation.mutate(notification.id)}
-                          disabled={markAsReadMutation.isPending}
-                        >
-                          {t("notifications.actions.markRead")}
-                        </Button>
-                      )}
-                      {notification.status !== "archived" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => archiveMutation.mutate(notification.id)}
-                          disabled={archiveMutation.isPending}
-                        >
-                          {t("notifications.actions.archive")}
-                        </Button>
-                      )}
-                    </div>
+                    {notification.status === "unread" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markAsReadMutation.mutate(notification.id)}
+                        disabled={markAsReadMutation.isPending}
+                      >
+                        {t("notifications.actions.markRead")}
+                      </Button>
+                    )}
+                    {notification.status !== "archived" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(notification);
+                        }}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -448,6 +480,23 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("notifications.actions.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("notifications.actions.deleteConfirmMessage")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              {t("notifications.actions.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

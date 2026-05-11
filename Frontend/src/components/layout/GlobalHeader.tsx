@@ -140,9 +140,11 @@ export default function GlobalHeader() {
             <div className="flex items-center gap-2">
               {user ? (
                 <>
-                  <div className="hidden lg:block">
-                    <NotificationBell />
-                  </div>                
+                  {location.pathname !== "/notifications" && (
+                    <div className="hidden lg:block">
+                      <NotificationBell />
+                    </div>
+                  )}
                   <div className="hidden lg:flex">
                     <ThemeToggle />
                   </div>
@@ -207,9 +209,11 @@ export default function GlobalHeader() {
                     ) : null}
                   </div>
 
-                  <div className="lg:hidden">
-                    <NotificationBell />
-                  </div>
+                  {location.pathname !== "/notifications" && (
+                    <div className="lg:hidden">
+                      <NotificationBell />
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

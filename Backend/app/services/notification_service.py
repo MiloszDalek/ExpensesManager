@@ -55,10 +55,14 @@ class NotificationService:
         user_id: int,
         status: Optional[NotificationStatus] = None,
         type: Optional[NotificationType] = None,
+        types: list[NotificationType] | None = None,
+        severity: Optional[NotificationSeverity] = None,
         limit: int = 20,
         offset: int = 0
     ) -> list[Notification]:
-        return self.notification_repo.get_by_user_filtered(user_id, status, type, limit, offset)
+        return self.notification_repo.get_by_user_filtered(
+            user_id, status, type, types, severity, limit, offset
+        )
 
     def get_unread_count(self, user_id: int) -> dict:
         count = self.notification_repo.get_unread_count(user_id)
@@ -83,7 +87,7 @@ class NotificationService:
         self.notification_repo.save_all()
         return marked_count
 
-    def archive_notification(self, notification_id: int, user_id: int) -> Notification:
+    def delete_notification(self, notification_id: int, user_id: int) -> bool:
         notification = self.notification_repo.get_by_id(notification_id)
 
         if notification is None:
@@ -92,10 +96,10 @@ class NotificationService:
         if notification.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         
-        notification.status = NotificationStatus.ARCHIVED
+        deleted = self.notification_repo.delete(notification_id)
         self.notification_repo.save_all()
         
-        return notification
+        return deleted
 
     def create_notification(
         self,

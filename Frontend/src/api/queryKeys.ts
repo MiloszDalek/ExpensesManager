@@ -137,6 +137,7 @@ export const queryKeys = {
       offset?: number;
       status?: NotificationStatus;
       type?: NotificationType;
+      types?: NotificationType[];
       severity?: NotificationSeverity;
     }) =>
       ["notifications", "list", params ?? {}] as const,

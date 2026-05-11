@@ -4,17 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { pl, enUS } from "date-fns/locale";
 import { notificationsApi } from "@/api/notificationsApi";
 import { cn } from "@/lib/utils";
 import { queryKeys } from "@/api/queryKeys";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { ApiNotificationResponse } from "@/types";
 
 export function NotificationBell() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const dateLocale = i18n.language === "pl" ? pl : enUS;
 
   // Poll for unread count every 30 seconds
   const { data: unreadData } = useQuery({
@@ -24,9 +28,9 @@ export function NotificationBell() {
   });
 
   // Fetch recent notifications when dropdown opens
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', 'recent'],
-    queryFn: () => notificationsApi.list({ limit: 10, offset: 0 }),
+    queryFn: () => notificationsApi.list({ limit: 5, offset: 0 }),
     enabled: isOpen,
     refetchInterval: isOpen ? 30000 : false,
   });
@@ -145,7 +149,11 @@ export function NotificationBell() {
 
           {/* Notifications List */}
           <div className="max-h-[400px] overflow-y-auto">
-            {notifications.length === 0 ? (
+            {isLoading ? (
+              <div className="px-4 py-8 flex items-center justify-center">
+                <LoadingSpinner className="h-6 w-6" />
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                 {t("notifications.empty")}
               </div>
@@ -189,7 +197,7 @@ export function NotificationBell() {
                           </span>
                           <span className="text-muted-foreground">•</span>
                           <span className="text-muted-foreground">
-                            {format(new Date(notification.created_at), "MMM d, HH:mm")}
+                            {format(new Date(notification.created_at), "MMM d, HH:mm", { locale: dateLocale })}
                           </span>
                         </div>
                       </div>

@@ -1520,7 +1520,10 @@
     "actions": {
       "markAllRead": "Mark all as read",
       "markRead": "Mark as read",
-      "archive": "Archive",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete notification",
+      "deleteConfirmMessage": "Are you sure you want to delete this notification? It will no longer be visible in the list.",
+      "deleteConfirm": "Delete",
       "open": "Open"
     },
     "severity": {
@@ -1529,7 +1532,7 @@
       "urgent": "Urgent"
     },
     "status": {
-      "archived": "Archived"
+      "deleted": "Deleted"
     },
     "typeGroups": {
       "invitations": "Invitations",
@@ -1540,6 +1543,30 @@
       "goals": "Goals",
       "insights": "Insights",
       "legacy": "Legacy"
+    },
+    "types": {
+      "invitation_received": "Invitation received",
+      "invitation_accepted": "Invitation accepted",
+      "invitation_rejected": "Invitation rejected",
+      "budget_near_limit": "Budget near limit",
+      "budget_exceeded": "Budget exceeded",
+      "budget_reset": "Budget reset",
+      "new_expense_added": "New expense added",
+      "expense_updated": "Expense updated",
+      "expense_deleted": "Expense deleted",
+      "recurring_due_soon": "Recurring due soon",
+      "recurring_executed": "Recurring executed",
+      "recurring_failed": "Recurring failed",
+      "settlement_pending": "Settlement pending",
+      "settlement_completed": "Settlement completed",
+      "settlement_failed": "Settlement failed",
+      "goal_progress": "Goal progress",
+      "goal_completed": "Goal completed",
+      "unusual_spending": "Unusual spending",
+      "high_spending_category": "High spending category",
+      "invitation": "Invitation",
+      "budget_overspending": "Budget overspending",
+      "upcoming_recurring_expense": "Upcoming recurring expense"
     }
   },
   "contactsBalancesPage": {

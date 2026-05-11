@@ -1510,7 +1510,10 @@
     "actions": {
       "markAllRead": "Oznacz wszystkie jako przeczytane",
       "markRead": "Oznacz jako przeczytane",
-      "archive": "Archiwizuj",
+      "delete": "Usuń",
+      "deleteConfirmTitle": "Usuń powiadomienie",
+      "deleteConfirmMessage": "Czy na pewno chcesz usunąć to powiadomienie? Nie będzie już widoczne na liście.",
+      "deleteConfirm": "Usuń",
       "open": "Otwórz"
     },
     "severity": {
@@ -1519,7 +1522,7 @@
       "urgent": "Pilne"
     },
     "status": {
-      "archived": "Zarchiwizowane"
+      "deleted": "Usunięte"
     },
     "typeGroups": {
       "invitations": "Zaproszenia",
@@ -1530,6 +1533,30 @@
       "goals": "Cele",
       "insights": "Wnioski",
       "legacy": "Starsze"
+    },
+    "types": {
+      "invitation_received": "Otrzymano zaproszenie",
+      "invitation_accepted": "Zaakceptowano zaproszenie",
+      "invitation_rejected": "Odrzucono zaproszenie",
+      "budget_near_limit": "Budżet blisko limitu",
+      "budget_exceeded": "Przekroczono budżet",
+      "budget_reset": "Reset budżetu",
+      "new_expense_added": "Nowy wydatek",
+      "expense_updated": "Zaktualizowano wydatek",
+      "expense_deleted": "Usunięto wydatek",
+      "recurring_due_soon": "Nadchodzący cykliczny",
+      "recurring_executed": "Wykonano cykliczny",
+      "recurring_failed": "Błąd cyklicznego",
+      "settlement_pending": "Oczekujące rozliczenie",
+      "settlement_completed": "Rozliczenie zakończone",
+      "settlement_failed": "Błąd rozliczenia",
+      "goal_progress": "Postęp celu",
+      "goal_completed": "Cel osiągnięty",
+      "unusual_spending": "Nietypowe wydatki",
+      "high_spending_category": "Wysokie wydatki w kategorii",
+      "invitation": "Zaproszenie",
+      "budget_overspending": "Przekroczenie budżetu",
+      "upcoming_recurring_expense": "Nadchodzący wydatek cykliczny"
     }
   },
   "contactsBalancesPage": {

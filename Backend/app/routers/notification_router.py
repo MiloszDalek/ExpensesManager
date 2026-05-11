@@ -5,7 +5,7 @@ from app.database import get_db
 from app.services import NotificationService
 from app.schemas import NotificationResponse, UnreadNotificationCountResponse, MarkAllReadResponse
 from app.models import User
-from app.enums import NotificationStatus, NotificationType
+from app.enums import NotificationStatus, NotificationType, NotificationSeverity
 from app.utils.auth_dependencies import get_current_active_user
 
 
@@ -32,16 +32,20 @@ def get_notifications(
 def get_notifications_filtered(
     status: Optional[NotificationStatus] = Query(None),
     type: Optional[NotificationType] = Query(None),
+    types: list[NotificationType] = Query(default=None),
+    severity: Optional[NotificationSeverity] = Query(None),
     limit: int = Query(20, le=100),
     offset: int = Query(0, ge=0),
     service: NotificationService = Depends(get_notification_service),
     current_user: User = Depends(get_current_active_user),
 ):
-    return service.get_notifications_filtered(current_user.id, status, type, limit, offset)
+    return service.get_notifications_filtered(
+        current_user.id, status, type, types, severity, limit, offset
+    )
 
 
 @notification_router.get("/unread-count", response_model=UnreadNotificationCountResponse)
-def get_unread_notifacations_count(
+def get_unread_notifications_count(
     service: NotificationService = Depends(get_notification_service),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -66,10 +70,11 @@ def mark_all_as_read(
     return {"marked_count": marked_count}
 
 
-@notification_router.patch("/{notification_id}/archive", response_model=NotificationResponse)
-def archive_notification(
+@notification_router.delete("/{notification_id}")
+def delete_notification(
     notification_id: int,
     service: NotificationService = Depends(get_notification_service),
     current_user: User = Depends(get_current_active_user),
 ):
-    return service.archive_notification(notification_id, current_user.id)
+    service.delete_notification(notification_id, current_user.id)
+    return {"message": "Notification deleted"}

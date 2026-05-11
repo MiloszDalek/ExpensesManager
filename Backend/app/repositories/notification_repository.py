@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime, timedelta
 from app.models import Notification
-from app.enums import NotificationStatus, NotificationType
+from app.enums import NotificationStatus, NotificationType, NotificationSeverity
 
 
 class NotificationRepository:
@@ -16,6 +16,7 @@ class NotificationRepository:
         return (
             self.db.query(Notification)
             .filter(Notification.user_id == user_id)
+            .filter(Notification.status != NotificationStatus.ARCHIVED)
             .order_by(Notification.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -27,17 +28,27 @@ class NotificationRepository:
         user_id: int,
         status: NotificationStatus | None = None,
         type: NotificationType | None = None,
+        types: list[NotificationType] | None = None,
+        severity: NotificationSeverity | None = None,
         limit: int = 20,
         offset: int = 0
     ) -> list[Notification]:
         query = self.db.query(Notification).filter(Notification.user_id == user_id)
-        
+
         if status is not None:
             query = query.filter(Notification.status == status)
-        
+        else:
+            query = query.filter(Notification.status != NotificationStatus.ARCHIVED)
+
         if type is not None:
             query = query.filter(Notification.type == type)
-        
+
+        if types is not None and len(types) > 0:
+            query = query.filter(Notification.type.in_(types))
+
+        if severity is not None:
+            query = query.filter(Notification.severity == severity)
+
         return (
             query
             .order_by(Notification.created_at.desc())
@@ -99,3 +110,11 @@ class NotificationRepository:
 
     def save_all(self):
         self.db.commit()
+
+    def delete(self, notification_id: int) -> bool:
+        notification = self.get_by_id(notification_id)
+        if notification is None:
+            return False
+        self.db.delete(notification)
+        self.db.flush()
+        return True
