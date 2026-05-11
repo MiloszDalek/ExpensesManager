@@ -54,13 +54,86 @@ export default function InvitationsPanel({
 }: InvitationsPanelProps) {
   const { t } = useTranslation();
 
+  const receivedInvitationsSection = (
+    <div>
+      <h3 className="mb-2 text-base font-semibold text-foreground">
+        {t("dashboardInbox.receivedInvitationsTitle")}
+      </h3>
+
+      {pendingInvitationsLoading ? (
+        <div className="space-y-2">
+          {[1, 2].map((item) => (
+            <div key={item} className="h-12 animate-pulse rounded bg-muted" />
+          ))}
+        </div>
+      ) : pendingInvitationsError ? (
+        <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
+          {pendingInvitationsError.message || t("common.somethingWentWrong")}
+        </p>
+      ) : receivedContactInvitations.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+          {t("dashboardInbox.receivedInvitationsEmpty")}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {receivedContactInvitations.map((invitation) => {
+            const senderLabel =
+              invitation.from_user_username ?? invitation.from_user_email ?? t("dashboardInbox.userFallback");
+            const isAccepting =
+              acceptInvitationPending && acceptInvitationTargetId === invitation.id;
+            const isDeclining =
+              declineInvitationPending && declineInvitationTargetId === invitation.id;
+
+            return (
+              <div
+                key={invitation.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {t("contactsBalancesPage.invitationFrom", { username: senderLabel })}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isAccepting || isDeclining}
+                    onClick={() => onAcceptInvitation(invitation.id)}
+                  >
+                    {isAccepting ? t("dashboardInbox.acceptingInvite") : t("dashboardInbox.acceptInvite")}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={isAccepting || isDeclining}
+                    onClick={() => onDeclineInvitation(invitation.id)}
+                  >
+                    {isDeclining ? t("dashboardInbox.decliningInvite") : t("dashboardInbox.declineInvite")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div>
+      <div className="hidden md:block">
         <h2 className="text-lg font-semibold text-foreground">
           {t("contactsBalancesPage.invitationsTitle")}
         </h2>
       </div>
+
+      {receivedContactInvitations.length > 0 ? (
+        <div className="md:hidden">{receivedInvitationsSection}</div>
+      ) : null}
 
       <Card className="border border-border bg-card/80 shadow-sm backdrop-blur-sm">
         <CardContent className="space-y-3 p-4">
@@ -161,72 +234,7 @@ export default function InvitationsPanel({
         )}
       </div>
 
-      <div>
-        <h3 className="mb-2 text-base font-semibold text-foreground">
-          {t("dashboardInbox.receivedInvitationsTitle")}
-        </h3>
-
-        {pendingInvitationsLoading ? (
-          <div className="space-y-2">
-            {[1, 2].map((item) => (
-              <div key={item} className="h-12 animate-pulse rounded bg-muted" />
-            ))}
-          </div>
-        ) : pendingInvitationsError ? (
-          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
-            {pendingInvitationsError.message || t("common.somethingWentWrong")}
-          </p>
-        ) : receivedContactInvitations.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-            {t("dashboardInbox.receivedInvitationsEmpty")}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {receivedContactInvitations.map((invitation) => {
-              const senderLabel =
-                invitation.from_user_username ?? invitation.from_user_email ?? t("dashboardInbox.userFallback");
-              const isAccepting =
-                acceptInvitationPending && acceptInvitationTargetId === invitation.id;
-              const isDeclining =
-                declineInvitationPending && declineInvitationTargetId === invitation.id;
-
-              return (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {t("contactsBalancesPage.invitationFrom", { username: senderLabel })}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isAccepting || isDeclining}
-                      onClick={() => onAcceptInvitation(invitation.id)}
-                    >
-                      {isAccepting ? t("dashboardInbox.acceptingInvite") : t("dashboardInbox.acceptInvite")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={isAccepting || isDeclining}
-                      onClick={() => onDeclineInvitation(invitation.id)}
-                    >
-                      {isDeclining ? t("dashboardInbox.decliningInvite") : t("dashboardInbox.declineInvite")}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <div className="hidden md:block">{receivedInvitationsSection}</div>
     </div>
   );
 }
