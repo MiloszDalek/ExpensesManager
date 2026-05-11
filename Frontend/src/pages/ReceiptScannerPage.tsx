@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Camera, ImageIcon } from "lucide-react";
 
@@ -71,11 +71,7 @@ const parseAmount = (value: string): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const getDefaultTitle = (vendor: string | null, fallback: string) => {
-  if (vendor && vendor.trim().length > 0) {
-    return vendor.trim();
-  }
-
+const getDefaultTitle = (fallback: string) => {
   return fallback;
 };
 
@@ -153,8 +149,6 @@ export default function ReceiptScannerPage() {
 
   const [ocrText, setOcrText] = useState("");
   const [parsedTotal, setParsedTotal] = useState("");
-  const [parsedDate, setParsedDate] = useState("");
-  const [parsedVendor, setParsedVendor] = useState("");
   const [items, setItems] = useState<ScannerItem[]>([]);
 
   const [expenseScope, setExpenseScope] = useState<ExpenseScope>(normalizedScopeFromUrl);
@@ -415,8 +409,9 @@ export default function ReceiptScannerPage() {
       setLocalWarning(didFallbackToTesseract ? t("receiptScannerPage.ocrFallbackToTesseract") : null);
       setOcrText(result.receipt_text ?? "");
       setParsedTotal(result.parsed_total ?? result.detected_amount ?? "");
-      setParsedDate(result.parsed_date ?? "");
-      setParsedVendor(result.parsed_vendor ?? "");
+      if (result.parsed_date) {
+        setExpenseDate(result.parsed_date);
+      }
 
       const sourceItems = result.parsed_items ?? result.detected_items ?? [];
       setItems(
@@ -429,13 +424,6 @@ export default function ReceiptScannerPage() {
           is_selected: false,
         }))
       );
-
-      if (result.parsed_vendor && titleDraft.trim().length === 0) {
-        setTitleDraft(result.parsed_vendor);
-      }
-      if (result.parsed_date) {
-        setExpenseDate(result.parsed_date);
-      }
     } catch (error) {
       const message = error && typeof error === "object" && "message" in error
         ? String((error as { message?: unknown }).message ?? "")
@@ -488,7 +476,7 @@ export default function ReceiptScannerPage() {
     }
 
     const basePayload = {
-      title: getDefaultTitle(parsedVendor || titleDraft, t("receiptScannerPage.defaultTitle")),
+      title: getDefaultTitle(titleDraft || t("receiptScannerPage.defaultTitle")),
       amount: amount.toFixed(2),
       currency,
       category_id: categoryId,
@@ -586,7 +574,10 @@ export default function ReceiptScannerPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2 md:hidden">
+        <PageInfoButton pageKey="receiptScan" autoOpen={true} />
+      </div>
       <div className="mx-auto max-w-6xl space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -16 }}
@@ -594,17 +585,12 @@ export default function ReceiptScannerPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-bold text-foreground">{t("receiptScannerPage.title")}</h1>
-              <PageInfoButton pageKey="receiptScan" autoOpen={true} />
-            </div>
+            <h1 className="text-3xl font-bold text-foreground">{t("receiptScannerPage.title")}</h1>
             <p className="mt-2 text-muted-foreground">{t("receiptScannerPage.subtitle")}</p>
           </div>
-          <Button asChild variant="outline">
-            <Link to={expenseScope === "group" && selectedGroupId ? `/groups/${selectedGroupId}` : "/personal"}>
-              {expenseScope === "group" ? t("receiptScannerPage.backToGroup") : t("receiptScannerPage.backToPersonal")}
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <PageInfoButton pageKey="receiptScan" autoOpen={true} className="hidden lg:inline-flex" />
+          </div>
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -797,41 +783,11 @@ export default function ReceiptScannerPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="receipt-scan-vendor">{t("receiptScannerPage.parsedVendor")}</Label>
-                <Input
-                  id="receipt-scan-vendor"
-                  value={parsedVendor}
-                  onChange={(event) => setParsedVendor(event.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
                 <Label htmlFor="receipt-scan-total">{t("receiptScannerPage.parsedTotal")}</Label>
                 <Input
                   id="receipt-scan-total"
                   value={parsedTotal}
                   onChange={(event) => setParsedTotal(event.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="receipt-scan-date">{t("receiptScannerPage.parsedDate")}</Label>
-                <DatePicker
-                  id="receipt-scan-date"
-                  value={parsedDate}
-                  onChange={(value) => {
-                    setParsedDate(value);
-                    setExpenseDate(value);
-                  }}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="receipt-expense-date">{t("receiptScannerPage.expenseDate")}</Label>
-                <DatePicker
-                  id="receipt-expense-date"
-                  value={expenseDate}
-                  onChange={setExpenseDate}
                 />
               </div>
 
@@ -846,6 +802,15 @@ export default function ReceiptScannerPage() {
                     onCurrencyChange={setCurrency}
                   />
                 )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="receipt-expense-date">{t("receiptScannerPage.expenseDate")}</Label>
+                <DatePicker
+                  id="receipt-expense-date"
+                  value={expenseDate}
+                  onChange={setExpenseDate}
+                />
               </div>
 
               <div className="space-y-1">
@@ -953,57 +918,59 @@ export default function ReceiptScannerPage() {
           </section>
         </div>
 
-        <section className="space-y-3 rounded-lg border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">{t("receiptScannerPage.itemsTitle")}</h2>
-            <Button type="button" variant="outline" size="sm" onClick={handleAddManualItem}>
-              {t("receiptScannerPage.addItem")}
-            </Button>
-          </div>
-
-          {items.length === 0 ? (
-            <p className="text-xs text-muted-foreground">{t("receiptScannerPage.noItems")}</p>
-          ) : (
-            <div className="space-y-2">
-              {items.map((item) => (
-                <div key={item.id} className="grid grid-cols-[auto_1fr_120px_auto] items-center gap-2 rounded-md border border-border bg-background/60 p-2">
-                  <input
-                    type="checkbox"
-                    checked={item.is_selected}
-                    disabled={item.is_used}
-                    onChange={(event) => handleToggleSelected(item.id, event.target.checked)}
-                    className="h-4 w-4"
-                  />
-
-                  <Input
-                    value={item.name}
-                    onChange={(event) => handleUpdateItem(item.id, "name", event.target.value)}
-                    placeholder={t("receiptScannerPage.itemNamePlaceholder")}
-                    disabled={item.is_used}
-                  />
-
-                  <Input
-                    value={item.amount}
-                    onChange={(event) => handleUpdateItem(item.id, "amount", event.target.value)}
-                    placeholder="0.00"
-                    disabled={item.is_used}
-                  />
-
-                  <div className="flex items-center gap-2">
-                    {item.is_used ? (
-                      <span className="rounded bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
-                        {t("receiptScannerPage.usedBadge")}
-                      </span>
-                    ) : null}
-                    <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)}>
-                      {t("receiptScannerPage.removeItem")}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+        {ocrText && (
+          <section className="space-y-3 rounded-lg border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">{t("receiptScannerPage.itemsTitle")}</h2>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddManualItem}>
+                {t("receiptScannerPage.addItem")}
+              </Button>
             </div>
-          )}
-        </section>
+
+            {items.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t("receiptScannerPage.noItems")}</p>
+            ) : (
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div key={item.id} className="grid grid-cols-[auto_1fr_120px_auto] items-center gap-2 rounded-md border border-border bg-background/60 p-2">
+                    <input
+                      type="checkbox"
+                      checked={item.is_selected}
+                      disabled={item.is_used}
+                      onChange={(event) => handleToggleSelected(item.id, event.target.checked)}
+                      className="h-4 w-4"
+                    />
+
+                    <Input
+                      value={item.name}
+                      onChange={(event) => handleUpdateItem(item.id, "name", event.target.value)}
+                      placeholder={t("receiptScannerPage.itemNamePlaceholder")}
+                      disabled={item.is_used}
+                    />
+
+                    <Input
+                      value={item.amount}
+                      onChange={(event) => handleUpdateItem(item.id, "amount", event.target.value)}
+                      placeholder="0.00"
+                      disabled={item.is_used}
+                    />
+
+                    <div className="flex items-center gap-2">
+                      {item.is_used ? (
+                        <span className="rounded bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                          {t("receiptScannerPage.usedBadge")}
+                        </span>
+                      ) : null}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)}>
+                        {t("receiptScannerPage.removeItem")}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

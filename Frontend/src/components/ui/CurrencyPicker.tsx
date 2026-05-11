@@ -95,10 +95,10 @@ export function CurrencyPicker<TValue extends CurrencyEnum | "all" = CurrencyEnu
       onOpenChange={setIsSelectOpen}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className={`gap-2 border border-border bg-card/80 ${className}`}>
+      <SelectTrigger id={id} className={`w-full gap-2 border border-border bg-card/80 ${className}`}>
         <SelectValue placeholder={placeholder ?? "Select currency"} />
       </SelectTrigger>
-      <SelectContent className="w-48">
+      <SelectContent>
         {allowAll && (
           <>
             <SelectGroup>
