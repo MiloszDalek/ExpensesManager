@@ -6,6 +6,7 @@ export * from "./expense";
 export * from "./category";
 export * from "./categoryIcons";
 export * from "./contact";
+export * from "./contactsPage";
 export * from "./invitation";
 export * from "./notification";
 export * from "./balance";
