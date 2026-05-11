@@ -21,8 +21,7 @@ import { expensesPersonalApi } from "@/api/expensesPersonalApi";
 import { recurringExpensesApi } from "@/api/recurringExpensesApi";
 import { categoriesApi } from "@/api/categoriesApi";
 import { queryKeys } from "@/api/queryKeys";
-import { formatCategoryNameForDisplay } from "@/utils/category";
-import { formatCurrency, formatCurrencyNumber } from "@/utils/currency";
+import { formatCurrency } from "@/utils/currency";
 import type { CurrencyEnum } from "@/types/enums";
 
 import type {
@@ -451,13 +450,6 @@ export default function PersonalExpensesPage() {
     .map((item) => formatCurrency(Number(item.total_amount), item.currency as CurrencyEnum))
     .join(" · ");
 
-  const topCategory = summary?.top_categories?.[0] ?? null;
-  const topCategoryName = topCategory
-    ? t(`category.${topCategory.category_name}`, {
-        defaultValue: formatCategoryNameForDisplay(topCategory.category_name),
-      })
-    : "-";
-
   const mapRecurringStatusLabel = (status: RecurringExpenseStatus) => {
     if (status === "active") {
       return t("recurringExpenses.statusActive", { defaultValue: "Active" });
@@ -597,7 +589,7 @@ export default function PersonalExpensesPage() {
               {t("personalExpensesPage.numericSummary")}
             </h2>
 
-            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm p-4 md:p-5">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t("personalExpensesPage.total")}
@@ -610,18 +602,6 @@ export default function PersonalExpensesPage() {
                   {t("personalExpensesPage.expenseCount")}
                 </p>
                 <p className="mt-1 text-xl font-bold text-foreground">{summary?.total_count ?? 0}</p>
-              </div>
-
-              <div className="rounded-lg border border-border bg-card/80 shadow-sm backdrop-blur-sm p-4 md:p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("personalExpensesPage.topCategory")}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {topCategoryName}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {topCategory ? formatCurrencyNumber(Number(topCategory.total_amount)) : "-"}
-                </p>
               </div>
             </div>
 
