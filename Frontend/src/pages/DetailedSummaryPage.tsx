@@ -427,7 +427,7 @@ export default function DetailedSummaryPage() {
           <Card className="mb-8 py-2 border border-border bg-card/80">
             <CardContent className="text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("summaryPage.total")}:</p>
-              <p className="text-2xl font-bold text-primary">{totalLabel || "0.00"}</p>
+              <p className="text-2xl font-bold text-primary">{totalLabel || formatCurrency(0, appliedFilters.currency as CurrencyEnum)}</p>
             </CardContent>
           </Card>
         </div>
@@ -458,7 +458,7 @@ export default function DetailedSummaryPage() {
             <Card className="mb-6 py-3 border border-border bg-card/80 min-w-lg">
               <CardContent className="text-center">
                 <p className="text-md text-muted-foreground mb-1">{t("summaryPage.total")}:</p>
-                <p className="text-2xl font-bold text-primary">{totalLabel || "0.00"}</p>
+                <p className="text-2xl font-bold text-primary">{totalLabel || formatCurrency(0, appliedFilters.currency as CurrencyEnum)}</p>
               </CardContent>
             </Card>
           </div>
