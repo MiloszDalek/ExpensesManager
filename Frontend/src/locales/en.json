@@ -615,6 +615,17 @@
             "Or use the PayPal button if available.",
             "After settlement the balance will be updated automatically."
           ]
+        },
+        "exportSummary": {
+          "title": "Export summary",
+          "purpose": "Export your expense data to CSV, Excel (XLSX), or PDF format with customizable sections and filename.",
+          "actions": [
+            "Select the export format from the dropdown.",
+            "Optionally provide a custom filename (extension is added automatically).",
+            "Choose which sections to include: transactions, category summary, or both.",
+            "The export always uses the filters from your current view (date range, categories, currency, etc.).",
+            "All exported documents are localized in your selected language."
+          ]
         }
       }
     }
@@ -899,7 +910,12 @@
     "exporting": "Exporting...",
     "exportCurrentViewHint": "Export always uses the filters from your current view.",
     "exportFormatLabel": "Format",
+    "exportFilenameLabel": "Filename (optional)",
+    "exportFilenamePlaceholder": "e.g., my-expenses",
+    "exportFilenameHint": "Leave empty to use auto-generated name. Extension will be added automatically.",
     "exportSectionsLabel": "Sections",
+    "exportSectionTransactions": "Transactions",
+    "exportSectionCategorySummary": "Category summary",
     "exportPdfHint": "PDF includes summary sections only. Raw transaction tables are excluded.",
     "exportSections": {
       "transactions": "Transactions",

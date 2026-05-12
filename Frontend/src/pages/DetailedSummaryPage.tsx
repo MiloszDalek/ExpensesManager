@@ -58,8 +58,12 @@ export default function DetailedSummaryPage() {
     setIsExportDialogOpen,
     exportFormat,
     pendingExportFormat,
+    exportSections,
+    exportFilename,
+    setExportFilename,
     exportMutation,
     handleExportFormatChange,
+    handleExportSectionToggle,
     handleExportSubmit,
   } = useSummaryExport({
     scope: appliedFilters.scope,
@@ -499,6 +503,10 @@ export default function DetailedSummaryPage() {
         onOpenChange={setIsExportDialogOpen}
         format={exportFormat}
         onFormatChange={handleExportFormatChange}
+        exportSections={exportSections}
+        onSectionToggle={handleExportSectionToggle}
+        exportFilename={exportFilename}
+        onExportFilenameChange={setExportFilename}
         isPending={exportMutation.isPending}
         pendingFormat={pendingExportFormat}
         onSubmit={handleExportSubmit}

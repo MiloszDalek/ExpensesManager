@@ -65,9 +65,13 @@ export const expensesSummaryApi = {
     return data;
   },
 
-  exportCsv: async (params?: ApiExpenseSummaryDrilldownParams): Promise<{ blob: Blob; filename: string }> => {
+  exportCsv: async (
+    params?: ApiExpenseSummaryDrilldownParams,
+    locale?: string
+  ): Promise<{ blob: Blob; filename: string }> => {
+    const requestParams = locale ? { ...(params ?? {}), locale } : params;
     const response = await client.get<Blob>("/expenses/summary/export/csv", {
-      params,
+      params: requestParams,
       responseType: "blob",
     });
 
@@ -78,7 +82,6 @@ export const expensesSummaryApi = {
       filename: filenameFromHeader || `expenses-summary-${Date.now()}.csv`,
     };
   },
-
   exportXlsx: async (
     params?: ApiExpenseSummaryDrilldownParams,
     locale?: string
@@ -96,7 +99,6 @@ export const expensesSummaryApi = {
       filename: filenameFromHeader || `expenses-summary-${Date.now()}.xlsx`,
     };
   },
-
   exportPdf: async (
     params?: ApiExpenseSummaryDrilldownParams,
     locale?: string

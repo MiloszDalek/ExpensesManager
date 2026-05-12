@@ -593,17 +593,28 @@
           "purpose": "Zmień nazwę, opis lub walutę grupy. Możesz również archiwizować grupę.",
           "actions": [
             "Edytuj nazwę i opis grupy.",
-            "Walutę można zmienić tylko, gdy grupa nie ma wydatków.",
-            "Użyj przycisku Archiwizuj, aby zamknąć grupę."
+            "Waluta może być zmieniona tylko gdy grupa nie ma wydatków.",
+            "Użyj przycisku Archiwizuj aby zamknąć grupę."
           ]
         },
         "groupSettlement": {
-          "title": "Rozliczenie w grupie",
+          "title": "Rozliczenie grupowe",
           "purpose": "Wybierz sposób rozliczenia salda z innym członkiem grupy.",
           "actions": [
             "Wybierz rozliczenie gotówkowe poza aplikacją.",
-            "Lub użyj przycisku PayPal, jeśli jest dostępny.",
+            "Lub użyj przycisku PayPal jeśli jest dostępny.",
             "Po rozliczeniu saldo zostanie zaktualizowane automatycznie."
+          ]
+        },
+        "exportSummary": {
+          "title": "Eksport podsumowania",
+          "purpose": "Eksportuj swoje dane wydatków do formatu CSV, Excel (XLSX) lub PDF z możliwością wyboru sekcji i nazwy pliku.",
+          "actions": [
+            "Wybierz format eksportu z listy rozwijanej.",
+            "Opcjonalnie podaj własną nazwę pliku (rozszerzenie zostanie dodane automatycznie).",
+            "Wybierz które sekcje uwzględnić: transakcje, podsumowanie kategorii lub obie.",
+            "Eksport zawsze używa filtrów z aktualnego widoku (zakres dat, kategorie, waluta itp.).",
+            "Wszystkie eksportowane dokumenty są zlokalizowane w wybranym języku."
           ]
         }
       }
@@ -882,14 +893,19 @@
     "subtitle": "Analizuj wydatki osobiste i grupowe w jednym miejscu",
     "transactionsTitle": "Transakcje",
     "total": "Suma w wybranym okresie",
-    "export": "Eksport",
+    "export": "Eksportuj",
     "exportCsv": "Eksport CSV",
     "exportXlsx": "Eksport XLSX",
     "exportPdf": "Eksport PDF",
     "exporting": "Eksportowanie...",
     "exportCurrentViewHint": "Eksport zawsze używa filtrów z aktualnego widoku.",
     "exportFormatLabel": "Format",
+    "exportFilenameLabel": "Nazwa pliku (opcjonalne)",
+    "exportFilenamePlaceholder": "np. moje-wydatki",
+    "exportFilenameHint": "Zostaw puste, aby użyć automatycznie wygenerowanej nazwy. Rozszerzenie zostanie dodane automatycznie.",
     "exportSectionsLabel": "Sekcje",
+    "exportSectionTransactions": "Transakcje",
+    "exportSectionCategorySummary": "Podsumowanie kategorii",
     "exportPdfHint": "PDF zawiera tylko sekcje podsumowujące. Surowa tabela transakcji jest pomijana.",
     "exportSections": {
       "transactions": "Transakcje",

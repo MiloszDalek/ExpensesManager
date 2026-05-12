@@ -10,12 +10,7 @@ type ExportMutationVariables = {
   format: ExportFormat;
 };
 
-const getSectionsForFormat = (format: ExportFormat): string => {
-  if (format === "pdf") {
-    return "category_summary";
-  }
-  return "transactions,category_summary";
-};
+type ExportSection = "transactions" | "category_summary";
 
 interface UseSummaryExportParams {
   scope: ExpenseSummaryScope;
@@ -28,18 +23,20 @@ interface UseSummaryExportParams {
   sortOrder: "asc" | "desc";
 }
 
-export type { ExportFormat, ExportMutationVariables };
-export { getSectionsForFormat };
+export type { ExportFormat, ExportMutationVariables, ExportSection };
 
 export function useSummaryExport(params: UseSummaryExportParams) {
   const { i18n } = useTranslation();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [pendingExportFormat, setPendingExportFormat] = useState<ExportFormat | null>(null);
+  const [exportSections, setExportSections] = useState<ExportSection[]>(["transactions", "category_summary"]);
+  const [exportFilename, setExportFilename] = useState("");
 
   const exportMutation = useMutation<{ blob: Blob; filename: string }, Error, ExportMutationVariables>({
     mutationFn: ({ format }) => {
-      const baseParams: ApiExpenseSummaryDrilldownParams & { sections?: string } = {
+      const sections = exportSections.join(",");
+      const baseParams: ApiExpenseSummaryDrilldownParams = {
         scope: params.scope,
         group_id: params.groupId,
         date_from: params.dateFrom,
@@ -48,7 +45,8 @@ export function useSummaryExport(params: UseSummaryExportParams) {
         currency: params.currency,
         sort_by: params.sortBy,
         sort_order: params.sortOrder,
-        sections: getSectionsForFormat(format),
+        sections: sections || undefined,
+        filename: exportFilename.trim() || undefined,
       };
       const activeLocale = i18n.resolvedLanguage || i18n.language || "en";
 
@@ -60,7 +58,7 @@ export function useSummaryExport(params: UseSummaryExportParams) {
         return expensesSummaryApi.exportPdf(baseParams, activeLocale);
       }
 
-      return expensesSummaryApi.exportCsv(baseParams);
+      return expensesSummaryApi.exportCsv(baseParams, activeLocale);
     },
     onMutate: ({ format }) => {
       setPendingExportFormat(format);
@@ -84,6 +82,14 @@ export function useSummaryExport(params: UseSummaryExportParams) {
     setExportFormat(nextFormat);
   };
 
+  const handleExportSectionToggle = (section: ExportSection) => {
+    setExportSections((prev) =>
+      prev.includes(section)
+        ? prev.filter((s) => s !== section)
+        : [...prev, section]
+    );
+  };
+
   const handleExportSubmit = () => {
     exportMutation.mutate({ format: exportFormat });
     setIsExportDialogOpen(false);
@@ -94,8 +100,12 @@ export function useSummaryExport(params: UseSummaryExportParams) {
     setIsExportDialogOpen,
     exportFormat,
     pendingExportFormat,
+    exportSections,
+    exportFilename,
+    setExportFilename,
     exportMutation,
     handleExportFormatChange,
+    handleExportSectionToggle,
     handleExportSubmit,
   };
 }

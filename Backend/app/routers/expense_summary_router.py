@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.enums import CurrencyEnum
 from app.models import User
+from app.services import ExpenseSummaryService
 from app.schemas import (
     ExpenseSummaryDrilldownResponse,
     ExpenseSummaryOverviewResponse,
@@ -16,7 +17,6 @@ from app.schemas import (
     ExpenseCategoriesResponse,
     ExpenseTrendResponse,
 )
-from app.services.expense_summary_service import ExpenseSummaryService
 from app.utils.auth_dependencies import get_current_active_user
 
 
@@ -130,6 +130,8 @@ def export_expense_summary_csv(
     currency: CurrencyEnum | None = Query(default=None),
     group_id: int | None = Query(default=None, ge=1),
     sections: str | None = Query(default=None),
+    locale: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
     sort_by: Literal["expense_date", "amount", "created_at"] = Query(default="expense_date"),
     sort_order: Literal["asc", "desc"] = Query(default="desc"),
     service: ExpenseSummaryService = Depends(get_summary_service),
@@ -145,6 +147,8 @@ def export_expense_summary_csv(
         currency=currency,
         group_id=group_id,
         sections=sections,
+        locale=locale,
+        filename=filename,
         sort_by=sort_by,
         sort_order=sort_order,
     )
@@ -168,6 +172,7 @@ def export_expense_summary_xlsx(
     group_id: int | None = Query(default=None, ge=1),
     sections: str | None = Query(default=None),
     locale: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
     sort_by: Literal["expense_date", "amount", "created_at"] = Query(default="expense_date"),
     sort_order: Literal["asc", "desc"] = Query(default="desc"),
     service: ExpenseSummaryService = Depends(get_summary_service),
@@ -184,6 +189,7 @@ def export_expense_summary_xlsx(
         group_id=group_id,
         sections=sections,
         locale=locale,
+        filename=filename,
         sort_by=sort_by,
         sort_order=sort_order,
     )
@@ -211,6 +217,7 @@ def export_expense_summary_pdf(
     group_id: int | None = Query(default=None, ge=1),
     sections: str | None = Query(default=None),
     locale: str | None = Query(default=None),
+    filename: str | None = Query(default=None),
     sort_by: Literal["expense_date", "amount", "created_at"] = Query(default="expense_date"),
     sort_order: Literal["asc", "desc"] = Query(default="desc"),
     service: ExpenseSummaryService = Depends(get_summary_service),
@@ -227,6 +234,7 @@ def export_expense_summary_pdf(
         group_id=group_id,
         sections=sections,
         locale=locale,
+        filename=filename,
         sort_by=sort_by,
         sort_order=sort_order,
     )

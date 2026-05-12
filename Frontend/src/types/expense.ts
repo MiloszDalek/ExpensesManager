@@ -245,6 +245,7 @@ export interface ApiExpenseSummaryDrilldownParams {
   currency?: CurrencyEnum;
   group_id?: number;
   sections?: string;
+  filename?: string;
   sort_by?: "expense_date" | "amount" | "created_at";
   sort_order?: "asc" | "desc";
 }
