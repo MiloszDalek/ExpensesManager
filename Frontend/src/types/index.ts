@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./common";
 export * from "./user";
 export * from "./group";
+export * from "./groupDetail";
 export * from "./expense";
 export * from "./category";
 export * from "./categoryIcons";

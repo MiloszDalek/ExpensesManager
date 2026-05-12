@@ -1,37 +1,26 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { Users, Wallet, Coins, UserPlus, Plus, ScanSearch, Pencil, Repeat2 } from "lucide-react";
-import { motion } from "framer-motion";
-import { format } from "date-fns";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import PageInfoButton from "@/components/help/PageInfoButton";
-import DialogInfoButton from "@/components/help/DialogInfoButton";
 import { LoadingSpinnerWrapper } from "@/components/ui/LoadingSpinner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import SpeedDial from "@/components/ui/speed-dial";
-import { PayPalCurrencyButtons } from "@/components/payments/PayPalCurrencyButtons";
-import GroupMembersPanel from "@/components/groups/GroupMembersPanel";
+import { useAuth } from "@/contexts/AuthContext";
+import { createPageUrl } from "@/utils/url";
+import type { CurrencyEnum } from "@/types/enums";
+import { useGroupData } from "@/hooks/groupDetail/useGroupData";
+import { useGroupExpenses } from "@/hooks/groupDetail/useGroupExpenses";
+import { useGroupRecurring } from "@/hooks/groupDetail/useGroupRecurring";
+import { useGroupSettlements } from "@/hooks/groupDetail/useGroupSettlements";
+import GroupHeader from "@/components/groupDetail/GroupHeader";
+import GroupSummaryCards from "@/components/groupDetail/GroupSummaryCards";
+import GroupBalancesPanel from "@/components/groupDetail/GroupBalancesPanel";
+import GroupSettlementsList from "@/components/groupDetail/GroupSettlementsList";
+import GroupRecurringList from "@/components/groupDetail/GroupRecurringList";
+import GroupMembersSection from "@/components/groupDetail/GroupMembersSection";
+import GroupSettlementDialog from "@/components/groupDetail/GroupSettlementDialog";
+import GroupSettlementConfirmDialog from "@/components/groupDetail/GroupSettlementConfirmDialog";
 import GroupExpensesList from "@/components/groups/GroupExpensesList";
 import { GroupSpendingTrendChart } from "@/components/groups/GroupSpendingTrendChart";
 import AddGroupMemberDialog from "@/components/groups/AddGroupMemberDialog";
@@ -39,824 +28,132 @@ import AddGroupExpenseDialog from "@/components/groups/AddGroupExpenseDialog";
 import AddGroupRecurringExpenseDialog from "@/components/groups/AddGroupRecurringExpenseDialog";
 import EditRecurringExpenseDialog from "@/components/expenses/EditRecurringExpenseDialog";
 import EditGroupDialog from "@/components/groups/EditGroupDialog";
-import { useAuth } from "@/contexts/AuthContext";
-import { formatCurrency } from "@/utils/currency";
-import type { CurrencyEnum } from "@/types/enums";
-import { groupsApi } from "@/api/groupsApi";
-import { expensesGroupApi } from "@/api/expensesGroupApi";
-import { recurringExpensesApi } from "@/api/recurringExpensesApi";
-import { categoriesApi } from "@/api/categoriesApi";
-import { contactsApi } from "@/api/contactsApi";
-import { invitationsApi } from "@/api/invitationsApi";
-import { balancesApi } from "@/api/balancesApi";
-import { settlementsApi } from "@/api/settlementsApi";
-import { queryKeys } from "@/api/queryKeys";
-import { paypalConfig } from "@/config/paypal";
-import { createPageUrl } from "@/utils/url";
-import { formatGroupName } from "@/utils/group";
-
-import type {
-  ApiGroupBalances,
-  ApiContactResponse,
-  ApiGroupExpenseCreate,
-  ApiGroupExpenseUpdate,
-  ApiGroupExpenseResponse,
-  ApiGroupInvitationCreate,
-  ApiGroupMemberResponse,
-  ApiRecurringGroupExpenseCreate,
-  ApiRecurringExpenseUpdate,
-  ApiRecurringExpenseResponse,
-  ApiGroupResponse,
-  ApiGroupUpdate,
-  ApiInvitationResponse,
-  ApiCategoryResponse,
-  ApiSettlementResponse,
-} from "@/types";
-import type { CategorySection, PaymentMethod } from "@/types/enums";
-
-const LIMIT = 20;
-const CONTACTS_LIMIT = 100;
-const SETTLEMENTS_LIMIT = 20;
-const RECURRING_LIMIT = 50;
-
-const getErrorStatus = (error: unknown): number | undefined =>
-  axios.isAxiosError(error) ? error.response?.status : undefined;
 
 export default function GroupDetailPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { id } = useParams();
-  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
-  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
-  const [showAddRecurringExpenseDialog, setShowAddRecurringExpenseDialog] = useState(false);
-  const [showEditGroupDialog, setShowEditGroupDialog] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ApiGroupExpenseResponse | null>(null);
-  const [editingRecurringExpense, setEditingRecurringExpense] = useState<ApiRecurringExpenseResponse | null>(null);
+  const [searchParams] = useSearchParams();
+
+  const groupData = useGroupData();
+  const {
+    groupId,
+    isValidGroupId,
+    isAccessDenied,
+    canLoadGroupData,
+    group,
+    groupLoading,
+    groupError,
+    members,
+    membersLoading,
+    membersError,
+    isCurrentUserAdmin,
+    contacts,
+    contactsLoading,
+    pendingInvitations,
+    pendingInvitationsLoading,
+    pendingInvitationsError,
+    categories,
+    categoriesLoading,
+    categoriesError,
+    inviteMemberError,
+    setInviteMemberError,
+    editGroupError,
+    setEditGroupError,
+    inviteMemberMutation,
+    grantAdminMutation,
+    removeMemberMutation,
+    leaveGroupMutation,
+    cancelInvitationMutation,
+    updateGroupMutation,
+    createGroupCategoryMutation,
+    deleteGroupCategoryMutation,
+  } = groupData;
+
+  const groupExpenses = useGroupExpenses(groupId, canLoadGroupData);
+  const {
+    expenses,
+    expensesLoading,
+    expensesError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    createExpenseError,
+    setCreateExpenseError,
+    editExpenseError,
+    setEditExpenseError,
+    deleteExpenseError,
+    setDeleteExpenseError,
+    editingExpense,
+    setEditingExpense,
+    createExpenseMutation,
+    updateExpenseMutation,
+    deleteExpenseMutation,
+  } = groupExpenses;
+
+  const groupRecurring = useGroupRecurring(groupId, canLoadGroupData);
+  const {
+    recurringExpenses,
+    recurringLoading,
+    recurringError,
+    editingRecurringExpense,
+    setEditingRecurringExpense,
+    createRecurringExpenseMutation,
+    updateRecurringMutation,
+    generateNowRecurringMutation,
+    pauseRecurringMutation,
+    resumeRecurringMutation,
+    archiveRecurringMutation,
+    recurringActionsPending,
+    mapRecurringFrequencyLabel,
+    mapRecurringStatusLabel,
+    formatDateSafe,
+  } = groupRecurring;
+
+  const memberNameById = members.reduce<Record<number, string>>((acc, member) => {
+    acc[member.user_id] = member.username;
+    return acc;
+  }, {});
+
+  const groupSettlements = useGroupSettlements(groupId, canLoadGroupData, user?.id, memberNameById);
+  const {
+    balancesLoading,
+    balancesError,
+    settlementsLoading,
+    settlementsError,
+    userBalanceSummary,
+    balanceRows,
+    completedSettlements,
+    getMemberDisplayName,
+    getSettlementMethodLabel,
+    settlementDialogTarget,
+    setSettlementDialogTarget,
+    outsideAppConfirmTarget,
+    setOutsideAppConfirmTarget,
+    groupSettlementFeedback,
+    setGroupSettlementFeedback,
+    isPayPalButtonEnabled,
+    getPayPalUnavailableMessage,
+    createGroupPayPalOrder,
+    finalizeGroupPayPalOrder,
+    settleGroupCashMutation,
+    mapPayPalSettlementError,
+  } = groupSettlements;
+
   const [mobileSection, setMobileSection] = useState<"expenses" | "balances" | "recurring" | "members">(
     searchParams.get("tab") === "recurring" ? "recurring" :
     searchParams.get("tab") === "balances" ? "balances" :
     searchParams.get("tab") === "members" ? "members" :
     "expenses"
   );
-  const [settlementDialogTarget, setSettlementDialogTarget] = useState<{
-    userId: number;
-    memberName: string;
-    absoluteAmount: number;
-  } | null>(null);
-  const [outsideAppConfirmTarget, setOutsideAppConfirmTarget] = useState<{
-    userId: number;
-    absoluteAmount: number;
-  } | null>(null);
-  const [inviteMemberError, setInviteMemberError] = useState<string | null>(null);
-  const [createExpenseError, setCreateExpenseError] = useState<string | null>(null);
-  const [editExpenseError, setEditExpenseError] = useState<string | null>(null);
-  const [editGroupError, setEditGroupError] = useState<string | null>(null);
-  const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
-  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
-  const [groupSettlementFeedback, setGroupSettlementFeedback] = useState<{
-    tone: "success" | "error";
-    message: string;
-  } | null>(null);
-  const isPayPalButtonEnabled = paypalConfig.isPayPalButtonEnabled;
 
-  const getPayPalUnavailableMessage = () => {
-    return paypalConfig.isDisabled
-      ? t("groupDetailPage.settlementErrors.paypalDisabled")
-      : t("groupDetailPage.settlementErrors.paypalSdkNotConfigured");
-  };
-
-  const groupId = Number(id);
-  const isValidGroupId = Number.isInteger(groupId) && groupId > 0;
-  const canQueryGroup = !!user && isValidGroupId;
-  const groupPendingInvitationsQueryKey = queryKeys.invitations.groupPending(groupId, {
-    limit: 100,
-    offset: 0,
-  });
-
-  const {
-    data: group,
-    isLoading: groupLoading,
-    error: groupError,
-  } = useQuery<ApiGroupResponse>({
-    queryKey: queryKeys.groups.byId(groupId),
-    queryFn: () => groupsApi.getById(groupId),
-    enabled: canQueryGroup,
-    retry: (failureCount, error) => {
-      const status = getErrorStatus(error);
-      if (status === 403 || status === 404) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-  });
-
-  const groupErrorStatus = getErrorStatus(groupError);
-  const isAccessDenied = groupErrorStatus === 403 || groupErrorStatus === 404;
-  const canLoadGroupData = canQueryGroup && !isAccessDenied && !!group && !isLeavingGroup;
-
-  const {
-    data: members = [],
-    isLoading: membersLoading,
-    error: membersError,
-  } = useQuery<ApiGroupMemberResponse[]>({
-    queryKey: queryKeys.groups.members(groupId),
-    queryFn: () => groupsApi.members(groupId),
-    enabled: canLoadGroupData,
-  });
-
-  const currentMember = useMemo(
-    () => members.find((member) => member.user_id === user?.id) ?? null,
-    [members, user?.id]
-  );
-  const isCurrentUserAdmin = currentMember?.role === "admin";
-
-  const {
-    data: contacts = [],
-    isLoading: contactsLoading,
-  } = useQuery<ApiContactResponse[]>({
-    queryKey: queryKeys.contacts.list({ limit: CONTACTS_LIMIT, offset: 0 }),
-    queryFn: () => contactsApi.list({ limit: CONTACTS_LIMIT, offset: 0 }),
-    enabled: canLoadGroupData && isCurrentUserAdmin,
-  });
-
-  const {
-    data: pendingInvitations = [],
-    isLoading: pendingInvitationsLoading,
-    error: pendingInvitationsError,
-  } = useQuery<ApiInvitationResponse[]>({
-    queryKey: groupPendingInvitationsQueryKey,
-    queryFn: () => invitationsApi.listGroupPending(groupId, { limit: 100, offset: 0 }),
-    enabled: canLoadGroupData && isCurrentUserAdmin,
-  });
-
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-    error: categoriesError,
-  } = useQuery<ApiCategoryResponse[]>({
-    queryKey: queryKeys.categories.availableGroup(groupId),
-    queryFn: () => categoriesApi.getAvailableGroup(groupId),
-    enabled: canLoadGroupData,
-  });
-
-  const {
-    data: groupBalances,
-    isLoading: balancesLoading,
-    error: balancesError,
-  } = useQuery<ApiGroupBalances>({
-    queryKey: queryKeys.balances.group(groupId),
-    queryFn: () => balancesApi.getGroup(groupId),
-    enabled: canLoadGroupData,
-  });
-
-  const {
-    data: expensePages,
-    isLoading: expensesLoading,
-    error: expensesError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<ApiGroupExpenseResponse[]>({
-    queryKey: [...queryKeys.groupExpenses.list(groupId), "infinite"],
-    queryFn: ({ pageParam = 0 }) =>
-      expensesGroupApi.list(groupId, {
-        limit: LIMIT,
-        offset: pageParam as number,
-      }),
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === LIMIT ? allPages.length * LIMIT : undefined;
-    },
-    initialPageParam: 0,
-    enabled: canLoadGroupData,
-  });
-
-  const {
-    data: settlements = [],
-    isLoading: settlementsLoading,
-    error: settlementsError,
-  } = useQuery<ApiSettlementResponse[]>({
-    queryKey: queryKeys.settlements.group(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
-    queryFn: () => settlementsApi.getByGroup(groupId, { limit: SETTLEMENTS_LIMIT, offset: 0 }),
-    enabled: canLoadGroupData,
-  });
-
-  const {
-    data: recurringExpenses = [],
-    isLoading: recurringLoading,
-    error: recurringError,
-  } = useQuery<ApiRecurringExpenseResponse[]>({
-    queryKey: queryKeys.recurringExpenses.list({
-      scope: "group",
-      group_id: groupId,
-      limit: RECURRING_LIMIT,
-      offset: 0,
-    }),
-    queryFn: () =>
-      recurringExpensesApi.list({
-        scope: "group",
-        group_id: groupId,
-        limit: RECURRING_LIMIT,
-        offset: 0,
-      }),
-    enabled: canLoadGroupData,
-  });
-
-  const expenses = useMemo(() => expensePages?.pages.flatMap((page) => page) ?? [], [expensePages]);
-
-  const inviteMemberMutation = useMutation<ApiInvitationResponse, Error, ApiGroupInvitationCreate>({
-    mutationFn: (payload) => invitationsApi.sendToGroup(payload),
-    onMutate: () => {
-      setInviteMemberError(null);
-    },
-    onSuccess: async (createdInvitation) => {
-      queryClient.setQueryData<ApiInvitationResponse[]>(groupPendingInvitationsQueryKey, (previous = []) => {
-        if (previous.some((invitation) => invitation.id === createdInvitation.id)) {
-          return previous;
-        }
-
-        return [createdInvitation, ...previous];
-      });
-      await queryClient.invalidateQueries({ queryKey: groupPendingInvitationsQueryKey });
-      setInviteMemberError(null);
-      setShowAddMemberDialog(false);
-    },
-    onError: (mutationError) => {
-      setInviteMemberError(mapGroupInvitationError(mutationError.message));
-    },
-  });
-
-  const grantAdminMutation = useMutation<ApiGroupMemberResponse, Error, number>({
-    mutationFn: (targetUserId) => groupsApi.grantAdmin(groupId, targetUserId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(groupId) });
-    },
-  });
-
-  const removeMemberMutation = useMutation<void, Error, number>({
-    mutationFn: (targetUserId) => groupsApi.removeMember(groupId, targetUserId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.members(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      await queryClient.invalidateQueries({ queryKey: ["invitations", "group", groupId, "pending"] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-    },
-  });
-
-  const leaveGroupMutation = useMutation<void, Error>({
-    mutationFn: () => groupsApi.leaveGroup(groupId),
-    onMutate: async () => {
-      setIsLeavingGroup(true);
-
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: queryKeys.groups.byId(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.groups.members(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.categories.availableGroup(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.balances.group(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.groupExpenses.list(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.settlements.group(groupId) }),
-        queryClient.cancelQueries({ queryKey: queryKeys.recurringExpenses.list({ scope: "group", group_id: groupId }) }),
-        queryClient.cancelQueries({ queryKey: groupPendingInvitationsQueryKey }),
-      ]);
-    },
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.groups.members(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.balances.group(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.groupExpenses.list(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.settlements.group(groupId) });
-      queryClient.removeQueries({ queryKey: queryKeys.recurringExpenses.list({ scope: "group", group_id: groupId }) });
-      queryClient.removeQueries({ queryKey: groupPendingInvitationsQueryKey });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
-      navigate(createPageUrl("Groups"));
-    },
-    onError: () => {
-      setIsLeavingGroup(false);
-    },
-  });
-
-  const cancelInvitationMutation = useMutation<ApiInvitationResponse, Error, number>({
-    mutationFn: (invitationId) => invitationsApi.cancel(invitationId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: groupPendingInvitationsQueryKey });
-    },
-  });
-
-  const updateGroupMutation = useMutation<ApiGroupResponse, Error, ApiGroupUpdate>({
-    mutationFn: (payload) => groupsApi.update(groupId, payload),
-    onMutate: () => {
-      setEditGroupError(null);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
-      setEditGroupError(null);
-      setShowEditGroupDialog(false);
-    },
-    onError: (mutationError) => {
-      setEditGroupError(mapGroupUpdateError(mutationError.message));
-    },
-  });
-
-  const mapGroupExpenseError = (message: string | undefined, fallbackKey: string) => {
-    return message === "Participant not found in group"
-      ? t("addGroupExpenseDialog.errors.participantNotFoundInGroup")
-      : message === "Duplicate participants"
-        ? t("addGroupExpenseDialog.errors.duplicateParticipants")
-        : message === "Expense must have at least one participant"
-          ? t("addGroupExpenseDialog.errors.participantsRequired")
-          : message === "Share amounts must be positive"
-            ? t("addGroupExpenseDialog.errors.sharesPositive")
-            : message === "Split amounts must add up to total expense amount"
-              ? t("addGroupExpenseDialog.errors.sharesSumMismatch")
-              : message === "Expense currency must match group currency"
-                ? t("addGroupExpenseDialog.errors.currencyMismatch")
-                : message === "Group not found"
-                  ? t("addGroupExpenseDialog.errors.groupNotFound")
-                  : message === "Expense not found"
-                    ? t("addGroupExpenseDialog.errors.expenseNotFound")
-                    : message === "Updating amount requires expense shares"
-                      ? t("addGroupExpenseDialog.errors.updateRequiresShares")
-                      : message === "Not authorized admin group role required or being expense creator"
-                        ? t("addGroupExpenseDialog.errors.managePermissionRequired")
-                        : message === "Not authorized"
-                          ? t("addGroupExpenseDialog.errors.notAuthorized")
-                          : message || t(fallbackKey);
-  };
-
-  const mapGroupSettlementError = (message: string | undefined) => {
-    return message === "Cannot settle with yourself"
-      ? t("groupDetailPage.settlementErrors.cannotSettleWithYourself")
-      : message === "Group id is required"
-        ? t("groupDetailPage.settlementErrors.groupIdRequired")
-        : message === "Member not found"
-          ? t("groupDetailPage.settlementErrors.memberNotFound")
-          : message === "No balance with this user"
-            ? t("groupDetailPage.settlementErrors.noBalanceWithUser")
-            : message === "No debt between users"
-              ? t("groupDetailPage.settlementErrors.noDebtBetweenUsers")
-              : message === "This user owes you money"
-                ? t("groupDetailPage.settlementErrors.otherUserOwesYou")
-                : message === "Group not found"
-                  ? t("groupDetailPage.settlementErrors.groupNotFound")
-                  : message === "Not authorized"
-                    ? t("groupDetailPage.settlementErrors.notAuthorized")
-                    : message || t("groupDetailPage.settlementErrors.settleFailed");
-  };
-
-  function mapGroupInvitationError(message: string | undefined) {
-    return message === "Cannot invite yourself"
-      ? t("dashboardInbox.errors.cannotInviteYourself")
-      : message === "Invitation already accepted"
-        ? t("dashboardInbox.errors.invitationAlreadyAccepted")
-        : message === "Invitation is already pending. Wait for response or cancel the existing invitation."
-          ? t("dashboardInbox.errors.invitationAlreadyPending")
-          : message === "Group invitation is already pending. Wait for response or cancel the existing invitation."
-            ? t("dashboardInbox.errors.groupInvitationAlreadyPending")
-            : message === "User with this email does not exist"
-              ? t("dashboardInbox.errors.userWithEmailNotFound")
-              : message === "Not authorized"
-                ? t("dashboardInbox.errors.notAuthorized")
-                : message || t("common.somethingWentWrong");
-    }
-
-  function mapGroupUpdateError(message: string | undefined) {
-    return message === "You already have an active group with this name"
-      ? t("createGroupDialog.errors.activeGroupNameTaken")
-      : message === "Group name cannot be empty"
-        ? t("createGroupDialog.errors.emptyName")
-        : message === "Group name is too long"
-          ? t("createGroupDialog.errors.nameTooLong")
-          : message === "Group description is too long"
-            ? t("createGroupDialog.errors.descriptionTooLong")
-            : message === "Cannot change group currency when group has expenses"
-              ? t("groupEditDialog.errors.currencyLocked")
-              : message === "Not authorized"
-                ? t("groupEditDialog.errors.notAuthorized")
-                : message || t("groupEditDialog.errors.updateFailed");
-  }
-
-  const mapPayPalSettlementError = (message: string | undefined) => {
-    return message === "PayPal integration disabled"
-      ? t("groupDetailPage.settlementErrors.paypalDisabled")
-      : message === "PayPal integration not configured"
-      ? t("groupDetailPage.settlementErrors.paypalNotConfigured")
-      : message === "Could not create PayPal order"
-        ? t("groupDetailPage.settlementErrors.paypalCreateOrderFailed")
-        : message === "PayPal request failed"
-          ? t("groupDetailPage.settlementErrors.paypalCreateOrderFailed")
-          : message === "PayPal capture was not completed"
-            ? t("groupDetailPage.settlementErrors.paypalCaptureFailed")
-          : message || t("groupDetailPage.settlementErrors.paypalInitFailed");
-  };
-
-  const createGroupPayPalOrder = async (toUserId: number): Promise<string> => {
-    setGroupSettlementFeedback(null);
-    const response = await settlementsApi.initiateGroupPayPal({
-      to_user_id: toUserId,
-      group_id: groupId,
-    });
-    return response.order_id;
-  };
-
-  const finalizeGroupPayPalOrder = async (orderId: string, toUserId: number) => {
-    await settlementsApi.finalizePayPal({ order_id: orderId });
-
-    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contacts });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
-
-    setGroupSettlementFeedback({
-      tone: "success",
-      message: t("groupDetailPage.settlementSuccess"),
-    });
-    setSettlementDialogTarget(null);
-    setOutsideAppConfirmTarget(null);
-  };
-
-  const settleGroupCashMutation = useMutation({
-    mutationFn: (toUserId: number) =>
-      settlementsApi.createGroupCash({
-        to_user_id: toUserId,
-        group_id: groupId,
-      }),
-    onMutate: () => {
-      setGroupSettlementFeedback(null);
-    },
-    onSuccess: async (_data, toUserId) => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contacts });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
-
-      setGroupSettlementFeedback({
-        tone: "success",
-        message: t("groupDetailPage.settlementSuccess"),
-      });
-      setSettlementDialogTarget(null);
-      setOutsideAppConfirmTarget(null);
-    },
-    onError: (mutationError: Error) => {
-      setGroupSettlementFeedback({
-        tone: "error",
-        message: mapGroupSettlementError(mutationError.message),
-      });
-    },
-  });
-
-  const createExpenseMutation = useMutation<ApiGroupExpenseResponse, Error, ApiGroupExpenseCreate>({
-    mutationFn: (expenseData) => expensesGroupApi.create(groupId, expenseData),
-    onMutate: () => {
-      setCreateExpenseError(null);
-      setDeleteExpenseError(null);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      setCreateExpenseError(null);
-      setShowAddExpenseDialog(false);
-    },
-    onError: (mutationError) => {
-      setCreateExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.createFailed"));
-    },
-  });
-
-  const createRecurringExpenseMutation = useMutation<void, Error, ApiRecurringGroupExpenseCreate>({
-    mutationFn: async (payload) => {
-      const recurringExpense = await recurringExpensesApi.createGroup(groupId, payload);
-      await recurringExpensesApi.generateNow(recurringExpense.id, { up_to_date: payload.starts_on });
-    },
-    onMutate: () => {
-      setCreateExpenseError(null);
-      setDeleteExpenseError(null);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
-      setCreateExpenseError(null);
-      setShowAddRecurringExpenseDialog(false);
-    },
-    onError: (mutationError) => {
-      setCreateExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.createFailed"));
-    },
-  });
-
-  const updateRecurringMutation = useMutation<
-    ApiRecurringExpenseResponse,
-    Error,
-    { recurringExpenseId: number; payload: ApiRecurringExpenseUpdate }
-  >({
-    mutationFn: ({ recurringExpenseId, payload }) => recurringExpensesApi.update(recurringExpenseId, payload),
-    onSuccess: async () => {
-      await invalidateRecurringGroupQueries();
-      setEditingRecurringExpense(null);
-    },
-  });
-
-  const recurringActionDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
-
-  const invalidateRecurringGroupQueries = async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.recurringExpenses.all });
-    await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-  };
-
-  const generateNowRecurringMutation = useMutation({
-    mutationFn: (recurringExpenseId: number) =>
-      recurringExpensesApi.generateNow(recurringExpenseId, { up_to_date: recurringActionDate }),
-    onSuccess: async () => {
-      await invalidateRecurringGroupQueries();
-    },
-  });
-
-  const pauseRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
-    mutationFn: (recurringExpenseId: number) => recurringExpensesApi.pause(recurringExpenseId),
-    onSuccess: async (updatedRecurringExpense) => {
-      setEditingRecurringExpense(updatedRecurringExpense);
-      await invalidateRecurringGroupQueries();
-    },
-  });
-
-  const resumeRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
-    mutationFn: (recurringExpenseId: number) => recurringExpensesApi.resume(recurringExpenseId),
-    onSuccess: async (updatedRecurringExpense) => {
-      setEditingRecurringExpense(updatedRecurringExpense);
-      await invalidateRecurringGroupQueries();
-    },
-  });
-
-  const archiveRecurringMutation = useMutation<ApiRecurringExpenseResponse, Error, number>({
-    mutationFn: (recurringExpenseId: number) => recurringExpensesApi.archive(recurringExpenseId),
-    onSuccess: async () => {
-      setEditingRecurringExpense(null);
-      await invalidateRecurringGroupQueries();
-    },
-  });
-
-  const updateExpenseMutation = useMutation<
-    ApiGroupExpenseResponse,
-    Error,
-    { expenseId: number; payload: ApiGroupExpenseUpdate }
-  >({
-    mutationFn: ({ expenseId, payload }) => expensesGroupApi.update(groupId, expenseId, payload),
-    onMutate: () => {
-      setEditExpenseError(null);
-      setDeleteExpenseError(null);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      setEditExpenseError(null);
-      setEditingExpense(null);
-    },
-    onError: (mutationError) => {
-      setEditExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.updateFailed"));
-    },
-  });
-
-  const deleteExpenseMutation = useMutation<void, Error, number>({
-    mutationFn: (expenseId) => expensesGroupApi.delete(groupId, expenseId),
-    onMutate: () => {
-      setDeleteExpenseError(null);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses", "group", groupId] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.groups.byId(groupId) });
-      setDeleteExpenseError(null);
-    },
-    onError: (mutationError) => {
-      setDeleteExpenseError(mapGroupExpenseError(mutationError.message, "addGroupExpenseDialog.errors.deleteFailed"));
-    },
-  });
-
-  const createGroupCategoryMutation = useMutation<
-    ApiCategoryResponse,
-    Error,
-    { name: string; section: CategorySection }
-  >({
-    mutationFn: (payload) => categoriesApi.createGroup(groupId, payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
-    },
-  });
-
-  const deleteGroupCategoryMutation = useMutation<void, Error, number>({
-    mutationFn: (categoryId) => categoriesApi.deleteGroup(categoryId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.categories.availableGroup(groupId) });
-    },
-  });
-
-  const handleInviteByContact = async (toUserId: number) => {
-    await inviteMemberMutation.mutateAsync({
-      group_id: groupId,
-      to_user_id: toUserId,
-    });
-  };
-
-  const handleInviteByEmail = async (email: string) => {
-    await inviteMemberMutation.mutateAsync({
-      group_id: groupId,
-      to_user_email: email,
-    });
-  };
-
-  const handleAddExpenseDialogOpenChange = (nextOpen: boolean) => {
-    setShowAddExpenseDialog(nextOpen);
-    if (!nextOpen) {
-      setCreateExpenseError(null);
-    }
-    setDeleteExpenseError(null);
-  };
-
-  const handleAddRecurringExpenseDialogOpenChange = (nextOpen: boolean) => {
-    setShowAddRecurringExpenseDialog(nextOpen);
-    if (!nextOpen) {
-      setCreateExpenseError(null);
-    }
-    setDeleteExpenseError(null);
-  };
-
-  const handleEditRecurringExpenseDialogOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setEditingRecurringExpense(null);
-    }
-  };
-
-  const handleCreateGroupCategory = async (payload: {
-    name: string;
-    section: CategorySection;
-  }): Promise<ApiCategoryResponse> => {
-    return createGroupCategoryMutation.mutateAsync(payload);
-  };
-
-  const handleDeleteGroupCategory = async (categoryId: number): Promise<void> => {
-    await deleteGroupCategoryMutation.mutateAsync(categoryId);
-  };
-
-  const handleAddMemberDialogOpenChange = (nextOpen: boolean) => {
-    setShowAddMemberDialog(nextOpen);
-    setInviteMemberError(null);
-  };
-
-  const handleEditExpenseDialogOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setEditingExpense(null);
-      setEditExpenseError(null);
-    }
-    setDeleteExpenseError(null);
-  };
-
-  const memberNameById = useMemo(() => {
-    return members.reduce<Record<number, string>>((accumulator, member) => {
-      accumulator[member.user_id] = member.username;
-      return accumulator;
-    }, {});
-  }, [members]);
-
-  const pendingInvitationUserIds = useMemo(() => {
-    const pendingUserIdSet = new Set<number>();
-
-    pendingInvitations.forEach((invitation) => {
-      if (invitation.status === "pending") {
-        pendingUserIdSet.add(invitation.to_user_id);
-      }
-    });
-
-    return Array.from(pendingUserIdSet);
-  }, [pendingInvitations]);
-
-  const userBalanceSummary = useMemo(() => {
-    const balances = groupBalances?.balances ?? [];
-
-    return balances.reduce(
-      (accumulator, item) => {
-        const amount = Number(item.amount);
-        if (amount > 0) {
-          accumulator.othersOweMe += amount;
-          accumulator.unsettledCount += 1;
-        } else if (amount < 0) {
-          accumulator.iOweOthers += Math.abs(amount);
-          accumulator.unsettledCount += 1;
-        }
-        return accumulator;
-      },
-      { othersOweMe: 0, iOweOthers: 0, unsettledCount: 0 }
-    );
-  }, [groupBalances]);
-
-  const balanceRows = useMemo(() => {
-    const balances = groupBalances?.balances ?? [];
-
-    return balances
-      .map((item) => {
-        const amount = Number(item.amount);
-        const absoluteAmount = Math.abs(amount);
-        const memberName =
-          memberNameById[item.user_id] ??
-          t("groupDetailPage.balanceUnknownUser", {
-            userId: item.user_id,
-          });
-
-        const relationLabel = amount > 0
-          ? t("groupDetailPage.balanceRowOwesYou")
-          : amount < 0
-            ? t("groupDetailPage.balanceRowYouOwe")
-            : t("groupDetailPage.balanceRowSettled");
-
-        return {
-          userId: item.user_id,
-          memberName,
-          relationLabel,
-          amount,
-          absoluteAmount,
-        };
-      })
-      .filter((row) => row.amount !== 0)
-      .sort((left, right) => right.absoluteAmount - left.absoluteAmount);
-  }, [groupBalances, memberNameById, t]);
-
-  const completedSettlements = useMemo(() => {
-    return settlements.filter((settlement) => settlement.status === "completed");
-  }, [settlements]);
-
-  const getMemberDisplayName = (userId: number) => {
-    if (userId === user?.id) {
-      return t("groupDetailPage.youLabel");
-    }
-
-    return (
-      memberNameById[userId] ??
-      t("groupDetailPage.userFallback", {
-        userId,
-      })
-    );
-  };
-
-  const getSettlementMethodLabel = (paymentMethod: PaymentMethod) => {
-    if (paymentMethod === "offset_applied" || paymentMethod === "offset_forgiven") {
-      return t("groupDetailPage.settlementMethodOffset");
-    }
-
-    if (paymentMethod === "paypal") {
-      return t("groupDetailPage.settlementMethodPaypal");
-    }
-
-    return t("groupDetailPage.settlementMethodCash");
-  };
-
-  const formatDateSafe = (dateValue: string) => {
-    const parsedDate = new Date(dateValue);
-    return Number.isNaN(parsedDate.getTime()) ? dateValue : format(parsedDate, "MMM d, yyyy");
-  };
-
-  const mapRecurringFrequencyLabel = (frequency: ApiRecurringExpenseResponse["frequency"]) => {
-    if (frequency === "daily") {
-      return t("addExpenseDialog.recurringDaily", { defaultValue: "Daily" });
-    }
-    if (frequency === "weekly") {
-      return t("addExpenseDialog.recurringWeekly", { defaultValue: "Weekly" });
-    }
-    if (frequency === "monthly") {
-      return t("addExpenseDialog.recurringMonthly", { defaultValue: "Monthly" });
-    }
-    if (frequency === "quarterly") {
-      return t("addExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" });
-    }
-    return t("addExpenseDialog.recurringYearly", { defaultValue: "Yearly" });
-  };
-
-  const mapRecurringStatusLabel = (status: ApiRecurringExpenseResponse["status"]) => {
-    if (status === "active") {
-      return t("recurringExpenses.statusActive", { defaultValue: "Active" });
-    }
-    if (status === "paused") {
-      return t("recurringExpenses.statusPaused", { defaultValue: "Paused" });
-    }
-    if (status === "ended") {
-      return t("recurringExpenses.statusEnded", { defaultValue: "Ended" });
-    }
-    return t("recurringExpenses.statusArchived", { defaultValue: "Archived" });
-  };
-
-  const recurringActionsPending =
-    updateRecurringMutation.isPending ||
-    generateNowRecurringMutation.isPending ||
-    pauseRecurringMutation.isPending ||
-    resumeRecurringMutation.isPending ||
-    archiveRecurringMutation.isPending;
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [showAddRecurringExpenseDialog, setShowAddRecurringExpenseDialog] = useState(false);
+  const [showEditGroupDialog, setShowEditGroupDialog] = useState(false);
+
+  const pendingInvitationUserIds = pendingInvitations
+    .filter((inv) => inv.status === "pending")
+    .map((inv) => inv.to_user_id);
 
   if (!isValidGroupId) {
     return (
@@ -880,12 +177,8 @@ export default function GroupDetailPage() {
         <Card className="w-full max-w-xl border border-border bg-card/80 shadow-sm backdrop-blur-sm">
           <CardContent className="p-6 text-center">
             <h2 className="text-2xl font-bold text-foreground">{t("groupDetailPage.accessDeniedTitle")}</h2>
-            <p className="mt-2 text-muted-foreground">
-              {t("groupDetailPage.accessDeniedDescription")}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("groupDetailPage.accessDeniedHint")}
-            </p>
+            <p className="mt-2 text-muted-foreground">{t("groupDetailPage.accessDeniedDescription")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t("groupDetailPage.accessDeniedHint")}</p>
             <div className="mt-4 flex justify-center">
               <Button asChild>
                 <Link to={createPageUrl("Groups")}>{t("groupDetailPage.backToGroups")}</Link>
@@ -923,61 +216,14 @@ export default function GroupDetailPage() {
         <PageInfoButton pageKey="groupDetail" autoOpen={true} />
       </div>
       <div className="mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12"
-        >
-          <div className="min-w-0 lg:col-span-7 lg:col-start-2 pr-12 md:pr-0">
-            <div className="flex max-w-full flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <h1 className="max-w-full break-words text-3xl font-bold text-foreground md:text-4xl">
-                  {formatGroupName(group.name)}
-                </h1>
-
-                {isCurrentUserAdmin ? (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => setShowEditGroupDialog(true)}
-                    aria-label={t("groupDetailPage.editGroup")}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-            <p className="mt-2 max-w-3xl text-muted-foreground [overflow-wrap:anywhere]">
-              {group.description || t("groupDetailPage.noDescription")} · {t("groupDetailPage.currencyLabel")}: {group.currency}
-            </p>
-          </div>
-
-          <div className="flex flex-row items-start justify-end gap-2 lg:col-span-4">
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <Button size="sm" className="hidden sm:inline-flex" onClick={() => setShowAddExpenseDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("groupDetailPage.addExpense")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="hidden sm:inline-flex border border-border bg-card/80"
-                onClick={() => setShowAddRecurringExpenseDialog(true)}
-              >
-                <Repeat2 className="mr-2 h-4 w-4" />
-                {t("groupDetailPage.addRecurringExpense", { defaultValue: "Add recurring" })}
-              </Button>
-              <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex border border-border bg-card/80">
-                <Link to={`/receipt-scan?mode=group&groupId=${groupId}`}>
-                  <ScanSearch className="mr-2 h-4 w-4" />
-                  {t("groupDetailPage.scanReceipt")}
-                </Link>
-              </Button>
-            </div>
-            <PageInfoButton pageKey="groupDetail" autoOpen={true} className="hidden lg:inline-flex" />
-          </div>
-        </motion.div>
+        <GroupHeader
+          group={group}
+          groupId={groupId}
+          isCurrentUserAdmin={isCurrentUserAdmin}
+          onEditGroup={() => setShowEditGroupDialog(true)}
+          onAddExpense={() => setShowAddExpenseDialog(true)}
+          onAddRecurringExpense={() => setShowAddRecurringExpenseDialog(true)}
+        />
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-12">
           <div className="order-2 lg:order-1 lg:col-span-8">
@@ -986,124 +232,34 @@ export default function GroupDetailPage() {
               currency={group.currency as CurrencyEnum}
             />
           </div>
-
           <div className="order-1 lg:order-2 lg:col-span-4">
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-3 lg:grid-cols-2">
-              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
-                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
-                      {t("groupDetailPage.summaryMembers")}
-                    </p>
-                    <Users className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                  </div>
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
-                      {group.members_count ?? members.length}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
-                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
-                      {t("groupDetailPage.summaryExpenses")}
-                    </p>
-                    <Wallet className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                  </div>
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
-                      {group.expenses_count ?? expenses.length}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
-                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
-                      {t("groupDetailPage.summaryTotal")}
-                    </p>
-                    <Coins className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                  </div>
-                  <div className="flex flex-1 items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-[clamp(0.95rem,4.6vw,1.5rem)] font-bold leading-none text-foreground sm:text-2xl md:text-4xl">
-                        {formatCurrency(Number(group.total_amount ?? 0), group.currency as CurrencyEnum)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
-                <CardContent className="flex h-full flex-col p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
-                    <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
-                      {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
-                    </p>
-                    <Repeat2 className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                  </div>
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
-                      {recurringLoading ? "..." : recurringExpenses.length}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <GroupSummaryCards
+              membersCount={group.members_count ?? members.length}
+              expensesCount={group.expenses_count ?? expenses.length}
+              totalAmount={Number(group.total_amount ?? 0)}
+              currency={group.currency}
+              recurringCount={recurringExpenses.length}
+              recurringLoading={recurringLoading}
+            />
           </div>
         </div>
 
         <div className="mb-4 md:hidden">
           <div className="grid grid-cols-4 gap-1">
-            <Button
-              type="button"
-              size="sm"
-              variant={mobileSection === "expenses" ? "default" : "outline"}
-              className={`h-8 px-1 text-[11px] border border-border ${
-                mobileSection === "expenses" ? "bg-primary text-primary-foreground" : "bg-card/80"
-              }`}
-              onClick={() => setMobileSection("expenses")}
-            >
-              {t("groupDetailPage.mobileTabExpenses", { defaultValue: "Expenses" })}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mobileSection === "balances" ? "default" : "outline"}
-              className={`h-8 px-1 text-[11px] border border-border ${
-                mobileSection === "balances" ? "bg-primary text-primary-foreground" : "bg-card/80"
-              }`}
-              onClick={() => setMobileSection("balances")}
-            >
-              {t("groupDetailPage.mobileTabBalances", { defaultValue: "Balances" })}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mobileSection === "recurring" ? "default" : "outline"}
-              className={`h-8 px-1 text-[11px] border border-border ${
-                mobileSection === "recurring" ? "bg-primary text-primary-foreground" : "bg-card/80"
-              }`}
-              onClick={() => setMobileSection("recurring")}
-            >
-              {t("groupDetailPage.mobileTabRecurring", { defaultValue: "Recurring" })}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mobileSection === "members" ? "default" : "outline"}
-              className={`h-8 px-1 text-[11px] border border-border ${
-                mobileSection === "members" ? "bg-primary text-primary-foreground" : "bg-card/80"
-              }`}
-              onClick={() => setMobileSection("members")}
-            >
-              {t("groupDetailPage.mobileTabMembers", { defaultValue: "Members" })}
-            </Button>
+            {(["expenses", "balances", "recurring", "members"] as const).map((tab) => (
+              <Button
+                key={tab}
+                type="button"
+                size="sm"
+                variant={mobileSection === tab ? "default" : "outline"}
+                className={`h-8 px-1 text-[11px] border border-border ${
+                  mobileSection === tab ? "bg-primary text-primary-foreground" : "bg-card/80"
+                }`}
+                onClick={() => setMobileSection(tab)}
+              >
+                {t(`groupDetailPage.mobileTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
+              </Button>
+            ))}
           </div>
         </div>
 
@@ -1119,217 +275,48 @@ export default function GroupDetailPage() {
                   {t("groupDetailPage.balanceBreakdownTitle")}
                 </h2>
               </div>
-
-              <div>
-                {balancesLoading ? (
-                  <p className="text-sm text-muted-foreground">{t("groupDetailPage.balanceSummaryLoading")}</p>
-                ) : balancesError ? (
-                  <p className="text-sm text-destructive">{t("groupDetailPage.balanceSummaryError")}</p>
-                ) : (
-                  <>
-                    <div
-                      className={`mb-4 rounded-lg border bg-card/80 p-3 shadow-sm backdrop-blur-sm ${
-                        userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
-                          ? "border-rose-200 bg-rose-50"
-                          : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
-                            ? "border-emerald-200 bg-emerald-50"
-                            : "border-border bg-background/60"
-                      }`}
-                    >
-                      <p className="text-sm text-muted-foreground">
-                        {userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
-                          ? t("groupDetailPage.balanceYouOwe")
-                          : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
-                            ? t("groupDetailPage.balanceOthersOweYou")
-                            : t("groupDetailPage.balanceAllSettled")}
-                      </p>
-                      <p
-                        className={`mt-1 text-2xl font-bold ${
-                          userBalanceSummary.iOweOthers > userBalanceSummary.othersOweMe
-                            ? "text-rose-700"
-                            : userBalanceSummary.othersOweMe > userBalanceSummary.iOweOthers
-                              ? "text-emerald-700"
-                              : "text-foreground"
-                        }`}
-                      >
-                        {formatCurrency(Math.abs(userBalanceSummary.othersOweMe - userBalanceSummary.iOweOthers), group.currency as CurrencyEnum)}
-                      </p>
-                    </div>
-
-                    <p className="mb-3 text-sm text-muted-foreground">
-                      {userBalanceSummary.unsettledCount === 0
-                        ? t("groupDetailPage.balanceAllSettled")
-                        : t("groupDetailPage.balanceOpenCount", {
-                            count: userBalanceSummary.unsettledCount,
-                          })}
-                    </p>
-
-                    {groupSettlementFeedback ? (
-                      <p
-                        className={`mb-3 text-sm ${
-                          groupSettlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
-                        }`}
-                      >
-                        {groupSettlementFeedback.message}
-                      </p>
-                    ) : null}
-
-                    {balanceRows.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        {t("groupDetailPage.balanceNoBreakdownRows")}
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {balanceRows.map((row) => (
-                          <div key={row.userId} className="rounded-lg border border-border bg-card/80 px-3 py-3 shadow-sm backdrop-blur-sm">
-                            <div className="mb-2 flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-foreground">{row.memberName}</p>
-                                <p className="truncate text-xs text-muted-foreground">{row.relationLabel}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {row.amount < 0 ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setSettlementDialogTarget({
-                                        userId: row.userId,
-                                        memberName: row.memberName,
-                                        absoluteAmount: row.absoluteAmount,
-                                      });
-                                    }}
-                                  >
-                                    {t("groupDetailPage.settle", { defaultValue: "Settle" })}
-                                  </Button>
-                                ) : null}
-                                <p
-                                  className={`whitespace-nowrap text-sm font-semibold ${
-                                    row.amount > 0 ? "text-emerald-700" : row.amount < 0 ? "text-rose-700" : "text-foreground"
-                                  }`}
-                                >
-                                  {formatCurrency(row.absoluteAmount, group.currency as CurrencyEnum)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <GroupBalancesPanel
+                userBalanceSummary={userBalanceSummary}
+                balanceRows={balanceRows}
+                groupSettlementFeedback={groupSettlementFeedback}
+                balancesLoading={balancesLoading}
+                balancesError={balancesError}
+                currency={group.currency}
+                onSettle={(target) => setSettlementDialogTarget(target)}
+              />
 
               <div className="mt-6">
                 <h3 className="mb-3 text-base font-semibold text-foreground">
                   {t("groupDetailPage.settlementsSection")}
                 </h3>
-
-                {settlementsLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2].map((item) => (
-                      <div key={item} className="h-14 animate-pulse rounded bg-muted" />
-                    ))}
-                  </div>
-                ) : settlementsError ? (
-                  <p className="text-sm text-destructive">
-                    {t("groupDetailPage.settlementsLoadError")}
-                  </p>
-                ) : completedSettlements.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                    {t("groupDetailPage.settlementsEmpty")}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {completedSettlements.map((settlement) => (
-                      <div key={settlement.id} className="rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm">
-                        <p className="text-sm font-medium text-foreground">
-                          {t("groupDetailPage.settlementItem", {
-                            from: getMemberDisplayName(settlement.from_user_id),
-                            to: getMemberDisplayName(settlement.to_user_id),
-                          })}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatCurrency(Number(settlement.amount), settlement.currency as CurrencyEnum)} · {getSettlementMethodLabel(settlement.payment_method)} · {format(new Date(settlement.created_at), "MMM d, yyyy HH:mm")}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <GroupSettlementsList
+                  settlements={completedSettlements}
+                  settlementsLoading={settlementsLoading}
+                  settlementsError={settlementsError}
+                  getMemberDisplayName={getMemberDisplayName}
+                  getSettlementMethodLabel={getSettlementMethodLabel}
+                />
               </div>
             </div>
 
             <div className={mobileSection === "balances" ? "hidden md:block" : ""}>
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h3 className="text-base font-semibold text-foreground hidden md:block">
-                  {t("globalHeader.navRecurring", { defaultValue: "Recurring" })}
+                  {t("globalHeader.navRecurring")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {recurringExpenses.filter((series) => series.status === "active").length}/{recurringExpenses.length}
+                  {recurringExpenses.filter((s) => s.status === "active").length}/{recurringExpenses.length}
                 </p>
               </div>
-
-              {recurringLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="h-16 animate-pulse rounded bg-muted" />
-                  ))}
-                </div>
-              ) : recurringError ? (
-                <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
-                  {(recurringError as Error).message || t("common.somethingWentWrong")}
-                </p>
-              ) : recurringExpenses.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                  {t("recurringExpenses.empty", {
-                    defaultValue: "No recurring expenses yet. Use the Add recurring action to create your first series.",
-                  })}
-                </p>
-              ) : (
-                <div className="max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-                  {recurringExpenses.map((series) => (
-                    <div
-                      key={series.id}
-                      className="group overflow-hidden rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                          <Repeat2 className="h-5 w-5" />
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold leading-tight text-foreground">{series.title}</p>
-
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardAmount", { defaultValue: "Amount" })}: {formatCurrency(Number(series.amount), series.currency as CurrencyEnum)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardFrequency", { defaultValue: "Frequency" })}: {mapRecurringFrequencyLabel(series.frequency)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardInterval", { defaultValue: "Every {{count}} periods", count: series.interval_count })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("recurringExpenses.cardStatus", { defaultValue: "Status" })}: {mapRecurringStatusLabel(series.status)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("recurringExpenses.nextDue", { defaultValue: "Next due" })}: {formatDateSafe(series.next_due_on)}
-                          </p>
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="mt-2 h-7 px-2 text-[11px]"
-                            onClick={() => setEditingRecurringExpense(series)}
-                          >
-                            {t("recurringExpenses.editSeries", { defaultValue: "Edit / Manage" })}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <GroupRecurringList
+                recurringExpenses={recurringExpenses}
+                recurringLoading={recurringLoading}
+                recurringError={recurringError}
+                mapFrequencyLabel={mapRecurringFrequencyLabel}
+                mapStatusLabel={mapRecurringStatusLabel}
+                formatDate={formatDateSafe}
+                onEdit={(series) => setEditingRecurringExpense(series)}
+              />
             </div>
           </div>
 
@@ -1350,17 +337,11 @@ export default function GroupDetailPage() {
                   setEditExpenseError(null);
                   setDeleteExpenseError(null);
                 }}
-                onDelete={(expenseId) => {
-                  deleteExpenseMutation.mutate(expenseId);
-                }}
+                onDelete={(expenseId) => deleteExpenseMutation.mutate(expenseId)}
                 canManageExpense={(expense) => isCurrentUserAdmin || expense.user_id === user.id}
               />
             </div>
-
-            {deleteExpenseError ? (
-              <p className="mt-3 text-sm text-destructive">{deleteExpenseError}</p>
-            ) : null}
-
+            {deleteExpenseError ? <p className="mt-3 text-sm text-destructive">{deleteExpenseError}</p> : null}
             {hasNextPage && (
               <div className="mt-4 flex justify-center">
                 <Button
@@ -1376,90 +357,25 @@ export default function GroupDetailPage() {
           </div>
 
           <div className={`order-3 space-y-4 md:col-span-1 lg:col-span-3 ${mobileSection !== "members" ? "hidden md:block" : ""}`}>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-foreground hidden md:block">{t("groupDetailPage.membersSection")}</h2>
-              {isCurrentUserAdmin && (
-                <Button size="sm" variant="outline" onClick={() => setShowAddMemberDialog(true)} className="border border-border bg-card/80">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  {t("groupDetailPage.addMember")}
-                </Button>
-              )}
-            </div>
-
-            <GroupMembersPanel
+            <GroupMembersSection
               members={members}
               currentUserId={user.id}
+              isCurrentUserAdmin={isCurrentUserAdmin}
               canManageMembers={isCurrentUserAdmin}
-              canRemoveMembers={false}
-              grantPendingUserId={grantAdminMutation.isPending ? grantAdminMutation.variables ?? null : null}
-              removePendingUserId={removeMemberMutation.isPending ? removeMemberMutation.variables ?? null : null}
-              leavePending={leaveGroupMutation.isPending}
               onGrantAdmin={(userId) => grantAdminMutation.mutate(userId)}
               onRemoveMember={(userId) => removeMemberMutation.mutate(userId)}
               onLeaveGroup={() => leaveGroupMutation.mutate()}
-              isLoading={false}
+              grantPendingUserId={grantAdminMutation.isPending ? grantAdminMutation.variables ?? null : null}
+              removePendingUserId={removeMemberMutation.isPending ? removeMemberMutation.variables ?? null : null}
+              leavePending={leaveGroupMutation.isPending}
+              onAddMember={() => setShowAddMemberDialog(true)}
+              pendingInvitations={pendingInvitations}
+              pendingInvitationsLoading={pendingInvitationsLoading}
+              pendingInvitationsError={pendingInvitationsError}
+              onCancelInvitation={(invitationId) => cancelInvitationMutation.mutate(invitationId)}
+              cancelInvitationPending={cancelInvitationMutation.isPending}
+              cancelInvitationTargetId={cancelInvitationMutation.variables}
             />
-
-            {isCurrentUserAdmin && (
-              <div>
-                <h3 className="mb-3 text-base font-semibold text-foreground">
-                  {t("groupDetailPage.pendingInvitations")}
-                </h3>
-
-                {pendingInvitationsLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2].map((item) => (
-                      <div key={item} className="h-12 animate-pulse rounded bg-muted" />
-                    ))}
-                  </div>
-                ) : pendingInvitationsError ? (
-                  <p className="rounded-lg border border-dashed border-border p-3 text-sm text-destructive">
-                    {pendingInvitationsError.message || t("common.somethingWentWrong")}
-                  </p>
-                ) : pendingInvitations.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-                    {t("groupDetailPage.noPendingInvitations")}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {pendingInvitations.map((invitation) => (
-                      <div
-                        key={invitation.id}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/80 p-3 shadow-sm backdrop-blur-sm"
-                      >
-                        <div className="min-w-0">
-                          {(() => {
-                            const recipientLabel =
-                              invitation.to_user_username ?? invitation.to_user_email ?? `#${invitation.to_user_id}`;
-
-                            return (
-                          <p className="truncate text-sm font-medium text-foreground">
-                              {t("groupDetailPage.pendingInvitationUser", {
-                                username: recipientLabel,
-                              })}
-                          </p>
-                            );
-                          })()}
-                          <p className="truncate text-xs text-muted-foreground">
-                            {format(new Date(invitation.created_at), "MMM d, yyyy HH:mm")}
-                          </p>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id}
-                          onClick={() => cancelInvitationMutation.mutate(invitation.id)}
-                        >
-                          {cancelInvitationMutation.isPending && cancelInvitationMutation.variables === invitation.id
-                            ? t("groupDetailPage.cancelling")
-                            : t("groupDetailPage.cancelInvitation")}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -1468,189 +384,87 @@ export default function GroupDetailPage() {
         <SpeedDial
           onAddExpense={() => setShowAddExpenseDialog(true)}
           onAddRecurringExpense={() => setShowAddRecurringExpenseDialog(true)}
-          onScanReceipt={() => navigate(`/receipt-scan?mode=group&groupId=${groupId}`)}
+          onScanReceipt={() => window.location.href = `/receipt-scan?mode=group&groupId=${groupId}`}
           addExpenseLabel={t("groupDetailPage.addExpense")}
-          addRecurringExpenseLabel={t("groupDetailPage.addRecurringExpense", { defaultValue: "Add recurring" })}
+          addRecurringExpenseLabel={t("groupDetailPage.addRecurringExpense")}
           scanReceiptLabel={t("groupDetailPage.scanReceipt")}
         />
       </div>
 
-      <Dialog
+      <GroupSettlementDialog
         open={settlementDialogTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSettlementDialogTarget(null);
+        onOpenChange={(open) => { if (!open) setSettlementDialogTarget(null); }}
+        memberName={settlementDialogTarget?.memberName}
+        currency={group.currency}
+        groupId={groupId}
+        userId={settlementDialogTarget?.userId}
+        settleCashPending={
+          settleGroupCashMutation.isPending &&
+          settleGroupCashMutation.variables === settlementDialogTarget?.userId
+        }
+        isPayPalButtonEnabled={isPayPalButtonEnabled}
+        getPayPalUnavailableMessage={getPayPalUnavailableMessage}
+        onCashClick={() => {
+          if (!settlementDialogTarget) return;
+          setOutsideAppConfirmTarget({
+            userId: settlementDialogTarget.userId,
+            absoluteAmount: settlementDialogTarget.absoluteAmount,
+          });
+          setSettlementDialogTarget(null);
+        }}
+        onPayPalCreateOrder={async () => {
+          if (!settlementDialogTarget) throw new Error("Missing settlement target");
+          try {
+            return await createGroupPayPalOrder(settlementDialogTarget.userId);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : undefined;
+            setGroupSettlementFeedback({ tone: "error", message: mapPayPalSettlementError(message) });
+            throw error;
           }
         }}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <DialogTitle>{t("groupDetailPage.settle", { defaultValue: "Settle" })}</DialogTitle>
-              <DialogInfoButton dialogKey="groupSettlement" autoOpen={true} />
-            </div>
-            <DialogDescription>
-              {settlementDialogTarget
-                ? t("groupDetailPage.settlementDialogDescription", {
-                    member: settlementDialogTarget.memberName,
-                  })
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
+        onPayPalApprove={async (data) => {
+          if (!data.orderID || !settlementDialogTarget) {
+            setGroupSettlementFeedback({ tone: "error", message: t("groupDetailPage.settlementErrors.paypalInitFailed") });
+            return;
+          }
+          try {
+            await finalizeGroupPayPalOrder(data.orderID, settlementDialogTarget.userId);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : undefined;
+            setGroupSettlementFeedback({ tone: "error", message: mapPayPalSettlementError(message) });
+          }
+        }}
+        onPayPalCancel={() => {
+          setGroupSettlementFeedback({ tone: "error", message: t("groupDetailPage.settlementErrors.paypalCancelled") });
+        }}
+        onPayPalError={(error) => {
+          const message = error instanceof Error ? error.message : undefined;
+          setGroupSettlementFeedback({ tone: "error", message: mapPayPalSettlementError(message) });
+        }}
+      />
 
-          <div className="flex flex-row gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 h-[34px] rounded-sm"
-              disabled={
-                !settlementDialogTarget ||
-                (settleGroupCashMutation.isPending &&
-                  settleGroupCashMutation.variables === settlementDialogTarget.userId)
-              }
-              onClick={() => {
-                if (!settlementDialogTarget) {
-                  return;
-                }
-
-                setOutsideAppConfirmTarget({
-                  userId: settlementDialogTarget.userId,
-                  absoluteAmount: settlementDialogTarget.absoluteAmount,
-                });
-                setSettlementDialogTarget(null);
-              }}
-            >
-              {settleGroupCashMutation.isPending
-                ? t("groupDetailPage.settlingCash")
-                : t("groupDetailPage.settleOutsideApp", { defaultValue: "Settle outside app" })}
-            </Button>
-
-            {isPayPalButtonEnabled ? (
-              <div className="flex-1">
-                <PayPalCurrencyButtons
-                  currency={group.currency}
-                  fundingSource="paypal"
-                  style={{ layout: "horizontal", tagline: false, height: 34 }}
-                  forceReRender={[settlementDialogTarget?.userId ?? 0, groupId]}
-                  createOrder={async () => {
-                    if (!settlementDialogTarget) {
-                      throw new Error("Missing settlement target");
-                    }
-
-                    try {
-                      return await createGroupPayPalOrder(settlementDialogTarget.userId);
-                    } catch (error) {
-                      const message = error instanceof Error ? error.message : undefined;
-                      setGroupSettlementFeedback({
-                        tone: "error",
-                        message: mapPayPalSettlementError(message),
-                      });
-                      throw error;
-                    }
-                  }}
-                  onApprove={async (data) => {
-                    if (!data.orderID || !settlementDialogTarget) {
-                      setGroupSettlementFeedback({
-                        tone: "error",
-                        message: t("groupDetailPage.settlementErrors.paypalInitFailed"),
-                      });
-                      return;
-                    }
-
-                    try {
-                      await finalizeGroupPayPalOrder(data.orderID, settlementDialogTarget.userId);
-                    } catch (error) {
-                      const message = error instanceof Error ? error.message : undefined;
-                      setGroupSettlementFeedback({
-                        tone: "error",
-                        message: mapPayPalSettlementError(message),
-                      });
-                    }
-                  }}
-                  onCancel={() => {
-                    setGroupSettlementFeedback({
-                      tone: "error",
-                      message: t("groupDetailPage.settlementErrors.paypalCancelled"),
-                    });
-                  }}
-                  onError={(error) => {
-                    const message = error instanceof Error ? error.message : undefined;
-                    setGroupSettlementFeedback({
-                      tone: "error",
-                      message: mapPayPalSettlementError(message),
-                    });
-                  }}
-                />
-              </div>
-            ) : (
-              <p className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-                {getPayPalUnavailableMessage()}
-              </p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
+      <GroupSettlementConfirmDialog
         open={outsideAppConfirmTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setOutsideAppConfirmTarget(null);
-          }
+        onOpenChange={(open) => { if (!open) setOutsideAppConfirmTarget(null); }}
+        amount={outsideAppConfirmTarget?.absoluteAmount ?? 0}
+        currency={group.currency}
+        userId={outsideAppConfirmTarget?.userId}
+        settleCashPending={
+          settleGroupCashMutation.isPending &&
+          settleGroupCashMutation.variables === outsideAppConfirmTarget?.userId
+        }
+        onConfirm={() => {
+          if (!outsideAppConfirmTarget) return;
+          settleGroupCashMutation.mutate(outsideAppConfirmTarget.userId);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("groupDetailPage.settlementOutsideConfirmTitle", {
-                defaultValue: "Record settlement outside the app?",
-              })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {outsideAppConfirmTarget
-                ? t("groupDetailPage.settlementOutsideConfirmDescription", {
-                    defaultValue:
-                      "Are you sure you want to record settlement outside the app for {{amount}} {{currency}}?",
-                    amount: formatCurrency(outsideAppConfirmTarget.absoluteAmount, group.currency as CurrencyEnum),
-                    currency: group.currency,
-                  })
-                : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel", { defaultValue: "Cancel" })}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={
-                !outsideAppConfirmTarget ||
-                (settleGroupCashMutation.isPending &&
-                  settleGroupCashMutation.variables === outsideAppConfirmTarget.userId)
-              }
-              onClick={() => {
-                if (!outsideAppConfirmTarget) {
-                  return;
-                }
-
-                settleGroupCashMutation.mutate(outsideAppConfirmTarget.userId);
-              }}
-            >
-              {settleGroupCashMutation.isPending
-                ? t("groupDetailPage.settlingCash")
-                : t("groupDetailPage.settlementOutsideConfirmAction", {
-                    defaultValue: "Record settlement",
-                  })}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      />
 
       <EditGroupDialog
         open={showEditGroupDialog}
         group={group}
         onOpenChange={(nextOpen) => {
           setShowEditGroupDialog(nextOpen);
-          if (!nextOpen) {
-            setEditGroupError(null);
-          }
+          if (!nextOpen) setEditGroupError(null);
         }}
         onSubmit={(payload) => updateGroupMutation.mutate(payload)}
         onArchive={() => updateGroupMutation.mutate({ status: "archived" })}
@@ -1661,22 +475,33 @@ export default function GroupDetailPage() {
 
       <AddGroupMemberDialog
         open={showAddMemberDialog}
-        onOpenChange={handleAddMemberDialogOpenChange}
+        onOpenChange={(nextOpen) => {
+          setShowAddMemberDialog(nextOpen);
+          setInviteMemberError(null);
+        }}
         contacts={contacts}
         members={members}
         pendingInvitationUserIds={pendingInvitationUserIds}
         isSubmitting={inviteMemberMutation.isPending || contactsLoading}
         errorMessage={inviteMemberError}
-        onInviteByContact={handleInviteByContact}
-        onInviteByEmail={handleInviteByEmail}
+        onInviteByContact={async (toUserId) => {
+          await inviteMemberMutation.mutateAsync({ group_id: groupId, to_user_id: toUserId });
+        }}
+        onInviteByEmail={async (email) => {
+          await inviteMemberMutation.mutateAsync({ group_id: groupId, to_user_email: email });
+        }}
       />
 
       <AddGroupExpenseDialog
         open={showAddExpenseDialog}
-        onOpenChange={handleAddExpenseDialogOpenChange}
+        onOpenChange={(nextOpen) => {
+          setShowAddExpenseDialog(nextOpen);
+          if (!nextOpen) setCreateExpenseError(null);
+          setDeleteExpenseError(null);
+        }}
         onSubmit={(data) => createExpenseMutation.mutate(data)}
-        onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
-        onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
+        onCreateGroupCategory={isCurrentUserAdmin ? (payload) => createGroupCategoryMutation.mutateAsync(payload) : undefined}
+        onDeleteGroupCategory={isCurrentUserAdmin ? (categoryId) => deleteGroupCategoryMutation.mutateAsync(categoryId) : undefined}
         isLoading={createExpenseMutation.isPending}
         categories={categories}
         members={members}
@@ -1688,10 +513,14 @@ export default function GroupDetailPage() {
 
       <AddGroupRecurringExpenseDialog
         open={showAddRecurringExpenseDialog}
-        onOpenChange={handleAddRecurringExpenseDialogOpenChange}
+        onOpenChange={(nextOpen) => {
+          setShowAddRecurringExpenseDialog(nextOpen);
+          if (!nextOpen) setCreateExpenseError(null);
+          setDeleteExpenseError(null);
+        }}
         onSubmit={(payload) => createRecurringExpenseMutation.mutate(payload)}
-        onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
-        onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
+        onCreateGroupCategory={isCurrentUserAdmin ? (payload) => createGroupCategoryMutation.mutateAsync(payload) : undefined}
+        onDeleteGroupCategory={isCurrentUserAdmin ? (categoryId) => deleteGroupCategoryMutation.mutateAsync(categoryId) : undefined}
         isLoading={createRecurringExpenseMutation.isPending}
         categories={categories}
         members={members}
@@ -1705,64 +534,46 @@ export default function GroupDetailPage() {
         categories={categories}
         isSaving={updateRecurringMutation.isPending}
         isActionPending={recurringActionsPending}
-        onOpenChange={handleEditRecurringExpenseDialogOpenChange}
+        onOpenChange={(nextOpen) => { if (!nextOpen) setEditingRecurringExpense(null); }}
         onSubmit={(payload) => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
-          updateRecurringMutation.mutate({
-            recurringExpenseId: editingRecurringExpense.id,
-            payload,
-          });
+          if (!editingRecurringExpense) return;
+          updateRecurringMutation.mutate({ recurringExpenseId: editingRecurringExpense.id, payload });
         }}
         onGenerateNow={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
+          if (!editingRecurringExpense) return;
           generateNowRecurringMutation.mutate(editingRecurringExpense.id);
         }}
         onPause={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
+          if (!editingRecurringExpense) return;
           pauseRecurringMutation.mutate(editingRecurringExpense.id);
         }}
         onResume={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
+          if (!editingRecurringExpense) return;
           resumeRecurringMutation.mutate(editingRecurringExpense.id);
         }}
         onArchive={() => {
-          if (!editingRecurringExpense) {
-            return;
-          }
-
+          if (!editingRecurringExpense) return;
           archiveRecurringMutation.mutate(editingRecurringExpense.id);
         }}
-        onCreateCustomCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
-        onDeleteCustomCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
+        onCreateCustomCategory={isCurrentUserAdmin ? (payload) => createGroupCategoryMutation.mutateAsync(payload) : undefined}
+        onDeleteCustomCategory={isCurrentUserAdmin ? (categoryId) => deleteGroupCategoryMutation.mutateAsync(categoryId) : undefined}
       />
 
       <AddGroupExpenseDialog
         open={!!editingExpense}
-        onOpenChange={handleEditExpenseDialogOpenChange}
-        onSubmit={(data) => {
-          if (!editingExpense) {
-            return;
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setEditingExpense(null);
+            setEditExpenseError(null);
           }
-
-          updateExpenseMutation.mutate({
-            expenseId: editingExpense.id,
-            payload: data,
-          });
+          setDeleteExpenseError(null);
         }}
-        onCreateGroupCategory={isCurrentUserAdmin ? handleCreateGroupCategory : undefined}
-        onDeleteGroupCategory={isCurrentUserAdmin ? handleDeleteGroupCategory : undefined}
+        onSubmit={(data) => {
+          if (!editingExpense) return;
+          updateExpenseMutation.mutate({ expenseId: editingExpense.id, payload: data });
+        }}
+        onCreateGroupCategory={isCurrentUserAdmin ? (payload) => createGroupCategoryMutation.mutateAsync(payload) : undefined}
+        onDeleteGroupCategory={isCurrentUserAdmin ? (categoryId) => deleteGroupCategoryMutation.mutateAsync(categoryId) : undefined}
         isLoading={updateExpenseMutation.isPending}
         categories={categories}
         members={members}
