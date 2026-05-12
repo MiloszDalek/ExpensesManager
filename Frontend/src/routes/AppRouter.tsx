@@ -42,7 +42,6 @@ const AppRouter = () => {
           <Route path="/personal" element={<PrivateRoute><PersonalExpensesPage /></PrivateRoute>} />
           <Route path="/budgets" element={<PrivateRoute><BudgetsPage /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-          <Route path="/recurring" element={<PrivateRoute><Navigate to="/personal" replace /></PrivateRoute>} />
           <Route path="/summaries" element={<PrivateRoute><DetailedSummaryPage /></PrivateRoute>} />
           <Route path="/receipt-scan" element={<PrivateRoute><ReceiptScannerPage /></PrivateRoute>} />
 
