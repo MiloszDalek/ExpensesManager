@@ -195,7 +195,9 @@
     "selectDate": "Select date",
     "close": "Close",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "previousYears": "Previous years",
+    "nextYears": "Next years"
   },
   "globalHeader": {
     "navDashboard": "Dashboard",

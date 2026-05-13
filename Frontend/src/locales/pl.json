@@ -185,7 +185,9 @@
     "selectDate": "Wybierz datę",
     "close": "Zamknij",
     "previousMonth": "Poprzedni miesiąc",
-    "nextMonth": "Następny miesiąc"
+    "nextMonth": "Następny miesiąc",
+    "previousYears": "Poprzednie lata",
+    "nextYears": "Następne lata"
   },
   "globalHeader": {
     "navDashboard": "Pulpit",
