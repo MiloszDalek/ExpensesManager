@@ -54,8 +54,8 @@ def initiate_total_paypal_settlement(
 @settlement_router.post(
     "/paypal/finalize",
     response_model=SettlementResponse,
-    summary="DEPRECATED: PayPal finalize UX confirmation",
-    description="Returns the current settlement state for UI feedback. Does NOT mutate payment status. Payment completion is handled exclusively by the PayPal webhook (PAYMENT.CAPTURE.COMPLETED)."
+    summary="PayPal finalize (capture trigger / UX bridge)",
+    description="Triggers PayPal capture so PayPal emits the webhook. Does NOT mutate payment status in DB. Settlement completion is handled exclusively by the PayPal webhook (PAYMENT.CAPTURE.COMPLETED)."
 )
 def finalize_paypal_settlement(
     payload: PayPalSettlementFinalizeRequest,
