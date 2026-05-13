@@ -133,6 +133,7 @@ export default function GroupDetailPage() {
     setGroupSettlementFeedback,
     isPayPalButtonEnabled,
     getPayPalUnavailableMessage,
+    isPayPalProcessing,
     createGroupPayPalOrder,
     finalizeGroupPayPalOrder,
     settleGroupCashMutation,
@@ -398,11 +399,9 @@ export default function GroupDetailPage() {
         currency={group.currency}
         groupId={groupId}
         userId={settlementDialogTarget?.userId}
-        settleCashPending={
-          settleGroupCashMutation.isPending &&
-          settleGroupCashMutation.variables === settlementDialogTarget?.userId
-        }
+        settleCashPending={settleGroupCashMutation.isPending}
         isPayPalButtonEnabled={isPayPalButtonEnabled}
+        isPayPalProcessing={isPayPalProcessing}
         getPayPalUnavailableMessage={getPayPalUnavailableMessage}
         onCashClick={() => {
           if (!settlementDialogTarget) return;

@@ -19,6 +19,7 @@ interface GroupSettlementDialogProps {
   userId: number | undefined;
   settleCashPending: boolean;
   isPayPalButtonEnabled: boolean;
+  isPayPalProcessing?: boolean;
   getPayPalUnavailableMessage: () => string;
   onCashClick: () => void;
   onPayPalCreateOrder: () => Promise<string>;
@@ -36,6 +37,7 @@ export default function GroupSettlementDialog({
   userId,
   settleCashPending,
   isPayPalButtonEnabled,
+  isPayPalProcessing,
   getPayPalUnavailableMessage,
   onCashClick,
   onPayPalCreateOrder,
@@ -76,6 +78,7 @@ export default function GroupSettlementDialog({
                 fundingSource="paypal"
                 style={{ layout: "horizontal", tagline: false, height: 34 }}
                 forceReRender={[userId ?? 0, groupId]}
+                disabled={isPayPalProcessing}
                 createOrder={onPayPalCreateOrder}
                 onApprove={onPayPalApprove}
                 onCancel={onPayPalCancel}

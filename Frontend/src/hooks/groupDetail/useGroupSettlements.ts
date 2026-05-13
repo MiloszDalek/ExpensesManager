@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { balancesApi } from "@/api/balancesApi";
@@ -57,9 +57,11 @@ export function useGroupSettlements(
   const [settlementDialogTarget, setSettlementDialogTarget] = useState<SettlementDialogTarget | null>(null);
   const [outsideAppConfirmTarget, setOutsideAppConfirmTarget] = useState<OutsideAppConfirmTarget | null>(null);
   const [groupSettlementFeedback, setGroupSettlementFeedback] = useState<{
-    tone: "success" | "error";
+    tone: "success" | "error" | "info";
     message: string;
   } | null>(null);
+  const [isPayPalProcessing, setIsPayPalProcessing] = useState(false);
+  const pollingRef = useRef(false);
 
   const isPayPalButtonEnabled = paypalConfig.isPayPalButtonEnabled;
   const getPayPalUnavailableMessage = () => {
@@ -157,16 +159,50 @@ export function useGroupSettlements(
     return response.order_id;
   };
 
+  const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  const pollForSettlementCompletion = async (
+    orderId: string,
+    maxAttempts = 5,
+    intervalMs = 1000
+  ): Promise<boolean> => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await delay(intervalMs);
+      const data = await settlementsApi.getByGroup(groupId, { limit: 5, offset: 0 });
+      if (data.some((s) => s.paypal_order_id === orderId && s.status === "completed")) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const finalizeGroupPayPalOrder = async (orderId: string, toUserId: number) => {
-    await settlementsApi.finalizePayPal({ order_id: orderId });
+    if (isPayPalProcessing || pollingRef.current) return;
+    setIsPayPalProcessing(true);
+    pollingRef.current = true;
+    setGroupSettlementFeedback({ tone: "info", message: t("groupDetailPage.processingPayment") });
+
+    try {
+      await settlementsApi.finalizePayPal({ order_id: orderId });
+      await pollForSettlementCompletion(orderId);
+    } catch (error) {
+      pollingRef.current = false;
+      setIsPayPalProcessing(false);
+      throw error;
+    }
+
     await queryClient.invalidateQueries({ queryKey: queryKeys.balances.group(groupId) });
     await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contacts });
     await queryClient.invalidateQueries({ queryKey: queryKeys.balances.contactByGroups(toUserId) });
     await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.group(groupId) });
     await queryClient.invalidateQueries({ queryKey: queryKeys.settlements.user() });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount });
+
     setGroupSettlementFeedback({ tone: "success", message: t("groupDetailPage.settlementSuccess") });
     setSettlementDialogTarget(null);
     setOutsideAppConfirmTarget(null);
+    pollingRef.current = false;
+    setIsPayPalProcessing(false);
   };
 
   const settleGroupCashMutation = useMutation<ApiSettlementResponse, Error, number>({
@@ -214,6 +250,7 @@ export function useGroupSettlements(
     createGroupPayPalOrder,
     finalizeGroupPayPalOrder,
     settleGroupCashMutation,
+    isPayPalProcessing,
     mapPayPalSettlementError: (message?: string) => mapPayPalSettlementError(t, message),
   };
 }

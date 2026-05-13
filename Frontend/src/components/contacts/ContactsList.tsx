@@ -19,7 +19,7 @@ interface ContactsListProps {
     groupName: string;
     groupCurrency: string;
   }[];
-  settlementFeedback: { tone: "success" | "error"; message: string } | null;
+  settlementFeedback: { tone: "success" | "error" | "info"; message: string } | null;
   onSettleTotal: (target: { contactUserId: number; contactUsername: string; currency: string }) => void;
   onSettleGroup: (target: GroupSettlementTarget) => void;
 }
@@ -55,7 +55,11 @@ export default function ContactsList({
       {settlementFeedback ? (
         <p
           className={`text-sm ${
-            settlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+            settlementFeedback.tone === "error"
+              ? "text-destructive"
+              : settlementFeedback.tone === "info"
+                ? "text-blue-600"
+                : "text-emerald-700"
           }`}
         >
           {settlementFeedback.message}
