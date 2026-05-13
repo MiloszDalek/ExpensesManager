@@ -540,6 +540,8 @@ export default function AddGroupExpenseDialog({
       recurrence_interval: null,
       recurrence_ends_on: null,
     });
+
+    onOpenChange(false);
   };
 
   const displayedError = localError ?? errorMessage ?? null;

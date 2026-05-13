@@ -478,6 +478,8 @@ export default function AddGroupRecurringExpenseDialog({
       ends_on: formData.ends_on || null,
       notes: formData.notes.trim() ? formData.notes.trim() : null,
     });
+
+    onOpenChange(false);
   };
 
   const displayedError = localError ?? errorMessage ?? null;

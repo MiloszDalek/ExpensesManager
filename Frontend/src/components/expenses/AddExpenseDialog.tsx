@@ -110,7 +110,9 @@ export default function AddExpenseDialog({
         recurrence_interval: null,
         recurrence_ends_on: null,
       });
-      
+
+      onOpenChange(false);
+
       setFormData({
         title: '',
         amount: '',

@@ -23,6 +23,13 @@ export default function GroupSummaryCards({
 }: GroupSummaryCardsProps) {
   const { t } = useTranslation();
 
+  const getFontSizeClass = (textLength: number) => {
+    if (textLength <= 8) return "text-[clamp(1rem,5.2vw,1.85rem)] sm:text-3xl md:text-6xl";
+    if (textLength <= 12) return "text-[clamp(0.9rem,4.5vw,1.5rem)] sm:text-2xl md:text-3xl";
+    if (textLength <= 16) return "text-[clamp(0.8rem,3.8vw,1.25rem)] sm:text-xl md:text-xl";
+    return "text-[clamp(0.7rem,3.2vw,1rem)] sm:text-lg md:text-2xl";
+  };
+
   const cards = [
     {
       label: t("groupDetailPage.summaryMembers"),
@@ -59,7 +66,7 @@ export default function GroupSummaryCards({
               <card.icon className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </div>
             <div className="flex flex-1 items-center justify-center">
-              <p className="text-[clamp(1rem,5.2vw,1.85rem)] font-bold leading-none text-foreground sm:text-3xl md:text-5xl">
+              <p className={`${card.isCurrency ? getFontSizeClass(String(card.value).length) : "text-[clamp(1rem,5.2vw,1.85rem)] sm:text-3xl md:text-5xl"} font-bold leading-none text-foreground`}>
                 {card.value}
               </p>
             </div>
