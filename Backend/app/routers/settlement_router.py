@@ -51,7 +51,12 @@ def initiate_total_paypal_settlement(
     return service.initiate_total_paypal_settlement(settlement_in, current_user.id)
 
 
-@settlement_router.post("/paypal/finalize", response_model=SettlementResponse)
+@settlement_router.post(
+    "/paypal/finalize",
+    response_model=SettlementResponse,
+    summary="DEPRECATED: PayPal finalize UX confirmation",
+    description="Returns the current settlement state for UI feedback. Does NOT mutate payment status. Payment completion is handled exclusively by the PayPal webhook (PAYMENT.CAPTURE.COMPLETED)."
+)
 def finalize_paypal_settlement(
     payload: PayPalSettlementFinalizeRequest,
     service: SettlementService = Depends(get_settlement_service),

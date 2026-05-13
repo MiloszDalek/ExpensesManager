@@ -15,6 +15,9 @@ from app.enums import PaymentMethod, SettlementStatus
 from fastapi import HTTPException
 from decimal import Decimal
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SettlementService:
@@ -98,12 +101,15 @@ class SettlementService:
         order_id = related_ids.get("order_id")
         return order_id if isinstance(order_id, str) else None
 
-    def _mark_order_settlements_completed(
+    def mark_as_paid(
         self,
         settlements: list[Settlement],
         capture_id: str | None,
         fallback_order_id: str,
     ) -> Settlement:
+        """Single source of truth for marking PayPal settlements as completed.
+        Must only be called from the webhook handler.
+        """
         if not settlements:
             raise HTTPException(404, "Settlement not found for this PayPal order")
 
@@ -367,6 +373,12 @@ class SettlementService:
         )
 
     def finalize_paypal_settlement(self, order_id: str, user_id: int) -> Settlement:
+        """DEPRECATED: UX confirmation only. Does NOT mutate payment state.
+
+        Payment completion is handled exclusively by the PayPal webhook
+        (PAYMENT.CAPTURE.COMPLETED). This endpoint returns the current
+        settlement state so the frontend can show an appropriate UI.
+        """
         self.paypal_service.ensure_available()
 
         settlements = self.settlement_repo.get_all_by_paypal_order_id(order_id)
@@ -376,70 +388,79 @@ class SettlementService:
         if any(s.from_user_id != user_id and s.to_user_id != user_id for s in settlements):
             raise HTTPException(403, "Not authorized")
 
-        if all(s.status == SettlementStatus.COMPLETED for s in settlements):
-            return next((s for s in settlements if s.payment_method == PaymentMethod.PAYPAL), settlements[0])
-
-        capture_response = self.paypal_service.capture_order(order_id)
-        capture_status = capture_response.get("status")
-
-        if capture_status != "COMPLETED":
-            for settlement in settlements:
-                settlement.status = SettlementStatus.FAILED
-            self.settlement_repo.save_all()
-            raise HTTPException(400, "PayPal capture was not completed")
-
-        capture_id = self._extract_capture_id(capture_response)
-        return self._mark_order_settlements_completed(settlements, capture_id, order_id)
+        primary = next((s for s in settlements if s.payment_method == PaymentMethod.PAYPAL), settlements[0])
+        return primary
 
     def handle_paypal_webhook(self, headers: dict[str, str | None], event: dict):
+        event_id = event.get("id")
+        event_type = event.get("event_type")
+        logger.info("PayPal webhook received: event_id=%s event_type=%s", event_id, event_type)
+
         is_verified = self.paypal_service.verify_webhook_event(headers, event)
         if not is_verified:
+            logger.warning("PayPal webhook signature verification failed: event_id=%s", event_id)
             raise HTTPException(401, "Invalid PayPal webhook signature")
 
-        event_type = event.get("event_type")
         if not isinstance(event_type, str):
+            logger.warning("PayPal webhook missing event_type: event_id=%s", event_id)
             return {"status": "ignored", "reason": "missing_event_type"}
 
         resource = event.get("resource")
         if not isinstance(resource, dict):
+            logger.warning("PayPal webhook missing resource: event_id=%s event_type=%s", event_id, event_type)
             return {"status": "ignored", "reason": "missing_resource"}
 
         order_id = self._extract_webhook_order_id(event_type, resource)
         if not order_id:
+            logger.warning("PayPal webhook missing order_id: event_id=%s event_type=%s", event_id, event_type)
             return {"status": "ignored", "reason": "missing_order_id"}
 
         settlements = self.settlement_repo.get_all_by_paypal_order_id(order_id)
         if len(settlements) == 0:
+            logger.info("PayPal webhook settlement not found: order_id=%s event_id=%s", order_id, event_id)
             return {"status": "ignored", "reason": "settlement_not_found"}
 
+        # Idempotency: status-based guard against duplicate events
         if all(s.status == SettlementStatus.COMPLETED for s in settlements):
+            logger.info("PayPal webhook ignored (already completed): order_id=%s event_id=%s", order_id, event_id)
             return {"status": "ignored", "reason": "already_completed"}
-
-        if event_type == "CHECKOUT.ORDER.APPROVED":
-            capture_response = self.paypal_service.capture_order(order_id)
-            capture_status = capture_response.get("status")
-            if capture_status != "COMPLETED":
-                for settlement in settlements:
-                    settlement.status = SettlementStatus.FAILED
-                self.settlement_repo.save_all()
-                return {"status": "processed", "result": "capture_not_completed"}
-
-            capture_id = self._extract_capture_id(capture_response)
-            self._mark_order_settlements_completed(settlements, capture_id, order_id)
-            return {"status": "processed", "result": "completed"}
 
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
             capture_id = resource.get("id")
             capture_id_str = capture_id if isinstance(capture_id, str) else None
-            self._mark_order_settlements_completed(settlements, capture_id_str, order_id)
+
+            # Idempotency: capture_id deduplication
+            if capture_id_str and all(
+                s.paypal_capture_id == capture_id_str
+                for s in settlements
+                if s.payment_method == PaymentMethod.PAYPAL
+            ):
+                logger.info("PayPal webhook duplicate capture ignored: order_id=%s capture_id=%s event_id=%s", order_id, capture_id_str, event_id)
+                return {"status": "ignored", "reason": "already_processed"}
+
+            self.mark_as_paid(settlements, capture_id_str, order_id)
+            logger.info(
+                "PayPal webhook marked settlements paid: order_id=%s capture_id=%s settlement_ids=%s event_id=%s",
+                order_id, capture_id_str, [s.id for s in settlements], event_id,
+            )
             return {"status": "processed", "result": "completed"}
 
         if event_type in {"PAYMENT.CAPTURE.DENIED", "PAYMENT.CAPTURE.DECLINED"}:
+            # Idempotency: skip if already failed
+            if all(s.status == SettlementStatus.FAILED for s in settlements):
+                logger.info("PayPal webhook ignored (already failed): order_id=%s event_id=%s", order_id, event_id)
+                return {"status": "ignored", "reason": "already_failed"}
+
             for settlement in settlements:
                 settlement.status = SettlementStatus.FAILED
             self.settlement_repo.save_all()
+            logger.info(
+                "PayPal webhook marked settlements failed: order_id=%s settlement_ids=%s event_id=%s",
+                order_id, [s.id for s in settlements], event_id,
+            )
             return {"status": "processed", "result": "failed"}
 
+        logger.info("PayPal webhook unsupported event ignored: event_type=%s order_id=%s event_id=%s", event_type, order_id, event_id)
         return {"status": "ignored", "reason": "unsupported_event"}
 
 
