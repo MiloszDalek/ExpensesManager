@@ -373,11 +373,11 @@ class SettlementService:
         )
 
     def finalize_paypal_settlement(self, order_id: str, user_id: int) -> Settlement:
-        """DEPRECATED: UX confirmation only. Does NOT mutate payment state.
+        """Capture trigger / UX bridge. Does NOT mutate settlement state.
 
-        Payment completion is handled exclusively by the PayPal webhook
-        (PAYMENT.CAPTURE.COMPLETED). This endpoint returns the current
-        settlement state so the frontend can show an appropriate UI.
+        Calls PayPal capture_order so PayPal executes the capture and
+        emits PAYMENT.CAPTURE.COMPLETED. The webhook handler is the
+        exclusive authority for marking settlements paid in the DB.
         """
         self.paypal_service.ensure_available()
 
@@ -388,6 +388,18 @@ class SettlementService:
         if any(s.from_user_id != user_id and s.to_user_id != user_id for s in settlements):
             raise HTTPException(403, "Not authorized")
 
+        # Idempotency: avoid duplicate capture calls if frontend retries
+        if all(s.status == SettlementStatus.COMPLETED for s in settlements):
+            logger.info("finalize_paypal_settlement skipped capture (already completed): order_id=%s", order_id)
+            return next((s for s in settlements if s.payment_method == PaymentMethod.PAYPAL), settlements[0])
+
+        capture_response = self.paypal_service.capture_order(order_id)
+        capture_status = capture_response.get("status")
+        if capture_status != "COMPLETED":
+            logger.warning("finalize_paypal_settlement capture not completed: order_id=%s status=%s", order_id, capture_status)
+            raise HTTPException(400, "PayPal capture was not completed")
+
+        logger.info("finalize_paypal_settlement capture triggered: order_id=%s", order_id)
         primary = next((s for s in settlements if s.payment_method == PaymentMethod.PAYPAL), settlements[0])
         return primary
 
