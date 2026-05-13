@@ -144,6 +144,7 @@ export default function ContactsPage() {
           settlements.settleTotalCashMutation.variables === settlements.totalSettlementOptionsTarget?.contactUserId
         }
         isPayPalButtonEnabled={settlements.isPayPalButtonEnabled}
+        isPayPalProcessing={settlements.isPayPalProcessing}
         getPayPalUnavailableMessage={settlements.getPayPalUnavailableMessage}
         onCashClick={() => {
           if (!settlements.totalSettlementOptionsTarget) return;
@@ -221,6 +222,7 @@ export default function ContactsPage() {
           settlements.settleGroupCashMutation.variables?.toUserId === settlements.groupSettlementOptionsTarget?.contactUserId
         }
         isPayPalButtonEnabled={settlements.isPayPalButtonEnabled}
+        isPayPalProcessing={settlements.isPayPalProcessing}
         getPayPalUnavailableMessage={settlements.getPayPalUnavailableMessage}
         onCashClick={() => {
           if (!settlements.groupSettlementOptionsTarget) return;

@@ -7,7 +7,7 @@ import type { BalanceRow, UserBalanceSummary } from "@/types";
 interface GroupBalancesPanelProps {
   userBalanceSummary: UserBalanceSummary;
   balanceRows: BalanceRow[];
-  groupSettlementFeedback: { tone: "success" | "error"; message: string } | null;
+  groupSettlementFeedback: { tone: "success" | "error" | "info"; message: string } | null;
   balancesLoading: boolean;
   balancesError: Error | null;
   currency: string;
@@ -76,7 +76,11 @@ export default function GroupBalancesPanel({
       {groupSettlementFeedback ? (
         <p
           className={`mb-3 text-sm ${
-            groupSettlementFeedback.tone === "error" ? "text-destructive" : "text-emerald-700"
+            groupSettlementFeedback.tone === "error"
+              ? "text-destructive"
+              : groupSettlementFeedback.tone === "info"
+                ? "text-blue-600"
+                : "text-emerald-700"
           }`}
         >
           {groupSettlementFeedback.message}

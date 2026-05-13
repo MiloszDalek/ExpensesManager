@@ -17,6 +17,7 @@ interface TotalSettlementDialogProps {
   contactUserId: number | undefined;
   settleTotalCashPending: boolean;
   isPayPalButtonEnabled: boolean;
+  isPayPalProcessing?: boolean;
   getPayPalUnavailableMessage: () => string;
   onCashClick: () => void;
   onPayPalCreateOrder: () => Promise<string>;
@@ -33,6 +34,7 @@ export default function TotalSettlementDialog({
   contactUserId,
   settleTotalCashPending,
   isPayPalButtonEnabled,
+  isPayPalProcessing,
   getPayPalUnavailableMessage,
   onCashClick,
   onPayPalCreateOrder,
@@ -75,6 +77,7 @@ export default function TotalSettlementDialog({
                 fundingSource="paypal"
                 style={{ layout: "horizontal", tagline: false, height: 34 }}
                 forceReRender={[contactUserId ?? 0, currency]}
+                disabled={isPayPalProcessing}
                 createOrder={onPayPalCreateOrder}
                 onApprove={onPayPalApprove}
                 onCancel={onPayPalCancel}
