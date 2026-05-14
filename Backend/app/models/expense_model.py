@@ -19,7 +19,7 @@ class Expense(Base):
     recurring_expense_id = Column(Integer, ForeignKey("recurring_expenses.id", ondelete="SET NULL"), nullable=True)
     recurring_occurrence_date = Column(Date, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    expense_date = Column(DateTime, nullable=False)
+    expense_date = Column(DateTime(timezone=True), nullable=False)
     notes = Column(Text)
     receipt_image_url = Column(Text)
     receipt_text = Column(Text)

@@ -16,7 +16,7 @@ class IncomeEntry(Base):
     source = Column(String(120), nullable=True)
     amount = Column(Numeric(12, 2), nullable=False)
     currency = Column(SAEnum(CurrencyEnum, name="currency_enum"), default=CurrencyEnum.PLN, nullable=False)
-    income_date = Column(DateTime, nullable=False)
+    income_date = Column(DateTime(timezone=True), nullable=False)
     notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
