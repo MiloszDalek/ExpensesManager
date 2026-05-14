@@ -687,7 +687,9 @@
     "expenseCount": "Wydatki",
     "topCategory": "Najczęstsza kategoria",
     "listTitle": "Lista wydatków",
-    "filtersTitle": "Filtry"
+    "filtersTitle": "Filtry",
+    "openFilters": "Otwórz filtry",
+    "closeFilters": "Zamknij filtry"
   },
   "recurringExpenses": {
     "title": "Wydatki cykliczne",

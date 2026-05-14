@@ -697,7 +697,9 @@
     "expenseCount": "Expenses",
     "topCategory": "Top Category",
     "listTitle": "Expense List",
-    "filtersTitle": "Filters"
+    "filtersTitle": "Filters",
+    "openFilters": "Open filters",
+    "closeFilters": "Close filters"
   },
   "recurringExpenses": {
     "title": "Recurring Expenses",

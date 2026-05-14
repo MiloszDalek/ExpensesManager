@@ -153,7 +153,7 @@ export default function EditRecurringExpenseDialog({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle>
-              {t("recurringExpenses.editDialogTitle", { defaultValue: "Edit recurring series" })}
+              {t("recurringExpenses.editDialogTitle")}
             </DialogTitle>
             <DialogInfoButton dialogKey="editRecurringExpense" autoOpen={true} />
           </div>
@@ -232,7 +232,7 @@ export default function EditRecurringExpenseDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="recurring-edit-frequency">
-                {t("addExpenseDialog.recurringFrequency", { defaultValue: "Frequency" })}
+                {t("addExpenseDialog.recurringFrequency")}
               </Label>
               <Select
                 value={formData.frequency}
@@ -247,18 +247,18 @@ export default function EditRecurringExpenseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">{t("addExpenseDialog.recurringDaily", { defaultValue: "Daily" })}</SelectItem>
-                  <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly", { defaultValue: "Weekly" })}</SelectItem>
-                  <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly", { defaultValue: "Monthly" })}</SelectItem>
-                  <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" })}</SelectItem>
-                  <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly", { defaultValue: "Yearly" })}</SelectItem>
+                  <SelectItem value="daily">{t("addExpenseDialog.recurringDaily")}</SelectItem>
+                  <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly")}</SelectItem>
+                  <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly")}</SelectItem>
+                  <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly")}</SelectItem>
+                  <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="recurring-edit-interval">
-                {t("addExpenseDialog.recurringInterval", { defaultValue: "Every N periods" })}
+                {t("addExpenseDialog.recurringInterval")}
               </Label>
               <Input
                 id="recurring-edit-interval"
@@ -278,7 +278,7 @@ export default function EditRecurringExpenseDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="recurring-edit-starts-on">{t("recurringExpenses.startsOn", { defaultValue: "Starts on" })}</Label>
+              <Label htmlFor="recurring-edit-starts-on">{t("recurringExpenses.startsOn")}</Label>
               <DatePicker
                 id="recurring-edit-starts-on"
                 value={formData.starts_on}
@@ -292,7 +292,7 @@ export default function EditRecurringExpenseDialog({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="recurring-edit-ends-on">{t("addExpenseDialog.recurringEndsOn", { defaultValue: "End date (optional)" })}</Label>
+              <Label htmlFor="recurring-edit-ends-on">{t("addExpenseDialog.recurringEndsOn")}</Label>
               <DatePicker
                 id="recurring-edit-ends-on"
                 value={formData.ends_on}
@@ -323,23 +323,23 @@ export default function EditRecurringExpenseDialog({
 
           <div className="rounded-md border border-border p-3">
             <p className="mb-2 text-sm font-medium text-foreground">
-              {t("recurringExpenses.actionsTitle", { defaultValue: "Series actions" })}
+              {t("recurringExpenses.actionsTitle")}
             </p>
 
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={onGenerateNow} disabled={isActionPending}>
-                {t("recurringExpenses.generateNow", { defaultValue: "Generate now" })}
+                {t("recurringExpenses.generateNow")}
               </Button>
 
               {recurringExpense?.status === "active" ? (
                 <Button size="sm" variant="outline" onClick={onPause} disabled={isActionPending}>
-                  {t("recurringExpenses.pause", { defaultValue: "Pause" })}
+                  {t("recurringExpenses.pause")}
                 </Button>
               ) : null}
 
               {recurringExpense?.status === "paused" ? (
                 <Button size="sm" variant="outline" onClick={onResume} disabled={isActionPending}>
-                  {t("recurringExpenses.resume", { defaultValue: "Resume" })}
+                  {t("recurringExpenses.resume")}
                 </Button>
               ) : null}
 
@@ -347,32 +347,27 @@ export default function EditRecurringExpenseDialog({
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="outline" disabled={isActionPending}>
-                      {t("recurringExpenses.archive", { defaultValue: "Archive" })}
+                      {t("recurringExpenses.archive")}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        {t("recurringExpenses.archiveWarningTitle", {
-                          defaultValue: "Archive this recurring series?",
-                        })}
+                        {t("recurringExpenses.archiveWarningTitle")}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t("recurringExpenses.archiveWarningDescription", {
-                          defaultValue:
-                            "Archived recurring series stay in the system, but they are treated as no longer active. Make sure you want to archive this series.",
-                        })}
+                        {t("recurringExpenses.archiveWarningDescription")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>
-                        {t("recurringExpenses.archiveCancel", { defaultValue: "Keep series" })}
+                        {t("recurringExpenses.archiveCancel")}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={onArchive}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        {t("recurringExpenses.archiveConfirm", { defaultValue: "Archive now" })}
+                        {t("recurringExpenses.archiveConfirm")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -399,7 +394,7 @@ export default function EditRecurringExpenseDialog({
             }
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {t("recurringExpenses.saveChanges", { defaultValue: "Save changes" })}
+            {t("recurringExpenses.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>
