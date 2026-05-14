@@ -7,7 +7,9 @@ from .user_schemas import (
 )
 from .token_schemas import Token, TokenData
 from .auth_schemas import (
+    ActivateAccountRequest,
     ForgotPasswordRequest,
+    ResendActivationRequest,
     ResetPasswordRequest,
     ChangePasswordRequest,
     UpdateMeRequest,

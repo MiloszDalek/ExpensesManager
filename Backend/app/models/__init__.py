@@ -20,3 +20,4 @@ from .budget_period_summary_model import BudgetPeriodSummary
 from .budget_pool_state_model import BudgetPoolState
 from .goal_state_model import GoalState
 from .password_reset_token_model import PasswordResetToken
+from .account_activation_token_model import AccountActivationToken

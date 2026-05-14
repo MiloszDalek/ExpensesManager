@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
 import jwt
 from app.schemas import (
     Token,
+    ActivateAccountRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    ResendActivationRequest,
     MessageResponse,
 )
 from fastapi.security import OAuth2PasswordRequestForm
@@ -62,7 +64,7 @@ async def login_for_access_token(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user",
+            detail="Account not activated",
         )
     
     access_token_expires = timedelta(minutes=15)
@@ -145,3 +147,23 @@ async def reset_password(
     auth_service.reset_password(payload.token, payload.new_password)
     clear_refresh_cookie(response)
     return MessageResponse(message="Password has been reset successfully.")
+
+
+@auth_router.post("/activate-account", response_model=MessageResponse)
+async def activate_account(
+    payload: ActivateAccountRequest,
+    db: Session = Depends(get_db),
+):
+    auth_service = AuthService(db)
+    auth_service.activate_account(payload.token)
+    return MessageResponse(message="Account has been activated successfully.")
+
+
+@auth_router.post("/resend-activation", response_model=MessageResponse)
+async def resend_activation(
+    payload: ResendActivationRequest,
+    db: Session = Depends(get_db),
+):
+    auth_service = AuthService(db)
+    auth_service.request_account_activation(payload.email, language=payload.language)
+    return MessageResponse(message="If an account with that email exists, an activation link has been sent.")

@@ -33,6 +33,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    language: Optional[str] = None
 
     @field_validator("password")
     @classmethod

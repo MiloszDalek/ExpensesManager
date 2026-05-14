@@ -23,7 +23,12 @@ export function logout() {
 }
 
 export async function register(email: string, username: string, password: string) {
-  const payload = { email, username, password };
+  const payload = {
+    email,
+    username,
+    password,
+    language: i18n.language,
+  };
   const { data } = await client.post("/users", payload);
   return data;
 }
@@ -47,5 +52,10 @@ export async function resetPassword(token: string, newPassword: string): Promise
     new_password: newPassword,
   };
   const { data } = await client.post<ApiMessageResponse>("/auth/reset-password", payload);
+  return data;
+}
+
+export async function activateAccount(token: string): Promise<ApiMessageResponse> {
+  const { data } = await client.post<ApiMessageResponse>("/auth/activate-account", { token });
   return data;
 }

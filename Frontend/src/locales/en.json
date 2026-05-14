@@ -347,10 +347,11 @@
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
       "success": {
-        "registered": "Account created successfully. You can now log in.",
+        "registered": "Activation link has been sent to your email. Use it to activate your account.",
         "passwordReset": "Password updated. You can now log in."
       },
       "errors": {
+        "accountNotActivated": "Account is not activated yet. Check your email for the activation link.",
         "loginFailed": "Login failed",
         "inactiveUser": "Your account is inactive. Contact the administrator.",
         "invalidCredentials": "Incorrect email or password.",
@@ -422,6 +423,19 @@
         "passwordComplexity": "Password must be at least 8 characters long and include at least one letter and one digit.",
         "invalidToken": "Invalid or expired token.",
         "resetFailed": "Could not reset password.",
+        "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
+      }
+    },
+    "activateAccount": {
+      "title": "Activate account",
+      "subtitle": "We are activating your account.",
+      "activating": "Activating your account...",
+      "success": "Your account has been activated. You can now log in.",
+      "missingToken": "Activation link is missing or invalid. Please request a new one.",
+      "goToLogin": "Go to login",
+      "errors": {
+        "invalidToken": "Invalid or expired token.",
+        "activationFailed": "Could not activate account.",
         "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
       }
     }

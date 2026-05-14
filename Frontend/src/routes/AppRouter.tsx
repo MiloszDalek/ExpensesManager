@@ -20,6 +20,7 @@ import {
   ReceiptScannerPage,
   RegisterPage,
   ResetPasswordPage,
+  ActivateAccountPage,
   SettingsPage,
 } from "./lazyPages";
 
@@ -38,6 +39,7 @@ const AppRouter = () => {
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+          <Route path="/activate-account" element={<PublicRoute><ActivateAccountPage /></PublicRoute>} />
 
           {/* Private */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

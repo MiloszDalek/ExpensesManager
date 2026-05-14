@@ -87,12 +87,13 @@ def read_users_activity_stats(
     return service.get_users_activity_stats(search=search, role=role, is_active=is_active)
 
 
-@user_router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@user_router.post("", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_data: UserCreate, 
     service: UserService = Depends(get_user_service)
 ):
-    return service.create_user(user_data)
+    service.create_user(user_data)
+    return MessageResponse(message="If an account with that email exists, an activation link has been sent.")
 
 
 @user_router.get("/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)

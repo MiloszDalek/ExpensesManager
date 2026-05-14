@@ -337,10 +337,11 @@
       "noAccount": "Nie masz konta?",
       "signUp": "Zarejestruj się",
       "success": {
-        "registered": "Konto zostało utworzone. Możesz się teraz zalogować.",
+        "registered": "Wysłaliśmy link aktywacyjny na podany email. Użyj go, aby aktywować konto.",
         "passwordReset": "Hasło zostało zmienione. Możesz się teraz zalogować."
       },
       "errors": {
+        "accountNotActivated": "Konto nie zostało jeszcze aktywowane. Sprawdź email z linkiem aktywacyjnym.",
         "loginFailed": "Logowanie nie powiodło się",
         "inactiveUser": "Twoje konto jest nieaktywne. Skontaktuj się z administratorem.",
         "invalidCredentials": "Nieprawidłowy email lub hasło.",
@@ -412,6 +413,19 @@
         "passwordComplexity": "Hasło musi mieć co najmniej 8 znaków oraz zawierać przynajmniej jedną literę i jedną cyfrę.",
         "invalidToken": "Nieprawidłowy lub wygasły token.",
         "resetFailed": "Nie udało się zresetować hasła.",
+        "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
+      }
+    },
+    "activateAccount": {
+      "title": "Aktywacja konta",
+      "subtitle": "Trwa aktywacja Twojego konta.",
+      "activating": "Aktywujemy Twoje konto...",
+      "success": "Twoje konto zostało aktywowane. Możesz się teraz zalogować.",
+      "missingToken": "Link aktywacyjny jest nieprawidłowy lub brakuje tokena. Poproś o nowy.",
+      "goToLogin": "Przejdź do logowania",
+      "errors": {
+        "invalidToken": "Nieprawidłowy lub wygasły token.",
+        "activationFailed": "Nie udało się aktywować konta.",
         "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
       }
     }

@@ -8,6 +8,15 @@ class ForgotPasswordRequest(BaseModel):
     language: str | None = None
 
 
+class ActivateAccountRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+
+
+class ResendActivationRequest(BaseModel):
+    email: EmailStr
+    language: str | None = None
+
+
 class ResetPasswordRequest(BaseModel):
     token: str = Field(..., min_length=1)
     new_password: str

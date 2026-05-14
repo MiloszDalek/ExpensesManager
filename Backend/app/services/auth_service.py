@@ -8,8 +8,12 @@ import jwt
 
 from app.core.config import get_settings
 from app.utils.auth_utils import verify_password, get_password_hash
-from app.utils.email_utils import send_password_reset_email
-from app.repositories import UserRepository, PasswordResetTokenRepository
+from app.utils.email_utils import (
+    send_password_reset_email,
+    send_account_activation_email,
+    send_account_exists_email,
+)
+from app.repositories import UserRepository, PasswordResetTokenRepository, AccountActivationTokenRepository
 from app.models import User
 from app.database import get_db
 from app.enums import SystemUserRole
@@ -24,6 +28,7 @@ class AuthService:
         self.db = db
         self.user_repo = UserRepository(db)
         self.reset_token_repo = PasswordResetTokenRepository(db)
+        self.activation_token_repo = AccountActivationTokenRepository(db)
 
 
     def authenticate_user(self, email: str, password: str):
@@ -112,6 +117,82 @@ class AuthService:
         return f"{base}{path}?token={raw_token}"
 
 
+    @staticmethod
+    def _build_activation_link(raw_token: str) -> str:
+        frontend_origins = [
+            origin.strip().rstrip("/")
+            for origin in settings.FRONTEND_URL.split(",")
+            if origin.strip()
+        ]
+        base = frontend_origins[0] if frontend_origins else ""
+        path = settings.ACCOUNT_ACTIVATION_PATH
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{base}{path}?token={raw_token}"
+
+
+    @staticmethod
+    def _build_forgot_password_request_link() -> str:
+        frontend_origins = [
+            origin.strip().rstrip("/")
+            for origin in settings.FRONTEND_URL.split(",")
+            if origin.strip()
+        ]
+        base = frontend_origins[0] if frontend_origins else ""
+        path = settings.PASSWORD_RESET_REQUEST_PATH
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{base}{path}"
+
+
+    def issue_account_activation(self, user: User, language: str | None = None) -> None:
+        if not user or user.is_active:
+            return
+
+        self.activation_token_repo.invalidate_active_for_user(user.id)
+
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = self._hash_token(raw_token)
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            hours=settings.ACCOUNT_ACTIVATION_TOKEN_TTL_HOURS
+        )
+
+        self.activation_token_repo.create(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+
+        activation_link = self._build_activation_link(raw_token)
+        try:
+            send_account_activation_email(user.email, activation_link, language=language)
+        except Exception:
+            logger.error("Account activation email could not be delivered to user_id=%s", user.id)
+
+
+    def request_account_activation(self, email: str, language: str | None = None) -> None:
+        """
+        Anti-enumeration: never raise based on existence/state of the user.
+        Caller must always return a generic response.
+        """
+        user = self.user_repo.get_by_email(email)
+        if not user or user.is_active:
+            return
+
+        self.issue_account_activation(user, language=language)
+
+
+    def notify_account_already_exists(self, email: str, language: str | None = None) -> None:
+        if not email:
+            return
+
+        forgot_password_link = self._build_forgot_password_request_link()
+        try:
+            send_account_exists_email(email, forgot_password_link, language=language)
+        except Exception:
+            logger.error("Account exists email could not be delivered to %s", email)
+
+
     def request_password_reset(self, email: str, language: str | None = None) -> None:
         """
         Anti-enumeration: never raise based on existence/state of the user.
@@ -157,6 +238,25 @@ class AuthService:
 
         self.reset_token_repo.mark_used(record)
         self.reset_token_repo.invalidate_active_for_user(user.id)
+        return user
+
+
+    def activate_account(self, token: str) -> User:
+        token_hash = self._hash_token(token)
+        record = self.activation_token_repo.get_active_by_hash(token_hash)
+        if not record:
+            raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+        user = self.user_repo.get_by_id(record.user_id)
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+        if not user.is_active:
+            user.is_active = True
+            self.user_repo.create(user)
+
+        self.activation_token_repo.mark_used(record)
+        self.activation_token_repo.invalidate_active_for_user(user.id)
         return user
 
 

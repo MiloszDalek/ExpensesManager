@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from fastapi import HTTPException
@@ -5,23 +7,46 @@ from app.schemas import UserCreate, UserUpdate
 from app.utils.auth_utils import get_password_hash, verify_password
 from app.repositories.user_repository import UserRepository
 from app.enums import SystemUserRole
+from app.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
     def __init__(self, db: Session):
+        self.db = db
         self.user_repo = UserRepository(db)
 
 
     def create_user(self, user_data: UserCreate) -> User:
-        if self.user_repo.get_by_email(user_data.email):
-            raise HTTPException(status_code=400, detail="Email already in use")
+        existing_user = self.user_repo.get_by_email(user_data.email)
+        if existing_user:
+            if not existing_user.is_active:
+                try:
+                    AuthService(self.db).issue_account_activation(existing_user, language=user_data.language)
+                except Exception:
+                    logger.exception("Account activation email could not be delivered to user_id=%s", existing_user.id)
+            else:
+                try:
+                    AuthService(self.db).notify_account_already_exists(existing_user.email, language=user_data.language)
+                except Exception:
+                    logger.exception("Account exists email could not be delivered to %s", existing_user.email)
+            return existing_user
 
         user = User(
             username=user_data.username,            
             email=user_data.email,
             hashed_password=get_password_hash(user_data.password),
+            is_active=False,
         )
-        return self.user_repo.create(user)        
+        created_user = self.user_repo.create(user)
+
+        try:
+            AuthService(self.db).issue_account_activation(created_user, language=user_data.language)
+        except Exception:
+            logger.exception("Account activation email could not be delivered to user_id=%s", created_user.id)
+
+        return created_user
 
 
     def get_user(self, user_id: int) -> User:

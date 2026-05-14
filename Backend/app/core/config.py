@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Password reset
     PASSWORD_RESET_TOKEN_TTL_MINUTES: int = 30
     PASSWORD_RESET_PATH: str = "/reset-password"
+    PASSWORD_RESET_REQUEST_PATH: str = "/forgot-password"
+
+    # Account activation
+    ACCOUNT_ACTIVATION_TOKEN_TTL_HOURS: int = 24
+    ACCOUNT_ACTIVATION_PATH: str = "/activate-account"
 
     @field_validator("PAYPAL_MODE", mode="before")
     @classmethod

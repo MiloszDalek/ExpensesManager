@@ -40,6 +40,10 @@ export default function LoginPage() {
       return t("authPages.login.errors.inactiveUser");
     }
 
+    if (normalizedMessage === "Account not activated") {
+      return t("authPages.login.errors.accountNotActivated");
+    }
+
     if (normalizedMessage === "Incorect email or password" || normalizedMessage === "Incorrect email or password") {
       return t("authPages.login.errors.invalidCredentials");
     }
