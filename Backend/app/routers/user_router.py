@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 from app.schemas import (
+    ChangePasswordRequest,
+    MessageResponse,
+    UpdateMeRequest,
     UserAdminActivityResponse,
     UserAdminActivityStatsResponse,
     UserCreate,
@@ -11,6 +14,7 @@ from app.models import User
 from app.services import UserService
 from app.database import get_db
 from app.enums import SystemUserRole
+from app.routers.auth_router import clear_refresh_cookie
 from app.utils.auth_dependencies import get_current_active_user, get_current_admin_user
 
 user_router = APIRouter(
@@ -25,6 +29,27 @@ def get_user_service(db: Session = Depends(get_db)):
 @user_router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def read_me(current_user: User = Depends(get_current_active_user)):
     return current_user
+
+
+@user_router.patch("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def update_me(
+    payload: UpdateMeRequest,
+    service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    return service.update_me(current_user, payload.username)
+
+
+@user_router.patch("/me/password", response_model=MessageResponse, status_code=status.HTTP_200_OK)
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    response: Response,
+    service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_active_user),
+):
+    service.change_password(current_user, payload.current_password, payload.new_password)
+    clear_refresh_cookie(response)
+    return MessageResponse(message="Password changed successfully.")
 
 
 @user_router.get("/me/admin", response_model=UserResponse, status_code=status.HTTP_200_OK)

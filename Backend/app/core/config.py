@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     BUDGET_ROLLOVER_SCHEDULER_ENABLED: bool = True
     BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS: int = 3600
 
+    # Resend — minimal email service for password reset
+    RESEND_API_KEY: str | None = None
+    EMAIL_FROM: str | None = None
+
+    # Password reset
+    PASSWORD_RESET_TOKEN_TTL_MINUTES: int = 30
+    PASSWORD_RESET_PATH: str = "/reset-password"
+
     @field_validator("PAYPAL_MODE", mode="before")
     @classmethod
     def validate_paypal_mode(cls, value: str | None) -> str:

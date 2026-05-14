@@ -216,6 +216,7 @@
     "switchToLight": "Switch to light mode",
     "login": "Log in",
     "register": "Register",
+    "userMenuSettings": "Settings",
     "logout": "Log out",
     "feedback": "Report a bug or suggestion",
     "openMenu": "Open menu",
@@ -342,10 +343,12 @@
       "hidePassword": "Hide password",
       "submit": "Login",
       "submitLoading": "Logging in...",
+      "forgotPassword": "Forgot password?",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
       "success": {
-        "registered": "Account created successfully. You can now log in."
+        "registered": "Account created successfully. You can now log in.",
+        "passwordReset": "Password updated. You can now log in."
       },
       "errors": {
         "loginFailed": "Login failed",
@@ -381,6 +384,86 @@
         "registrationFailed": "Registration failed",
         "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
       }
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send a reset link.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "submitLoading": "Sending...",
+      "success": "If an account with that email exists, a password reset link has been sent.",
+      "backToLogin": "Back to login",
+      "errors": {
+        "requestFailed": "Could not request password reset.",
+        "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
+      }
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "********",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "********",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Reset password",
+      "submitLoading": "Resetting...",
+      "requestNewLink": "Request a new link",
+      "missingToken": "Reset link is missing or invalid. Request a new one.",
+      "passwordRules": {
+        "minLength": "At least 8 characters",
+        "letter": "At least one letter",
+        "digit": "At least one digit"
+      },
+      "errors": {
+        "passwordsDoNotMatch": "Passwords do not match",
+        "passwordComplexity": "Password must be at least 8 characters long and include at least one letter and one digit.",
+        "invalidToken": "Invalid or expired token.",
+        "resetFailed": "Could not reset password.",
+        "networkError": "Cannot reach the API. Check HTTPS configuration and API URL."
+      }
+    }
+  },
+  "settingsPage": {
+    "title": "Account settings",
+    "subtitle": "Manage your profile and password.",
+    "profileTitle": "Profile",
+    "profileDescription": "Update your username.",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Your name",
+    "saveProfile": "Save changes",
+    "saveProfileLoading": "Saving...",
+    "profileSuccess": "Username updated.",
+    "profileErrors": {
+      "required": "Username cannot be empty.",
+      "updateFailed": "Could not update profile."
+    },
+    "passwordTitle": "Change password",
+    "passwordDescription": "Use a strong password you do not reuse.",
+    "currentPasswordLabel": "Current password",
+    "currentPasswordPlaceholder": "********",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "********",
+    "confirmPasswordLabel": "Confirm new password",
+    "confirmPasswordPlaceholder": "********",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "savePassword": "Change password",
+    "savePasswordLoading": "Changing...",
+    "passwordSuccess": "Password changed successfully.",
+    "passwordRules": {
+      "minLength": "At least 8 characters",
+      "letter": "At least one letter",
+      "digit": "At least one digit"
+    },
+    "passwordErrors": {
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordComplexity": "Password must be at least 8 characters long and include at least one letter and one digit.",
+      "incorrectCurrent": "Current password is incorrect.",
+      "sameAsCurrent": "New password must be different from the current one.",
+      "changeFailed": "Could not change password."
     }
   },
   "homePage": {

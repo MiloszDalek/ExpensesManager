@@ -9,6 +9,7 @@ import {
   ContactsPage,
   DashboardPage,
   DetailedSummaryPage,
+  ForgotPasswordPage,
   GroupDetailPage,
   GroupsPage,
   HomePage,
@@ -18,6 +19,8 @@ import {
   PersonalExpensesPage,
   ReceiptScannerPage,
   RegisterPage,
+  ResetPasswordPage,
+  SettingsPage,
 } from "./lazyPages";
 
 
@@ -33,6 +36,8 @@ const AppRouter = () => {
           <Route path="/home" element={<PublicRoute><HomePage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
           {/* Private */}
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -44,6 +49,7 @@ const AppRouter = () => {
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/summaries" element={<PrivateRoute><DetailedSummaryPage /></PrivateRoute>} />
           <Route path="/receipt-scan" element={<PrivateRoute><ReceiptScannerPage /></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
 
           {/* default redirect */}
           <Route path="/" element={<Navigate to="/home" replace />} />

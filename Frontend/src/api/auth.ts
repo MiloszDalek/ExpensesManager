@@ -1,5 +1,5 @@
 import client from "./client";
-import type { TokenResponse } from "@/types";
+import type { ApiMessageResponse, TokenResponse } from "@/types";
 
 
 export async function login(email: string, password: string): Promise<TokenResponse> {
@@ -29,5 +29,19 @@ export async function register(email: string, username: string, password: string
 
 export async function getCurrentUser() {
   const { data } = await client.get("/users/me");
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<ApiMessageResponse> {
+  const { data } = await client.post<ApiMessageResponse>("/auth/forgot-password", { email });
+  return data;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<ApiMessageResponse> {
+  const payload = {
+    token,
+    new_password: newPassword,
+  };
+  const { data } = await client.post<ApiMessageResponse>("/auth/reset-password", payload);
   return data;
 }

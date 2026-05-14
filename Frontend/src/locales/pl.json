@@ -206,6 +206,7 @@
     "switchToLight": "Przełącz na tryb jasny",
     "login": "Zaloguj",
     "register": "Rejestracja",
+    "userMenuSettings": "Ustawienia",
     "logout": "Wyloguj",
     "feedback": "Zgłoś błąd lub sugestię",
     "openMenu": "Otwórz menu",
@@ -332,10 +333,12 @@
       "hidePassword": "Ukryj hasło",
       "submit": "Zaloguj",
       "submitLoading": "Logowanie...",
+      "forgotPassword": "Nie pamiętasz hasła?",
       "noAccount": "Nie masz konta?",
       "signUp": "Zarejestruj się",
       "success": {
-        "registered": "Konto zostało utworzone. Możesz się teraz zalogować."
+        "registered": "Konto zostało utworzone. Możesz się teraz zalogować.",
+        "passwordReset": "Hasło zostało zmienione. Możesz się teraz zalogować."
       },
       "errors": {
         "loginFailed": "Logowanie nie powiodło się",
@@ -371,6 +374,86 @@
         "registrationFailed": "Rejestracja nie powiodła się",
         "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
       }
+    },
+    "forgotPassword": {
+      "title": "Nie pamiętasz hasła",
+      "subtitle": "Podaj email, a wyślemy link do resetu.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Wyślij link resetu",
+      "submitLoading": "Wysyłanie...",
+      "success": "Jeśli konto z tym adresem email istnieje, wysłaliśmy link do resetu hasła.",
+      "backToLogin": "Wróć do logowania",
+      "errors": {
+        "requestFailed": "Nie udało się wysłać prośby o reset hasła.",
+        "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
+      }
+    },
+    "resetPassword": {
+      "title": "Reset hasła",
+      "subtitle": "Ustaw nowe hasło do konta.",
+      "newPasswordLabel": "Nowe hasło",
+      "newPasswordPlaceholder": "********",
+      "confirmPasswordLabel": "Potwierdź hasło",
+      "confirmPasswordPlaceholder": "********",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
+      "submit": "Zresetuj hasło",
+      "submitLoading": "Resetowanie...",
+      "requestNewLink": "Poproś o nowy link",
+      "missingToken": "Link resetu jest nieprawidłowy lub brakuje tokena. Poproś o nowy.",
+      "passwordRules": {
+        "minLength": "Minimum 8 znaków",
+        "letter": "Przynajmniej jedna litera",
+        "digit": "Przynajmniej jedna cyfra"
+      },
+      "errors": {
+        "passwordsDoNotMatch": "Hasła nie są takie same",
+        "passwordComplexity": "Hasło musi mieć co najmniej 8 znaków oraz zawierać przynajmniej jedną literę i jedną cyfrę.",
+        "invalidToken": "Nieprawidłowy lub wygasły token.",
+        "resetFailed": "Nie udało się zresetować hasła.",
+        "networkError": "Brak połączenia z API. Sprawdź konfigurację HTTPS i adres API."
+      }
+    }
+  },
+  "settingsPage": {
+    "title": "Ustawienia konta",
+    "subtitle": "Zarządzaj profilem i hasłem.",
+    "profileTitle": "Profil",
+    "profileDescription": "Zaktualizuj nazwę użytkownika.",
+    "usernameLabel": "Nazwa użytkownika",
+    "usernamePlaceholder": "Twoje imię",
+    "saveProfile": "Zapisz zmiany",
+    "saveProfileLoading": "Zapisywanie...",
+    "profileSuccess": "Nazwa użytkownika została zaktualizowana.",
+    "profileErrors": {
+      "required": "Nazwa użytkownika nie może być pusta.",
+      "updateFailed": "Nie udało się zaktualizować profilu."
+    },
+    "passwordTitle": "Zmień hasło",
+    "passwordDescription": "Użyj silnego hasła, którego nie używasz ponownie.",
+    "currentPasswordLabel": "Obecne hasło",
+    "currentPasswordPlaceholder": "********",
+    "newPasswordLabel": "Nowe hasło",
+    "newPasswordPlaceholder": "********",
+    "confirmPasswordLabel": "Potwierdź nowe hasło",
+    "confirmPasswordPlaceholder": "********",
+    "showPassword": "Pokaż hasło",
+    "hidePassword": "Ukryj hasło",
+    "savePassword": "Zmień hasło",
+    "savePasswordLoading": "Zmiana...",
+    "passwordSuccess": "Hasło zostało zmienione.",
+    "passwordRules": {
+      "minLength": "Minimum 8 znaków",
+      "letter": "Przynajmniej jedna litera",
+      "digit": "Przynajmniej jedna cyfra"
+    },
+    "passwordErrors": {
+      "passwordsDoNotMatch": "Hasła nie są takie same",
+      "passwordComplexity": "Hasło musi mieć co najmniej 8 znaków oraz zawierać przynajmniej jedną literę i jedną cyfrę.",
+      "incorrectCurrent": "Obecne hasło jest nieprawidłowe.",
+      "sameAsCurrent": "Nowe hasło musi różnić się od obecnego.",
+      "changeFailed": "Nie udało się zmienić hasła."
     }
   },
   "homePage": {

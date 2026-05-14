@@ -11,3 +11,4 @@ from .recurring_expense_repository import RecurringExpenseRepository
 from .income_repository import IncomeRepository
 from .budget_repository import BudgetRepository
 from .savings_goal_repository import SavingsGoalRepository
+from .password_reset_token_repository import PasswordResetTokenRepository

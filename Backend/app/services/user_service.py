@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.user_model import User
 from fastapi import HTTPException
 from app.schemas import UserCreate, UserUpdate
-from app.utils.auth_utils import get_password_hash
+from app.utils.auth_utils import get_password_hash, verify_password
 from app.repositories.user_repository import UserRepository
 from app.enums import SystemUserRole
 
@@ -142,3 +142,29 @@ class UserService:
             setattr(user, key, value)
 
         return self.user_repo.create(user)
+
+
+    def update_me(self, current_user: User, username: str) -> User:
+        new_username = (username or "").strip()
+        if not new_username:
+            raise HTTPException(status_code=400, detail="Username cannot be empty")
+
+        if new_username == current_user.username:
+            return current_user
+
+        current_user.username = new_username
+        return self.user_repo.create(current_user)
+
+
+    def change_password(self, current_user: User, current_password: str, new_password: str) -> User:
+        if not verify_password(current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+        if verify_password(new_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="New password must be different from the current one",
+            )
+
+        current_user.hashed_password = get_password_hash(new_password)
+        return self.user_repo.create(current_user)
