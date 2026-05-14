@@ -112,7 +112,7 @@ class AuthService:
         return f"{base}{path}?token={raw_token}"
 
 
-    def request_password_reset(self, email: str) -> None:
+    def request_password_reset(self, email: str, language: str | None = None) -> None:
         """
         Anti-enumeration: never raise based on existence/state of the user.
         Caller must always return a generic 200 response.
@@ -136,7 +136,7 @@ class AuthService:
 
         reset_link = self._build_reset_link(raw_token)
         try:
-            send_password_reset_email(user.email, reset_link)
+            send_password_reset_email(user.email, reset_link, language=language)
         except Exception:
             # Email failure is logged in email_utils. Do not leak details to caller.
             logger.error("Password reset email could not be delivered to user_id=%s", user.id)

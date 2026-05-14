@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import client from "./client";
 import type { ApiMessageResponse, TokenResponse } from "@/types";
 
@@ -33,7 +34,10 @@ export async function getCurrentUser() {
 }
 
 export async function requestPasswordReset(email: string): Promise<ApiMessageResponse> {
-  const { data } = await client.post<ApiMessageResponse>("/auth/forgot-password", { email });
+  const { data } = await client.post<ApiMessageResponse>("/auth/forgot-password", {
+    email,
+    language: i18n.language,
+  });
   return data;
 }
 

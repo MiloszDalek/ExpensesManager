@@ -129,7 +129,7 @@ async def forgot_password(
     db: Session = Depends(get_db),
 ):
     auth_service = AuthService(db)
-    auth_service.request_password_reset(payload.email)
+    auth_service.request_password_reset(payload.email, language=payload.language)
     return MessageResponse(
         message="If an account with that email exists, a password reset link has been sent."
     )

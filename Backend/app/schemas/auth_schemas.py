@@ -5,6 +5,7 @@ from app.schemas.user_schemas import _validate_password_complexity
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+    language: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):
