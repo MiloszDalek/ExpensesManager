@@ -59,13 +59,13 @@ class UserService:
             user = row[0]
             groups_count = int(row.groups_count or 0)
             expenses_count = int(row.expenses_count or 0)
-            sent_invitations_count = int(row.sent_invitations_count or 0)
+            contacts_count = int(row.contacts_count or 0)
             settlements_count = int(row.settlements_count or 0)
 
             timestamps = [
                 user.created_at,
                 row.last_expense_at,
-                row.last_invitation_at,
+                row.last_contact_at,
                 row.last_settlement_at,
             ]
             non_null_timestamps = [value for value in timestamps if value is not None]
@@ -81,7 +81,7 @@ class UserService:
                     "created_at": user.created_at,
                     "groups_count": groups_count,
                     "expenses_count": expenses_count,
-                    "sent_invitations_count": sent_invitations_count,
+                    "contacts_count": contacts_count,
                     "settlements_count": settlements_count,
                     "last_activity_at": last_activity_at,
                 }

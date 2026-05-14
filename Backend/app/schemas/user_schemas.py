@@ -66,7 +66,7 @@ class UserResponse(UserBase):
 class UserAdminActivityResponse(UserResponse):
     groups_count: int
     expenses_count: int
-    sent_invitations_count: int
+    contacts_count: int
     settlements_count: int
     last_activity_at: Optional[datetime] = None
 

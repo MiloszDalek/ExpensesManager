@@ -1,7 +1,7 @@
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session
 from app.enums import GroupMemberStatus, SystemUserRole
-from app.models import Expense, GroupMember, Invitation, Settlement, User
+from app.models import Contact, Expense, GroupMember, Settlement, User
 
 
 class UserRepository:
@@ -65,13 +65,13 @@ class UserRepository:
             .subquery()
         )
 
-        invitation_counts_sq = (
+        contact_counts_sq = (
             self.db.query(
-                Invitation.from_user_id.label("user_id"),
-                func.count(Invitation.id).label("sent_invitations_count"),
-                func.max(Invitation.created_at).label("last_invitation_at"),
+                Contact.user_id.label("user_id"),
+                func.count(Contact.id).label("contacts_count"),
+                func.max(Contact.created_at).label("last_contact_at"),
             )
-            .group_by(Invitation.from_user_id)
+            .group_by(Contact.user_id)
             .subquery()
         )
 
@@ -91,17 +91,17 @@ class UserRepository:
                 func.coalesce(group_counts_sq.c.groups_count, 0).label("groups_count"),
                 func.coalesce(expense_counts_sq.c.expenses_count, 0).label("expenses_count"),
                 func.coalesce(
-                    invitation_counts_sq.c.sent_invitations_count,
+                    contact_counts_sq.c.contacts_count,
                     0,
-                ).label("sent_invitations_count"),
+                ).label("contacts_count"),
                 func.coalesce(settlement_counts_sq.c.settlements_count, 0).label("settlements_count"),
                 expense_counts_sq.c.last_expense_at.label("last_expense_at"),
-                invitation_counts_sq.c.last_invitation_at.label("last_invitation_at"),
+                contact_counts_sq.c.last_contact_at.label("last_contact_at"),
                 settlement_counts_sq.c.last_settlement_at.label("last_settlement_at"),
             )
             .outerjoin(group_counts_sq, group_counts_sq.c.user_id == User.id)
             .outerjoin(expense_counts_sq, expense_counts_sq.c.user_id == User.id)
-            .outerjoin(invitation_counts_sq, invitation_counts_sq.c.user_id == User.id)
+            .outerjoin(contact_counts_sq, contact_counts_sq.c.user_id == User.id)
             .outerjoin(settlement_counts_sq, settlement_counts_sq.c.user_id == User.id)
         )
 
