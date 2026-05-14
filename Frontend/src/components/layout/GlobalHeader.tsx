@@ -180,17 +180,19 @@ export default function GlobalHeader() {
                         role="menu"
                       >
                         {location.pathname !== "/settings" ? (
-                          <Link
-                            to="/settings"
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            role="menuitem"
-                          >
-                            <Settings className="h-4 w-4" />
-                            <span>{t("globalHeader.userMenuSettings")}</span>
-                          </Link>
+                          <>
+                            <Link
+                              to="/settings"
+                              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Settings className="h-4 w-4" />
+                              <span>{t("globalHeader.userMenuSettings")}</span>
+                            </Link>
+                            <div className="my-1 h-px bg-border" />
+                          </>
                         ) : null}
-                        <div className="my-1 h-px bg-border" />
                         <button
                           type="button"
                           onClick={() => {
