@@ -24,7 +24,7 @@ export default function GroupSummaryCards({
   const { t } = useTranslation();
 
   const getFontSizeClass = (textLength: number) => {
-    if (textLength <= 8) return "text-[clamp(1rem,5.2vw,1.85rem)] sm:text-3xl md:text-6xl";
+    if (textLength <= 8) return "text-[clamp(1rem,5.2vw,1.85rem)] sm:text-3xl md:text-4xl";
     if (textLength <= 12) return "text-[clamp(0.9rem,4.5vw,1.5rem)] sm:text-2xl md:text-3xl";
     if (textLength <= 16) return "text-[clamp(0.8rem,3.8vw,1.25rem)] sm:text-xl md:text-xl";
     return "text-[clamp(0.7rem,3.2vw,1rem)] sm:text-lg md:text-2xl";
