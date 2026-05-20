@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.models import GoalState
+from app.models import SavingsGoal
 from app.repositories import BudgetRepository
 from app.services import BudgetService
 
@@ -16,6 +16,16 @@ class EngineResult:
 
 
 class BudgetEngine:
+    """Thin testing facade around `BudgetService.recalculate_budget_state`.
+
+    Historically this helper read snapshot rows from `budget_pool_states` and
+    `goal_states` tables. After the refactor those caches were removed: all
+    derived values are now produced live by `BudgetService` and persisted on
+    `budget_pools` / `savings_goals`. This helper rebuilds the legacy
+    `EngineResult` shape from those live sources so existing tests keep
+    working without behavioral changes.
+    """
+
     def __init__(self, db: Session):
         self.db = db
         self.budget_repo = BudgetRepository(db)
@@ -34,6 +44,65 @@ class BudgetEngine:
             "overspend_flag": overspend_flag,
         }
 
+    @staticmethod
+    def _pool_states_from_summary(raw_summary: dict) -> list[dict]:
+        rows: list[dict] = []
+        for pool_row in raw_summary["pools"]:
+            usage = pool_row.get("utilization_percent")
+            rows.append(
+                {
+                    "pool_id": pool_row["pool_id"],
+                    "allocated_amount": Decimal(pool_row["allocated_amount"]),
+                    "spent_amount": Decimal(pool_row["spent_amount"]),
+                    "remaining_amount": Decimal(pool_row["remaining_amount"]),
+                    "usage_percentage": None if usage is None else Decimal(str(usage)),
+                    "status": str(pool_row["status"]).upper(),
+                }
+            )
+        rows.sort(key=lambda item: item["pool_id"])
+        return rows
+
+    def _goal_states_for_budget(self, budget_id: int, user_id: int) -> list[dict]:
+        goals = (
+            self.db.query(SavingsGoal)
+            .filter(SavingsGoal.user_id == user_id)
+            .order_by(SavingsGoal.id.asc())
+            .all()
+        )
+
+        result: list[dict] = []
+        for goal in goals:
+            current_amount = Decimal(goal.current_amount or 0)
+            target_amount = Decimal(goal.target_amount or 0)
+
+            if target_amount > 0 and current_amount >= target_amount:
+                status = "COMPLETED"
+            elif goal.is_active:
+                status = "ACTIVE"
+            else:
+                status = "PAUSED"
+
+            if target_amount > 0:
+                progress = (current_amount / target_amount) * Decimal("100")
+                progress = min(progress, Decimal("100"))
+            else:
+                progress = Decimal("0")
+
+            linked_budget_id = goal.budget_pool.budget_id if goal.budget_pool is not None else None
+
+            result.append(
+                {
+                    "goal_id": goal.id,
+                    "budget_id": linked_budget_id if linked_budget_id is not None else budget_id,
+                    "current_amount": current_amount,
+                    "target_amount": target_amount,
+                    "progress_percentage": progress,
+                    "status": status,
+                }
+            )
+
+        return result
+
     def recalculate(self, budget_id: int) -> EngineResult:
         budget = self.budget_repo.get_plan_by_id(budget_id)
         if budget is None:
@@ -41,41 +110,10 @@ class BudgetEngine:
 
         raw_summary = self.budget_service.recalculate_budget_state(budget_id, budget.user_id)
 
-        pool_state_rows = self.budget_repo.list_budget_pool_states(budget_id)
-        pool_states = sorted(
-            [
-                {
-                    "pool_id": row.pool_id,
-                    "allocated_amount": Decimal(row.allocated_amount),
-                    "spent_amount": Decimal(row.spent_amount),
-                    "remaining_amount": Decimal(row.remaining_amount),
-                    "usage_percentage": None if row.usage_percentage is None else Decimal(row.usage_percentage),
-                    "status": str(row.status).upper(),
-                }
-                for row in pool_state_rows
-            ],
-            key=lambda item: item["pool_id"],
-        )
-
-        goal_state_rows = (
-            self.db.query(GoalState)
-            .filter(GoalState.budget_id == budget_id)
-            .order_by(GoalState.goal_id.asc())
-            .all()
-        )
-        goal_states = [
-            {
-                "goal_id": row.goal_id,
-                "budget_id": row.budget_id,
-                "current_amount": Decimal(row.current_amount),
-                "target_amount": Decimal(row.target_amount),
-                "progress_percentage": Decimal(row.progress_percentage),
-                "status": str(row.status).upper(),
-            }
-            for row in goal_state_rows
-        ]
-
+        pool_states = self._pool_states_from_summary(raw_summary)
+        goal_states = self._goal_states_for_budget(budget_id, budget.user_id)
         summary = self._normalize_summary(raw_summary, pool_states)
+
         return EngineResult(summary=summary, pool_states=pool_states, goal_states=goal_states)
 
 
