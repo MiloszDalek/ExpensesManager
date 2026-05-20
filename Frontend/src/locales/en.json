@@ -857,6 +857,7 @@
       "end": "End",
       "currency": "Currency",
       "incomeTarget": "Income target (optional)",
+      "useTemplate": "Use template",
       "includeGroupExpenses": "Include my group expense shares in budget calculations"
     },
     "period": {
@@ -878,7 +879,7 @@
     },
     "actions": {
       "creating": "Creating...",
-      "createWithTemplate": "Create budget (50/30/20 template)",
+      "createWithTemplate": "Create budget",
       "selected": "Selected",
       "select": "Select",
       "saving": "Saving...",

@@ -20,6 +20,7 @@ export function useBudgetCreateForm(
   const [periodEnd, setPeriodEnd] = useState("");
   const [incomeTarget, setIncomeTarget] = useState("");
   const [includeGroupExpenses, setIncludeGroupExpenses] = useState(false);
+  const [useTemplate, setUseTemplate] = useState(true);
 
   const createBudgetMutation = useMutation({
     mutationFn: () =>
@@ -31,7 +32,7 @@ export function useBudgetCreateForm(
         period_end: periodEnd,
         income_target: incomeTarget.trim() ? Number(incomeTarget) : null,
         include_group_expenses: includeGroupExpenses,
-        use_template_50_30_20: true,
+        use_template_50_30_20: useTemplate,
       }),
     onSuccess: async (created) => {
       setErrorMessage(null);
@@ -65,6 +66,8 @@ export function useBudgetCreateForm(
     setIncomeTarget,
     includeGroupExpenses,
     setIncludeGroupExpenses,
+    useTemplate,
+    setUseTemplate,
     createBudgetMutation,
     isCreateBudgetDisabled,
   };

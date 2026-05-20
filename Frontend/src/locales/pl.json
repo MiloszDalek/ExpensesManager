@@ -847,6 +847,7 @@
       "end": "Koniec",
       "currency": "Waluta",
       "incomeTarget": "Cel przychodu (opcjonalnie)",
+      "useTemplate": "Użyj szablonu",
       "includeGroupExpenses": "Uwzględniaj moje udziały w wydatkach grupowych w obliczeniach budżetu"
     },
     "period": {
@@ -868,7 +869,7 @@
     },
     "actions": {
       "creating": "Tworzenie...",
-      "createWithTemplate": "Utwórz budżet (szablon 50/30/20)",
+      "createWithTemplate": "Utwórz budżet",
       "selected": "Wybrany",
       "select": "Wybierz",
       "saving": "Zapisywanie...",

@@ -27,6 +27,8 @@ interface BudgetCreateFormProps {
   setIncludeGroupExpenses: (value: boolean) => void;
   createBudgetMutation: UseMutationResult<ApiBudgetPlanResponse, Error, void, unknown>;
   isCreateBudgetDisabled: boolean;
+  useTemplate: boolean;
+  setUseTemplate: (value: boolean) => void;
 }
 
 export default function BudgetCreateForm({
@@ -46,6 +48,8 @@ export default function BudgetCreateForm({
   setIncludeGroupExpenses,
   createBudgetMutation,
   isCreateBudgetDisabled,
+  // useTemplate,
+  // setUseTemplate,
 }: BudgetCreateFormProps) {
   const { t } = useTranslation();
 
@@ -117,6 +121,18 @@ export default function BudgetCreateForm({
         </div>
 
         <div className="md:col-span-6">
+          {/* <div className="md:col-span-6 flex items-center gap-2">
+            <input
+              id="budget-use-template"
+              type="checkbox"
+              checked={useTemplate}
+              onChange={(event) => setUseTemplate(event.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="budget-use-template" className="cursor-pointer text-sm">
+              {t("budgets.form.useTemplate")}
+            </Label>
+          </div> */}
           <Button onClick={() => createBudgetMutation.mutate()} disabled={isCreateBudgetDisabled}>
             {createBudgetMutation.isPending
               ? t("budgets.actions.creating")

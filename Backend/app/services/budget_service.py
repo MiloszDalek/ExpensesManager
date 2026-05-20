@@ -441,9 +441,6 @@ class BudgetService:
             pools = self._build_template_pools(user_id)
             template_key = "50_30_20"
 
-        if not pools:
-            raise HTTPException(status_code=400, detail="Budget requires at least one pool")
-
         for pool in pools:
             self._validate_pool_payload(pool, user_id)
         self._validate_pool_mix(pools, budget_in.income_target)
