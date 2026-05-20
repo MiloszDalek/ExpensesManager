@@ -34,8 +34,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# reset_database()
-
 settings = get_settings()
 recurring_scheduler = RecurringExpensesScheduler(interval_seconds=300)
 budget_rollover_scheduler = BudgetRolloverScheduler(interval_seconds=settings.BUDGET_ROLLOVER_SCHEDULER_INTERVAL_SECONDS)
