@@ -1,5 +1,6 @@
 import client from "./client";
 import type {
+	ApiMessageResponse,
 	ApiSystemUserActivityResponse,
 	ApiSystemUserActivityStatsResponse,
 	ApiUserUpdate,
@@ -78,6 +79,23 @@ export const usersApi = {
 
 	update: async (userId: number, payload: ApiUserUpdate): Promise<User> => {
 		const { data } = await client.put<User>(`/users/${userId}`, payload);
+		return data;
+	},
+
+	updateMe: async (username: string): Promise<User> => {
+		const { data } = await client.patch<User>("/users/me", { username });
+		return data;
+	},
+
+	changeMyPassword: async (
+		currentPassword: string,
+		newPassword: string
+	): Promise<ApiMessageResponse> => {
+		const payload = {
+			current_password: currentPassword,
+			new_password: newPassword,
+		};
+		const { data } = await client.patch<ApiMessageResponse>("/users/me/password", payload);
 		return data;
 	},
 };

@@ -14,6 +14,10 @@ const loadNotFoundPage = () => import("@/pages/NotFoundPage");
 const loadHomePage = () => import("@/pages/HomePage");
 const loadAdminPage = () => import("@/pages/AdminPage");
 const loadRegisterPage = () => import("@/pages/RegisterPage");
+const loadForgotPasswordPage = () => import("@/pages/ForgotPasswordPage");
+const loadResetPasswordPage = () => import("@/pages/ResetPasswordPage");
+const loadActivateAccountPage = () => import("@/pages/ActivateAccountPage");
+const loadSettingsPage = () => import("@/pages/SettingsPage");
 
 export const DashboardPage = lazy(loadDashboardPage);
 export const GroupsPage = lazy(loadGroupsPage);
@@ -29,6 +33,10 @@ export const NotFoundPage = lazy(loadNotFoundPage);
 export const HomePage = lazy(loadHomePage);
 export const AdminPage = lazy(loadAdminPage);
 export const RegisterPage = lazy(loadRegisterPage);
+export const ForgotPasswordPage = lazy(loadForgotPasswordPage);
+export const ResetPasswordPage = lazy(loadResetPasswordPage);
+export const ActivateAccountPage = lazy(loadActivateAccountPage);
+export const SettingsPage = lazy(loadSettingsPage);
 
 export const prefetchGroupsPage = () => {
   void loadGroupsPage();

@@ -136,7 +136,7 @@ export default function AddRecurringExpenseDialog({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle>
-              {t("addRecurringExpenseDialog.title", { defaultValue: "Add recurring expense" })}
+              {t("addRecurringExpenseDialog.title")}
             </DialogTitle>
             <DialogInfoButton dialogKey="addRecurringExpense" autoOpen={true} />
           </div>
@@ -214,7 +214,7 @@ export default function AddRecurringExpenseDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="recurring-create-frequency">
-                {t("addExpenseDialog.recurringFrequency", { defaultValue: "Frequency" })}
+                {t("addExpenseDialog.recurringFrequency")}
               </Label>
               <Select
                 value={formData.frequency}
@@ -229,18 +229,18 @@ export default function AddRecurringExpenseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">{t("addExpenseDialog.recurringDaily", { defaultValue: "Daily" })}</SelectItem>
-                  <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly", { defaultValue: "Weekly" })}</SelectItem>
-                  <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly", { defaultValue: "Monthly" })}</SelectItem>
-                  <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly", { defaultValue: "Quarterly" })}</SelectItem>
-                  <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly", { defaultValue: "Yearly" })}</SelectItem>
+                  <SelectItem value="daily">{t("addExpenseDialog.recurringDaily")}</SelectItem>
+                  <SelectItem value="weekly">{t("addExpenseDialog.recurringWeekly")}</SelectItem>
+                  <SelectItem value="monthly">{t("addExpenseDialog.recurringMonthly")}</SelectItem>
+                  <SelectItem value="quarterly">{t("addExpenseDialog.recurringQuarterly")}</SelectItem>
+                  <SelectItem value="yearly">{t("addExpenseDialog.recurringYearly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="recurring-create-interval">
-                {t("addExpenseDialog.recurringInterval", { defaultValue: "Every N periods" })}
+                {t("addExpenseDialog.recurringInterval")}
               </Label>
               <Input
                 id="recurring-create-interval"
@@ -260,7 +260,7 @@ export default function AddRecurringExpenseDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="recurring-create-starts-on">{t("recurringExpenses.startsOn", { defaultValue: "Starts on" })}</Label>
+              <Label htmlFor="recurring-create-starts-on">{t("recurringExpenses.startsOn")}</Label>
               <DatePicker
                 id="recurring-create-starts-on"
                 value={formData.starts_on}
@@ -274,7 +274,7 @@ export default function AddRecurringExpenseDialog({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="recurring-create-ends-on">{t("addExpenseDialog.recurringEndsOn", { defaultValue: "End date (optional)" })}</Label>
+              <Label htmlFor="recurring-create-ends-on">{t("addExpenseDialog.recurringEndsOn")}</Label>
               <DatePicker
                 id="recurring-create-ends-on"
                 value={formData.ends_on}
@@ -321,8 +321,9 @@ export default function AddRecurringExpenseDialog({
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isLoading
-              ? t("addRecurringExpenseDialog.submitting", { defaultValue: "Adding..." })
-              : t("addRecurringExpenseDialog.submit", { defaultValue: "Add recurring" })}
+              ? t("addRecurringExpenseDialog.submitting")
+              : t("addRecurringExpenseDialog.submit")
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,27 +1,52 @@
+import logging
+
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from fastapi import HTTPException
 from app.schemas import UserCreate, UserUpdate
-from app.utils.auth_utils import get_password_hash
+from app.utils.auth_utils import get_password_hash, verify_password
 from app.repositories.user_repository import UserRepository
 from app.enums import SystemUserRole
+from app.services.auth_service import AuthService
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
     def __init__(self, db: Session):
+        self.db = db
         self.user_repo = UserRepository(db)
 
 
     def create_user(self, user_data: UserCreate) -> User:
-        if self.user_repo.get_by_email(user_data.email):
-            raise HTTPException(status_code=400, detail="Email already in use")
+        existing_user = self.user_repo.get_by_email(user_data.email)
+        if existing_user:
+            if not existing_user.is_active:
+                try:
+                    AuthService(self.db).issue_account_activation(existing_user, language=user_data.language)
+                except Exception:
+                    logger.exception("Account activation email could not be delivered to user_id=%s", existing_user.id)
+            else:
+                try:
+                    AuthService(self.db).notify_account_already_exists(existing_user.email, language=user_data.language)
+                except Exception:
+                    logger.exception("Account exists email could not be delivered to %s", existing_user.email)
+            return existing_user
 
         user = User(
             username=user_data.username,            
             email=user_data.email,
             hashed_password=get_password_hash(user_data.password),
+            is_active=False,
         )
-        return self.user_repo.create(user)        
+        created_user = self.user_repo.create(user)
+
+        try:
+            AuthService(self.db).issue_account_activation(created_user, language=user_data.language)
+        except Exception:
+            logger.exception("Account activation email could not be delivered to user_id=%s", created_user.id)
+
+        return created_user
 
 
     def get_user(self, user_id: int) -> User:
@@ -59,13 +84,13 @@ class UserService:
             user = row[0]
             groups_count = int(row.groups_count or 0)
             expenses_count = int(row.expenses_count or 0)
-            sent_invitations_count = int(row.sent_invitations_count or 0)
+            contacts_count = int(row.contacts_count or 0)
             settlements_count = int(row.settlements_count or 0)
 
             timestamps = [
                 user.created_at,
                 row.last_expense_at,
-                row.last_invitation_at,
+                row.last_contact_at,
                 row.last_settlement_at,
             ]
             non_null_timestamps = [value for value in timestamps if value is not None]
@@ -81,7 +106,7 @@ class UserService:
                     "created_at": user.created_at,
                     "groups_count": groups_count,
                     "expenses_count": expenses_count,
-                    "sent_invitations_count": sent_invitations_count,
+                    "contacts_count": contacts_count,
                     "settlements_count": settlements_count,
                     "last_activity_at": last_activity_at,
                 }
@@ -142,3 +167,29 @@ class UserService:
             setattr(user, key, value)
 
         return self.user_repo.create(user)
+
+
+    def update_me(self, current_user: User, username: str) -> User:
+        new_username = (username or "").strip()
+        if not new_username:
+            raise HTTPException(status_code=400, detail="Username cannot be empty")
+
+        if new_username == current_user.username:
+            return current_user
+
+        current_user.username = new_username
+        return self.user_repo.create(current_user)
+
+
+    def change_password(self, current_user: User, current_password: str, new_password: str) -> User:
+        if not verify_password(current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+        if verify_password(new_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="New password must be different from the current one",
+            )
+
+        current_user.hashed_password = get_password_hash(new_password)
+        return self.user_repo.create(current_user)

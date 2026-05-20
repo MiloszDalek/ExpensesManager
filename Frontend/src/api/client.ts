@@ -147,12 +147,14 @@ client.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const requestUrl = originalRequest?.url ?? "";
     const isRefreshEndpoint = requestUrl.includes("/auth/refresh");
+    const isLoginEndpoint = requestUrl.includes("/auth/token");
 
     if (
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !isRefreshEndpoint
+      !isRefreshEndpoint &&
+      !isLoginEndpoint
     ) {
       originalRequest._retry = true;
 

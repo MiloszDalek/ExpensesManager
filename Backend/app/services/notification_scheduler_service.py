@@ -85,46 +85,54 @@ class NotificationScheduler:
         notifications_sent = 0
 
         try:
-            # Get all active budget plans
             active_budgets = budget_repo.list_all_active_plans()
 
             for budget in active_budgets:
-                pool_states = budget_repo.list_budget_pool_states(budget.id)
-                
-                for state in pool_states:
-                    pool = next((p for p in budget.pools if p.id == state.pool_id), None)
-                    if not pool:
-                        continue
+                for pool in budget.pools:
+                    allocated_amount = Decimal(pool.allocated_amount or 0)
+                    spent_amount = Decimal(pool.spent_amount or 0)
+                    alert_threshold = Decimal(pool.alert_threshold or 0)
+
+                    if allocated_amount <= 0:
+                        usage_percentage = None
+                    else:
+                        usage_percentage = float(
+                            (spent_amount / allocated_amount) * Decimal("100")
+                        )
+
+                    if spent_amount > allocated_amount:
+                        pool_status = "EXCEEDED"
+                    elif usage_percentage is not None and usage_percentage >= float(alert_threshold):
+                        pool_status = "WARNING"
+                    else:
+                        pool_status = "ON_TRACK"
 
                     category_name = pool.category.name if pool.category else f"Pool {pool.id}"
-                    
-                    # Check for exceeded budget
-                    if state.status == "EXCEEDED":
+
+                    if pool_status == "EXCEEDED":
                         result = notification_service.notify_budget_exceeded(
                             user_id=budget.user_id,
                             budget_id=budget.id,
-                            pool_id=state.pool_id,
+                            pool_id=pool.id,
                             category_name=category_name,
-                            spent_amount=float(state.spent_amount),
-                            allocated_amount=float(state.allocated_amount)
+                            spent_amount=float(spent_amount),
+                            allocated_amount=float(allocated_amount),
                         )
                         if result:
                             notifications_sent += 1
-                    
-                    # Check for warning (near limit)
-                    elif state.status == "WARNING" and state.usage_percentage:
-                        if float(state.usage_percentage) >= float(pool.alert_threshold):
-                            result = notification_service.notify_budget_near_limit(
-                                user_id=budget.user_id,
-                                budget_id=budget.id,
-                                pool_id=state.pool_id,
-                                category_name=category_name,
-                                usage_percentage=float(state.usage_percentage),
-                                spent_amount=float(state.spent_amount),
-                                allocated_amount=float(state.allocated_amount)
-                            )
-                            if result:
-                                notifications_sent += 1
+
+                    elif pool_status == "WARNING" and usage_percentage is not None:
+                        result = notification_service.notify_budget_near_limit(
+                            user_id=budget.user_id,
+                            budget_id=budget.id,
+                            pool_id=pool.id,
+                            category_name=category_name,
+                            usage_percentage=usage_percentage,
+                            spent_amount=float(spent_amount),
+                            allocated_amount=float(allocated_amount),
+                        )
+                        if result:
+                            notifications_sent += 1
 
             db.commit()
         except Exception as e:
@@ -134,7 +142,6 @@ class NotificationScheduler:
         return notifications_sent
 
     def _check_recurring_alerts(self, db) -> int:
-        """Check for upcoming recurring expenses and send notifications."""
         from app.services.notification_service import NotificationService
         from app.repositories.recurring_expense_repository import RecurringExpenseRepository
 
@@ -143,7 +150,6 @@ class NotificationScheduler:
         notifications_sent = 0
 
         try:
-            # Look ahead 3 days for upcoming recurring expenses
             lookahead_date = date.today() + timedelta(days=3)
             
             recurring_expenses = recurring_repo.get_due_series(
@@ -151,7 +157,6 @@ class NotificationScheduler:
                 limit=1000
             )
             
-            # Filter to only include those due today or in the next 3 days
             recurring_expenses = [
                 r for r in recurring_expenses 
                 if r.next_due_on >= date.today()
@@ -189,20 +194,17 @@ class NotificationScheduler:
         notifications_sent = 0
 
         try:
-            # Get pending settlements
             pending_settlements = settlement_repo.get_all_pending()
 
             for settlement in pending_settlements:
-                # Check if notification was already sent recently (last 7 days)
                 if notification_service.notification_recently_sent(
                     user_id=settlement.from_user_id,
                     notification_type=NotificationType.SETTLEMENT_PENDING,
                     reference_id=settlement.id,
-                    hours=168  # 7 days
+                    hours=168
                 ):
                     continue
 
-                # Get creditor name
                 creditor = user_repo.get_by_id(settlement.to_user_id)
                 creditor_name = creditor.username if creditor else f"User {settlement.to_user_id}"
 
@@ -223,7 +225,6 @@ class NotificationScheduler:
         return notifications_sent
 
     def _check_goal_milestones(self, db) -> int:
-        """Check savings goals for milestone achievements."""
         from app.services.notification_service import NotificationService
         from app.models import SavingsGoal
         from app.repositories.savings_goal_repository import SavingsGoalRepository
@@ -233,7 +234,6 @@ class NotificationScheduler:
         notifications_sent = 0
 
         try:
-            # Get active goals
             active_goals = goal_repo.list_goals_by_user(user_id=None, include_inactive=False)
 
             for goal in active_goals:
@@ -244,9 +244,7 @@ class NotificationScheduler:
                 target_amount = Decimal(goal.target_amount)
                 progress_pct = float((current_amount / target_amount) * 100)
 
-                # Check for completion (100%)
                 if progress_pct >= 100:
-                    # Check if completion notification already sent
                     from app.enums import NotificationType
                     if not notification_service.notification_recently_sent(
                         user_id=goal.user_id,
@@ -267,7 +265,6 @@ class NotificationScheduler:
                     milestones = [25, 50, 75, 90]
                     for milestone in milestones:
                         if progress_pct >= milestone:
-                            # Create a unique check per milestone
                             from app.enums import NotificationType
                             recent_progress_notifications = notification_service.notification_repo.get_recent_by_type(
                                 user_id=goal.user_id,
@@ -276,7 +273,6 @@ class NotificationScheduler:
                                 hours=168  # 7 days
                             )
                             
-                            # Check if we've already notified about this milestone level
                             milestone_already_notified = any(
                                 f"{milestone}%" in (n.message or "") 
                                 for n in recent_progress_notifications
@@ -291,7 +287,6 @@ class NotificationScheduler:
                                 )
                                 if result:
                                     notifications_sent += 1
-                                # Only notify once per check cycle
                                 break
 
             db.commit()

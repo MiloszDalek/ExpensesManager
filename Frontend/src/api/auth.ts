@@ -1,5 +1,6 @@
+import i18n from "@/lib/i18n";
 import client from "./client";
-import type { TokenResponse } from "@/types";
+import type { ApiMessageResponse, TokenResponse } from "@/types";
 
 
 export async function login(email: string, password: string): Promise<TokenResponse> {
@@ -22,12 +23,39 @@ export function logout() {
 }
 
 export async function register(email: string, username: string, password: string) {
-  const payload = { email, username, password };
+  const payload = {
+    email,
+    username,
+    password,
+    language: i18n.language,
+  };
   const { data } = await client.post("/users", payload);
   return data;
 }
 
 export async function getCurrentUser() {
   const { data } = await client.get("/users/me");
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<ApiMessageResponse> {
+  const { data } = await client.post<ApiMessageResponse>("/auth/forgot-password", {
+    email,
+    language: i18n.language,
+  });
+  return data;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<ApiMessageResponse> {
+  const payload = {
+    token,
+    new_password: newPassword,
+  };
+  const { data } = await client.post<ApiMessageResponse>("/auth/reset-password", payload);
+  return data;
+}
+
+export async function activateAccount(token: string): Promise<ApiMessageResponse> {
+  const { data } = await client.post<ApiMessageResponse>("/auth/activate-account", { token });
   return data;
 }

@@ -26,7 +26,7 @@ export interface ApiSystemUserActivityResponse {
   created_at: ISODateTimeString;
   groups_count: number;
   expenses_count: number;
-  sent_invitations_count: number;
+  contacts_count: number;
   settlements_count: number;
   last_activity_at?: ISODateTimeString | null;
 }

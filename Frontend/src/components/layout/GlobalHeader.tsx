@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { BarChart3, ChevronDown, Globe, Info, LayoutDashboard, LogOut, Menu, MessageSquareText, PiggyBank, ReceiptText, Shield, Users, BookUser, X } from "lucide-react";
+import { BarChart3, ChevronDown, Globe, Info, LayoutDashboard, LogOut, Menu, MessageSquareText, PiggyBank, ReceiptText, Settings, Shield, Users, BookUser, X } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -179,21 +179,20 @@ export default function GlobalHeader() {
                         className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-56 rounded-md border border-border bg-popover p-1 shadow-md"
                         role="menu"
                       >
-                        <button
-                          type="button"
-                          className="flex w-full cursor-not-allowed items-center rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground/70"
-                          disabled
-                        >
-                          {t("globalHeader.userMenuSettings", { defaultValue: "Settings (soon)" })}
-                        </button>
-                        <button
-                          type="button"
-                          className="flex w-full cursor-not-allowed items-center rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground/70"
-                          disabled
-                        >
-                          {t("globalHeader.userMenuProfile", { defaultValue: "User info (soon)" })}
-                        </button>
-                        <div className="my-1 h-px bg-border" />
+                        {location.pathname !== "/settings" ? (
+                          <>
+                            <Link
+                              to="/settings"
+                              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              role="menuitem"
+                            >
+                              <Settings className="h-4 w-4" />
+                              <span>{t("globalHeader.userMenuSettings")}</span>
+                            </Link>
+                            <div className="my-1 h-px bg-border" />
+                          </>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => {
@@ -363,6 +362,24 @@ export default function GlobalHeader() {
                 <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="truncate">{t("globalHeader.loggedAs", { username: user.username })}</span>
               </div>
+
+              {location.pathname !== "/settings" ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="mb-3 w-full border border-border bg-card/80"
+                >
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>{t("globalHeader.userMenuSettings")}</span>
+                  </Link>
+                </Button>
+              ) : null}
 
               <div className="mb-3 flex items-center justify-between rounded-md border border-border bg-card px-3 py-2">
                 <span className="text-sm font-medium text-muted-foreground">{t("languageSwitcher.selectLanguage")}</span>

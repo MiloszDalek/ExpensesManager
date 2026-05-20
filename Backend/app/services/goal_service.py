@@ -20,18 +20,11 @@ class GoalService:
         return Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def _to_goal_response(self, goal: SavingsGoal) -> dict:
-        state = goal.state
+        current_amount = self._round_money(goal.current_amount)
+        target_amount = self._round_money(goal.target_amount)
 
-        current_amount = self._round_money(state.current_amount) if state else self._round_money(goal.current_amount)
-        target_amount = self._round_money(state.target_amount) if state else self._round_money(goal.target_amount)
-
-        if state is not None:
-            if state.status == "ACTIVE":
-                is_active = True
-            elif state.status == "COMPLETED":
-                is_active = False
-            else:
-                is_active = False
+        if target_amount > 0 and current_amount >= target_amount:
+            is_active = False
         else:
             is_active = goal.is_active
 

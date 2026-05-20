@@ -21,6 +21,7 @@ export default function LoginPage() {
 
   const [searchParams] = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
+  const passwordReset = searchParams.get("reset") === "true";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +38,10 @@ export default function LoginPage() {
 
     if (normalizedMessage === "Inactive user" || normalizedMessage === "User not found or inactive") {
       return t("authPages.login.errors.inactiveUser");
+    }
+
+    if (normalizedMessage === "Account not activated") {
+      return t("authPages.login.errors.accountNotActivated");
     }
 
     if (normalizedMessage === "Incorect email or password" || normalizedMessage === "Incorrect email or password") {
@@ -77,9 +82,12 @@ export default function LoginPage() {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-card-foreground shadow-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">{t("authPages.login.title")}</h1>
-        {justRegistered && (
-          <p className="text-emerald-600 text-sm mb-4 text-center">{t("authPages.login.success.registered")}</p>
-        )}
+        {justRegistered || passwordReset ? (
+          <div className="mb-4 space-y-2 text-center text-sm text-emerald-600">
+            {justRegistered ? <p>{t("authPages.login.success.registered")}</p> : null}
+            {passwordReset ? <p>{t("authPages.login.success.passwordReset")}</p> : null}
+          </div>
+        ) : null}
         {error && (
           <p className="text-destructive text-sm mb-4 text-center">{error}</p>
         )}
@@ -123,6 +131,11 @@ export default function LoginPage() {
             {loading ? t("authPages.login.submitLoading") : t("authPages.login.submit")}
           </Button>
         </form>
+        <p className="text-sm text-muted-foreground mt-3 text-center">
+          <Link to="/forgot-password" className="text-primary hover:underline">
+            {t("authPages.login.forgotPassword")}
+          </Link>
+        </p>
         <p className="text-sm text-muted-foreground mt-4 text-center">
           {t("authPages.login.noAccount")} <Link to="/register" className="text-primary hover:underline">{t("authPages.login.signUp")}</Link>
         </p>

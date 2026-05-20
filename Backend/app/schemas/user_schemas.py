@@ -33,6 +33,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    language: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -66,7 +67,7 @@ class UserResponse(UserBase):
 class UserAdminActivityResponse(UserResponse):
     groups_count: int
     expenses_count: int
-    sent_invitations_count: int
+    contacts_count: int
     settlements_count: int
     last_activity_at: Optional[datetime] = None
 
