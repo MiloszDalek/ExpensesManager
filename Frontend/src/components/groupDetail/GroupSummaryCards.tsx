@@ -59,7 +59,7 @@ export default function GroupSummaryCards({
       {cards.map((card) => (
         <Card key={card.label} className="aspect-square border border-border bg-card/80 shadow-sm backdrop-blur-sm">
           <CardContent className="flex h-full flex-col p-2 sm:p-3">
-            <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-[-12px] sm:mt-0">
+            <div className="flex items-center justify-center gap-1 text-center sm:gap-2 mt-3 sm:mt-0">
               <p className="text-[10px] font-medium leading-tight text-muted-foreground sm:text-xs md:text-base">
                 {card.label}
               </p>

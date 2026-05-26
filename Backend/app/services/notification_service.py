@@ -11,9 +11,7 @@ from app.enums import (
 from typing import Optional
 
 
-# Severity mapping for notification types
 SEVERITY_MAP = {
-    # INFO
     NotificationType.INVITATION_RECEIVED: NotificationSeverity.INFO,
     NotificationType.INVITATION_ACCEPTED: NotificationSeverity.INFO,
     NotificationType.NEW_EXPENSE_ADDED: NotificationSeverity.INFO,
@@ -23,20 +21,17 @@ SEVERITY_MAP = {
     NotificationType.SETTLEMENT_COMPLETED: NotificationSeverity.INFO,
     NotificationType.BUDGET_RESET: NotificationSeverity.INFO,
     
-    # WARNING
     NotificationType.BUDGET_NEAR_LIMIT: NotificationSeverity.WARNING,
     NotificationType.RECURRING_DUE_SOON: NotificationSeverity.WARNING,
     NotificationType.HIGH_SPENDING_CATEGORY: NotificationSeverity.WARNING,
     NotificationType.INVITATION_REJECTED: NotificationSeverity.WARNING,
     
-    # URGENT
     NotificationType.BUDGET_EXCEEDED: NotificationSeverity.URGENT,
     NotificationType.SETTLEMENT_PENDING: NotificationSeverity.URGENT,
     NotificationType.RECURRING_FAILED: NotificationSeverity.URGENT,
     NotificationType.UNUSUAL_SPENDING: NotificationSeverity.URGENT,
     NotificationType.SETTLEMENT_FAILED: NotificationSeverity.URGENT,
     
-    # Legacy support
     NotificationType.INVITATION: NotificationSeverity.INFO,
     NotificationType.BUDGET_OVERSPENDING: NotificationSeverity.URGENT,
     NotificationType.UPCOMING_RECURRING_EXPENSE: NotificationSeverity.WARNING,

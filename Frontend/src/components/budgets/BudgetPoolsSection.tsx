@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CategoryPicker from "@/components/expenses/CategoryPicker";
 import { Badge } from "@/components/ui/badge";
 import PageInfoButton from "@/components/help/PageInfoButton";
 import type { ApiBudgetPlanResponse, ApiCategoryResponse, ApiBudgetSummaryResponse } from "@/types";
@@ -74,18 +75,13 @@ export default function BudgetPoolsSection({
             </div>
             <div className="space-y-1">
               <Label>{t("budgets.pools.category")}</Label>
-              <Select value={poolCategoryId} onValueChange={setPoolCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("budgets.pools.selectCategory")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {personalCategories.map((category) => (
-                    <SelectItem key={category.id} value={String(category.id)}>
-                      {t(`category.${category.name}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategoryPicker
+                categories={personalCategories}
+                value={poolCategoryId}
+                onValueChange={setPoolCategoryId}
+                trigger="button"
+                showLabel={false}
+              />
             </div>
             <div className="space-y-1">
               <Label>{t("budgets.pools.type")}</Label>
@@ -146,7 +142,7 @@ export default function BudgetPoolsSection({
               <p className="text-sm text-muted-foreground">{t("budgets.summary.empty")}</p>
             ) : (
               <>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-4">
                   <Card>
                     <CardContent className="p-3">
                       <p className="text-xs text-muted-foreground">{t("budgets.summary.income")}</p>
@@ -168,14 +164,6 @@ export default function BudgetPoolsSection({
                       <p className="text-xs text-muted-foreground">{t("budgets.summary.saved")}</p>
                       <p className="text-lg font-semibold">
                         {formatCurrency(Number(budgetSummary.saved_total), budgetSummary.currency as CurrencyEnum)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-3">
-                      <p className="text-xs text-muted-foreground">{t("budgets.summary.policy")}</p>
-                      <p className="text-lg font-semibold uppercase">
-                        {budgetSummary.overspending_strategy.replace("_", " ")}
                       </p>
                     </CardContent>
                   </Card>

@@ -462,7 +462,7 @@ export default function CategoryPicker(props: CategoryPickerProps) {
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm ${style.badgeClass}`}>
                       <Icon className="h-3 w-3" />
                     </span>
-                    <span className="truncate max-w-[120px]">{getCategoryLabel(cat)}</span>
+                    <span className="truncate max-w-30">{getCategoryLabel(cat)}</span>
                     <button
                       type="button"
                       onClick={(event) => {

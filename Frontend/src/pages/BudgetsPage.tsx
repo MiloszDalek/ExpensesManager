@@ -64,6 +64,8 @@ export default function BudgetsPage() {
     setIncludeGroupExpenses,
     createBudgetMutation,
     isCreateBudgetDisabled,
+    useTemplate,
+    setUseTemplate,
   } = useBudgetCreateForm(t, refreshBudgetArea, setSelectedBudgetId, setErrorMessage, setSuccessMessage);
 
   const {
@@ -176,6 +178,8 @@ export default function BudgetsPage() {
           setIncludeGroupExpenses={setIncludeGroupExpenses}
           createBudgetMutation={createBudgetMutation}
           isCreateBudgetDisabled={isCreateBudgetDisabled}
+          useTemplate={useTemplate}
+          setUseTemplate={setUseTemplate}
         />
 
         <div className="space-y-4">
