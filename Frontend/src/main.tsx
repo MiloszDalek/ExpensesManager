@@ -10,7 +10,9 @@ import logoPicture from "@/assets/logo_picture.webp";
 
 const queryClient = new QueryClient();
 
-const ReactQueryDevtools = import.meta.env.DEV
+const showQueryDevtools = import.meta.env.DEV && import.meta.env.VITE_SHOW_QUERY_DEVTOOLS === 'true';
+
+const ReactQueryDevtools = showQueryDevtools
   ? lazy(async () => {
       const module = await import("@tanstack/react-query-devtools");
       return { default: module.ReactQueryDevtools };
