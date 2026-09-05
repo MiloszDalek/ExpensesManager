@@ -1,89 +1,63 @@
 # Expenses Manager
-Expenses Manager is a web application designed to help users manage shared expenses within groups or keep track of their personal spending.
 
-## Test data seeding
+Expenses Manager is a full-stack web application designed to help users manage personal and shared finances by tracking income and expenses, organizing transactions, and simplifying settlements between users.
 
-Backend includes a synthetic data seeder for high-volume UI and business-logic testing.
+The application allows users to manage individual expenses as well as create groups for shared financial activities. Group members can monitor shared expenses, track contributions, and maintain clear settlements between participants.
 
-Run from `Backend` directory:
+The project was created to gain practical experience in building a modern web application with a Python-based backend, REST API architecture, database integration, and a TypeScript frontend.
 
-```powershell
-python seed_data.py
-```
+## Features
 
-Useful options:
+- User registration and authentication
+- Secure access using JWT-based authentication
+- Adding, editing, and deleting financial transactions
+- Categorizing expenses and income
+- Creating and managing expense groups
+- Tracking shared expenses between group members
+- Monitoring individual contributions within groups
+- Simplifying settlements between users
+- Viewing transaction history
+- Filtering and organizing transactions
+- Persistent data storage using a relational database
+- Communication between frontend and backend through REST API
 
-```powershell
-python seed_data.py --profile medium
-python seed_data.py --users 120 --groups 90 --personal-expenses 18000 --group-expenses 12000
-python seed_data.py --personal-recurring-expenses 1200 --group-recurring-expenses 700
-python seed_data.py --max-personal-recurring-per-user 3 --max-group-recurring-per-group 3
-python seed_data.py --seed 42
-python seed_data.py --max-days-back 1095 --edge-case-ratio 0.15
-```
+## Technologies Used
 
-Defaults:
-- append-only mode (adds new data on each run),
-- random distribution every run (unless `--seed` is provided),
-- generated users share password: `password`.
+### Backend
 
-Example full run with recurring data:
+- Python
+- FastAPI
+- Pydantic
+- SQLAlchemy
+- PostgreSQL
+- JWT Authentication
+- Uvicorn
 
-```powershell
-python seed_data.py --users 120 --groups 90 --personal-expenses 18000 --group-expenses 12000 --personal-recurring-expenses 200 --group-recurring-expenses 220 --max-personal-recurring-per-user 3 --max-group-recurring-per-group 3 --seed 42
-```
+### Frontend
 
-## PayPal modes
+- React
+- TypeScript
+- HTML
+- CSS
 
-PayPal behavior is controlled with `.env` flags in backend and frontend.
+### Tools
 
-Backend (`Backend/.env`):
-- `PAYPAL_ENABLED=true|false`
-- `PAYPAL_MODE=disabled|sandbox|live|mock`
+- Git
+- Docker
+- VS Code
+- PostgreSQL
 
-Frontend (`Frontend/.env`):
-- `VITE_PAYPAL_ENABLED=true|false`
-- `VITE_PAYPAL_MODE=disabled|sandbox|live|mock`
-- `VITE_PAYPAL_CLIENT_ID=...` (required for `sandbox` and `live`)
+## Architecture
 
-Mode behavior:
-- `disabled`: PayPal button is hidden in UI and backend rejects PayPal settlement flow.
-- `sandbox`: regular PayPal Sandbox API flow.
-- `live`: regular PayPal Live API flow.
-- `mock`: debug mode without real PayPal API calls, but with full settlement flow in app.
+The application follows a client-server architecture consisting of two main parts:
 
-`*_ENABLED=false` has priority and behaves like `disabled`.
+- **Frontend** — React application responsible for user interaction and communication with the backend.
+- **Backend** — FastAPI application providing REST API endpoints, handling business logic, authentication, and database operations.
 
-## Backend deployment on Railway with Tesseract OCR
+The backend uses SQLAlchemy as an ORM layer for communication with the PostgreSQL database, while Pydantic models are used for data validation and API schemas.
 
-For production OCR with `pytesseract`, the app needs system-level `tesseract` binaries.
-Use Docker deployment for backend so Railway builds a container with required OS packages.
+## Security
 
-1. In Railway create/open backend service.
-2. Set service Root Directory to `Backend`.
-3. Ensure service uses Dockerfile build (Railway auto-detects `Backend/Dockerfile`).
-4. Add all required backend environment variables in Railway (the same values you normally keep in backend `.env`).
-5. Deploy.
+The application uses JWT (JSON Web Token) authentication to protect user data.
 
-Docker image in `Backend/Dockerfile` installs:
-- `tesseract-ocr`
-- `tesseract-ocr-eng`
-- `tesseract-ocr-pol`
-
-Startup command inside container is handled by `Backend/start_server.py`.
-The script reads `PORT` from environment and converts it to integer before launching Uvicorn.
-
-Important for Railway:
-- for Docker deployment, leave Railway Start Command empty
-- alternatively set Start Command to `python start_server.py`
-- do not use `--port $PORT` directly in Railway Start Command (it may be passed as literal string)
-
-Quick post-deploy check:
-- open backend logs and verify no `TesseractNotFoundError`
-- call OCR endpoint and confirm response uses OCR status `done` (for readable receipt image)
-
-
-**command for counting lines of code**
-```
-cloc . --vcs=git --not-match-f='(components.json|eslint.config.js|package-lock.json|package.json|tsconfig.app.json|tsconfig.json|tsconfig.node.json|vite.config.ts|_metadata.json)'
-```
+After successful authentication, the user receives an access token that is required when accessing protected API endpoints. This ensures that each user can only manage their own financial records.
