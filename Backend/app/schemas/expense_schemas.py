@@ -20,6 +20,15 @@ class PersonalExpenseCreate(ExpenseBase):
     pass
 
 
+class PersonalExpenseResponse(ExpenseBase):
+    id: int
+    created_at: datetime
+    recurring_expense_id: int | None = None
+    recurring_occurrence_date: date | None = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PersonalExpenseUpdate(BaseModel):
     title: Optional[str] = None
     amount: Optional[Decimal] = None
@@ -29,15 +38,6 @@ class PersonalExpenseUpdate(BaseModel):
     notes: Optional[str] = None
     receipt_image_url: Optional[str] = None
     receipt_text: Optional[str] = None
-
-
-class PersonalExpenseResponse(ExpenseBase):
-    id: int
-    created_at: datetime
-    recurring_expense_id: int | None = None
-    recurring_occurrence_date: date | None = None
-    
-    model_config = ConfigDict(from_attributes=True)
 
 
 class PersonalExpenseSummaryCurrency(BaseModel):
