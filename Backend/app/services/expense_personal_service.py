@@ -18,8 +18,6 @@ class ExpensePersonalService:
         self.category_service = CategoryService(db)
         self.budget_service = BudgetService(db)
 
-    
-    # -- Personal Expenses
 
     def _resolve_category_ids(
         self,

@@ -1455,7 +1455,7 @@
     "split": {
       "equal": "Equal",
       "percent": "Percent",
-      "exact": "Exact"
+      "exact": "Custom"
     },
     "userPrefix": "User",
     "noNotes": "No note",

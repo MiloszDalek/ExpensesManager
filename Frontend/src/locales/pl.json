@@ -1445,7 +1445,7 @@
     "split": {
       "equal": "Równo",
       "percent": "Procentowo",
-      "exact": "Dokładnie"
+      "exact": "Niestandardowo"
     },
     "userPrefix": "Użytkownik",
     "noNotes": "Brak notatki",
