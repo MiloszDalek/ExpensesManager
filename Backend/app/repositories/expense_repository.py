@@ -18,6 +18,10 @@ class ExpenseRepository:
         return expense
 
 
+    def save_all(self):
+        self.db.commit()
+
+        
     def _apply_personal_expense_filters(
         self,
         query,
@@ -676,8 +680,7 @@ class ExpenseRepository:
         self.db.flush()
 
 
-    def save_all(self):
-        self.db.commit()
+
 
 
     def get_spending_trend(
