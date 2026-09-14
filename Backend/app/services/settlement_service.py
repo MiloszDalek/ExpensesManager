@@ -434,7 +434,6 @@ class SettlementService:
 
         # Idempotency: status-based guard against duplicate events
         if all(s.status == SettlementStatus.COMPLETED for s in settlements):
-            logger.info("PayPal webhook ignored (already completed): order_id=%s event_id=%s", order_id, event_id)
             return {"status": "ignored", "reason": "already_completed"}
 
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
@@ -447,7 +446,6 @@ class SettlementService:
                 for s in settlements
                 if s.payment_method == PaymentMethod.PAYPAL
             ):
-                logger.info("PayPal webhook duplicate capture ignored: order_id=%s capture_id=%s event_id=%s", order_id, capture_id_str, event_id)
                 return {"status": "ignored", "reason": "already_processed"}
 
             self.mark_as_paid(settlements, capture_id_str, order_id)

@@ -1472,7 +1472,7 @@
     "splitType": "Split type",
     "splitTypePlaceholder": "Select split type",
     "splitTypeEqual": "Equal",
-    "splitTypeExact": "Exact",
+    "splitTypeExact": "Custom",
     "splitTypePercent": "Percent",
     "category": "Category",
     "date": "Date",

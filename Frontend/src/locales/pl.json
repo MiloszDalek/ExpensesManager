@@ -1462,7 +1462,7 @@
     "splitType": "Typ podziału",
     "splitTypePlaceholder": "Wybierz typ podziału",
     "splitTypeEqual": "Równo",
-    "splitTypeExact": "Dokładnie",
+    "splitTypeExact": "Niestandardowo",
     "splitTypePercent": "Procentowo",
     "category": "Kategoria",
     "date": "Data",
