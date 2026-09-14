@@ -7,7 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install OCR runtime and minimal system dependencies required by Pillow/OpenCV OCR pipelines.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
