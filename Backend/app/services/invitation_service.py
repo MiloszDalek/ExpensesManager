@@ -126,8 +126,6 @@ class InvitationService:
                         detail="Group invitation is already pending. Wait for response or cancel the existing invitation.",
                     )
                 elif invitation.status == InvitationStatus.ACCEPTED:
-                    # Recovery path for historical inconsistent data where invitation
-                    # is accepted but membership was never created.
                     if self.group_service.group_repo.get_membership(group.id, to_user.id):
                         raise HTTPException(status_code=400, detail="Invitation already accepted")
                 

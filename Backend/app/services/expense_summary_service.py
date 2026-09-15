@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
 import csv
 import io
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.enums import CurrencyEnum
 from app.repositories import ExpenseRepository
